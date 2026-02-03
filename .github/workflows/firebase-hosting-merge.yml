@@ -24,3 +24,4 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_PATIENT_SCRIBE_APP }}
           channelId: live
           projectId: patient-scribe-app
+          entryPoint: frontend

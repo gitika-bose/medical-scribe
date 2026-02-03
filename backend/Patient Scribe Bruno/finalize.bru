@@ -1,0 +1,24 @@
+meta {
+  name: finalize
+  type: http
+  seq: 5
+}
+
+post {
+  url: http://localhost:5000/appointments/19fe4199-037f-4105-8eb1-f9be3edba19e/finalize
+  body: multipartForm
+  auth: inherit
+}
+
+headers {
+  Authorization: Bearer eyJhbGciOiJSUzI1NiIsImtpZCI6ImY3NThlNTYzYzBiNjRhNzVmN2UzZGFlNDk0ZDM5NTk1YzE0MGVmOTMiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vcGF0aWVudC1zY3JpYmUtYXBwIiwiYXVkIjoicGF0aWVudC1zY3JpYmUtYXBwIiwiYXV0aF90aW1lIjoxNzY5ODkwMDEzLCJ1c2VyX2lkIjoiWVQwM3FSOUx1b1JmQWxaaWp4RURVdWQxRlNxMiIsInN1YiI6IllUMDNxUjlMdW9SZkFsWmlqeEVEVXVkMUZTcTIiLCJpYXQiOjE3Njk4OTAwMTMsImV4cCI6MTc2OTg5MzYxMywiZW1haWwiOiJ0ZXN0QHBhdGllbnQtc2NyaWJlLmFwcCIsImVtYWlsX3ZlcmlmaWVkIjpmYWxzZSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6eyJlbWFpbCI6WyJ0ZXN0QHBhdGllbnQtc2NyaWJlLmFwcCJdfSwic2lnbl9pbl9wcm92aWRlciI6InBhc3N3b3JkIn19.jb92cOS2_HzMhnoEYC-KnblR70Rc9bVdP0i2Duh8OTspS5oxZZEAVZYY9z1O3MsBA8qMoBg34ybepuGHfcBIX0LC8fQEdnkZpKZbK41vWgYSnUY3WqxmNt9VkRDXchOElbw8vA0ivphtpsJjC0kWhhq06yLIF1j0nMVq8L53afP6NGa9-K3ustZ_fGfenUvVhQx-dSJIiwfJomuVRhmNJhbbDyiblZTqperjKTuAyhp5Fmj7Nm2Cu9ft_N0s_gXL3iHThGQGutwd0yP8LyIDumVrQc4tSH3fszzMzRUOtevWoggJOJGbgE7rKIJBLKCSppZZfsbzpLxq6Xx_Rx6GwQ
+}
+
+body:multipart-form {
+  fullAudio: @file(C:\Users\gitikabose\Downloads\Crossover annual health checkup.m4a)
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

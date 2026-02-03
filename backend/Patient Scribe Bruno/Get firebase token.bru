@@ -1,0 +1,28 @@
+meta {
+  name: Get firebase token
+  type: http
+  seq: 1
+}
+
+post {
+  url: https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=AIzaSyBlYqE38bg2zMAp8Hevf0o4mzmDJYJFp2c
+  body: json
+  auth: inherit
+}
+
+params:query {
+  key: AIzaSyBlYqE38bg2zMAp8Hevf0o4mzmDJYJFp2c
+}
+
+body:json {
+  {
+    "email": "test@patient-scribe.app",
+    "password": "testpassword",
+    "returnSecureToken": true
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

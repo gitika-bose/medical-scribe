@@ -192,7 +192,7 @@ npm run preview
 
 Create `.env.local` for local development:
 ```env
-VITE_API_URL=http://localhost:5000
+VITE_API_URL=http://localhost:8080
 VITE_FIREBASE_API_KEY=your_key
 VITE_FIREBASE_AUTH_DOMAIN=your_domain
 ```

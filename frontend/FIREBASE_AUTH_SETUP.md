@@ -175,7 +175,7 @@ export async function apiCall(endpoint: string, options: RequestInit = {}) {
 
 2. **Add API URL to `.env.local`:**
 ```env
-VITE_API_URL=http://localhost:5000
+VITE_API_URL=http://localhost:8080
 ```
 
 3. **Use in components:**

@@ -103,15 +103,15 @@ VITE_FIREBASE_MESSAGING_SENDER_ID=...
 VITE_FIREBASE_APP_ID=...
 
 # Backend API URL (ADD THIS)
-VITE_API_URL=http://localhost:5000
+VITE_API_URL=http://localhost:8080
 ```
 
-**Important:** The API URL defaults to `http://localhost:5000` if not set.
+**Important:** The API URL defaults to `http://localhost:8080` if not set.
 
 ## Testing
 
 ### Prerequisites
-1. Backend server running on port 5000
+1. Backend server running on port 8080
 2. Firebase authentication working
 3. Microphone access granted in browser
 

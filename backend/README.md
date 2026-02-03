@@ -107,7 +107,7 @@ VERTEX_AI_MODEL=gemini-1.5-pro
 python app.py
 ```
 
-The API will be available at `http://localhost:5000`
+The API will be available at `http://localhost:8080`
 
 ## API Endpoints
 
@@ -321,7 +321,7 @@ You can use tools like:
 Example cURL request:
 
 ```bash
-curl -X POST http://localhost:5000/appointments \
+curl -X POST http://localhost:8080/appointments \
   -H "Authorization: Bearer YOUR_FIREBASE_TOKEN" \
   -H "Content-Type: application/json"
 ```

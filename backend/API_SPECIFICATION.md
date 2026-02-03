@@ -5,7 +5,7 @@ This document provides a detailed specification of all API endpoints for the Med
 
 ## Base URL
 ```
-http://localhost:5000
+http://localhost:8080
 ```
 
 ## Authentication

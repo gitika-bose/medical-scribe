@@ -26,6 +26,9 @@ wheels/
 .installed.cfg
 *.egg
 
+# Node.js (if any Node dependencies are used)
+node_modules/
+
 # Firebase credentials
 serviceAccountKey.json
 *-firebase-adminsdk-*.json

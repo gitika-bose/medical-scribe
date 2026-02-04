@@ -11,9 +11,10 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
   const [isRecording, setIsRecording] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const chunksRef = useRef<Blob[]>([]);
+  const streamRef = useRef<MediaStream | null>(null);
   const allChunksRef = useRef<Blob[]>([]); // Keep all chunks for full recording
   const chunkIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const onChunkReadyRef = useRef<((chunk: Blob) => void) | null>(null);
 
   const startRecording = useCallback(async (onChunkReady: (chunk: Blob) => void) => {
     try {
@@ -28,46 +29,17 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
         } 
       });
 
-      // Create MediaRecorder
-      const mediaRecorder = new MediaRecorder(stream, {
-        mimeType: 'audio/webm;codecs=opus',
-      });
+      streamRef.current = stream;
+      onChunkReadyRef.current = onChunkReady;
 
-      chunksRef.current = [];
-
-      // Collect audio data
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          chunksRef.current.push(event.data);
-          allChunksRef.current.push(event.data); // Also keep for full recording
-        }
-      };
-
-      // Start recording with 1-second chunks
-      mediaRecorder.start(1000);
-      mediaRecorderRef.current = mediaRecorder;
+      // Start the first 30-second recording
+      startNewRecordingSegment();
       setIsRecording(true);
 
-      // Every 30 seconds, create a blob from collected chunks and send it
-      chunkIntervalRef.current = setInterval(async () => {
-        if (chunksRef.current.length > 0) {
-          const chunk = new Blob(chunksRef.current, { type: 'audio/webm' });
-          const chunkSizeMB = (chunk.size / (1024 * 1024)).toFixed(2);
-          console.log(`[AudioRecorder] Creating chunk: ${chunkSizeMB} MB, ${chunksRef.current.length} data pieces`);
-          
-          // Clear chunks BEFORE sending to avoid race condition
-          const chunkToSend = chunk;
-          chunksRef.current = [];
-          
-          // Send chunk (await to ensure it completes)
-          try {
-            await onChunkReady(chunkToSend);
-            console.log(`[AudioRecorder] Chunk sent successfully`);
-          } catch (err) {
-            console.error(`[AudioRecorder] Failed to send chunk:`, err);
-          }
-        }
-      }, 30000); // 30 seconds (well under 60s limit)
+      // Every 30 seconds, stop current recorder and start a new one
+      chunkIntervalRef.current = setInterval(() => {
+        stopAndRestartRecording();
+      }, 30000); // 30 seconds
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to start recording';
@@ -76,6 +48,68 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
       throw err;
     }
   }, []);
+
+  const startNewRecordingSegment = useCallback(() => {
+    if (!streamRef.current) return;
+
+    // Create a new MediaRecorder for this 30-second segment
+    const mediaRecorder = new MediaRecorder(streamRef.current, {
+      mimeType: 'audio/webm;codecs=opus',
+    });
+
+    const currentChunks: Blob[] = [];
+
+    // Collect audio data for this segment
+    mediaRecorder.ondataavailable = (event) => {
+      if (event.data.size > 0) {
+        currentChunks.push(event.data);
+        allChunksRef.current.push(event.data); // Also keep for full recording
+      }
+    };
+
+    // When this segment stops, send it as a chunk
+    mediaRecorder.onstop = async () => {
+      if (currentChunks.length > 0) {
+        const chunk = new Blob(currentChunks, { type: 'audio/webm' });
+        const chunkSizeMB = (chunk.size / (1024 * 1024)).toFixed(2);
+        console.log(`[AudioRecorder] Segment complete: ${chunkSizeMB} MB`);
+        
+        // Send chunk
+        if (onChunkReadyRef.current) {
+          try {
+            await onChunkReadyRef.current(chunk);
+            console.log(`[AudioRecorder] Chunk sent successfully`);
+          } catch (err) {
+            console.error(`[AudioRecorder] Failed to send chunk:`, err);
+          }
+        }
+      }
+    };
+
+    // Start recording (no timeslice - record continuously until stopped)
+    mediaRecorder.start();
+    mediaRecorderRef.current = mediaRecorder;
+    console.log(`[AudioRecorder] Started new 30-second recording segment`);
+  }, []);
+
+  const stopAndRestartRecording = useCallback(() => {
+    const currentRecorder = mediaRecorderRef.current;
+    
+    if (currentRecorder && currentRecorder.state === 'recording') {
+      console.log('[AudioRecorder] Stopping current segment to restart...');
+      // Stop current recorder (this will trigger onstop and send the chunk)
+      currentRecorder.stop();
+      
+      // Start a new recording segment immediately
+      // Use setTimeout to ensure the stop event completes first
+      setTimeout(() => {
+        if (streamRef.current) {
+          console.log('[AudioRecorder] Restarting new segment...');
+          startNewRecordingSegment();
+        }
+      }, 100);
+    }
+  }, [startNewRecordingSegment]);
 
   const stopRecording = useCallback(async (): Promise<Blob | null> => {
     return new Promise((resolve) => {
@@ -88,7 +122,14 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
       const mediaRecorder = mediaRecorderRef.current;
       
       if (!mediaRecorder || mediaRecorder.state === 'inactive') {
+        // Stop stream
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach(track => track.stop());
+          streamRef.current = null;
+        }
+        
         setIsRecording(false);
+        
         // Return full recording if available
         if (allChunksRef.current.length > 0) {
           const fullBlob = new Blob(allChunksRef.current, { type: 'audio/webm' });
@@ -101,8 +142,11 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
       }
 
       mediaRecorder.onstop = () => {
-        // Stop all tracks
-        mediaRecorder.stream.getTracks().forEach(track => track.stop());
+        // Stop stream
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach(track => track.stop());
+          streamRef.current = null;
+        }
         
         // Create full recording blob from all chunks
         const fullBlob = allChunksRef.current.length > 0 
@@ -112,8 +156,8 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
         // Reset state
         setIsRecording(false);
         mediaRecorderRef.current = null;
-        chunksRef.current = [];
         allChunksRef.current = [];
+        onChunkReadyRef.current = null;
         
         resolve(fullBlob);
       };

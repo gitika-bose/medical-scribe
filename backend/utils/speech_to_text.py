@@ -1,6 +1,6 @@
 from google.cloud import speech
 import io
-import wave
+from pydub import AudioSegment
 
 def stitch_diarized_words(words):
     """
@@ -51,36 +51,48 @@ class SpeechToTextService:
     def __init__(self):
         self.client = speech.SpeechClient()
     
-    def _get_sample_rate(self, audio_content: bytes) -> int:
-        """Extract sample rate from WAV file header"""
+    def _decode_to_pcm(self, audio_content: bytes) -> bytes:
+        """
+        Decode any audio format to raw PCM (mono, 16-bit, 16 kHz)
+        
+        Args:
+            audio_content: Audio file content in any format (webm, mp3, wav, etc.)
+            
+        Returns:
+            Raw PCM audio bytes (mono, 16-bit, 16 kHz)
+        """
         try:
-            with wave.open(io.BytesIO(audio_content), 'rb') as wav_file:
-                return wav_file.getframerate()
-        except:
-            # Default to 16000 if can't read WAV header
-            return 16000
-    
-    def _get_audio_duration(self, audio_content: bytes) -> float:
-        """Get audio duration in seconds from WAV file"""
-        try:
-            with wave.open(io.BytesIO(audio_content), 'rb') as wav_file:
-                frames = wav_file.getnframes()
-                rate = wav_file.getframerate()
-                duration = frames / float(rate)
-                return duration
-        except:
-            return 0
+            # Load audio using pydub (supports many formats via ffmpeg)
+            audio = AudioSegment.from_file(io.BytesIO(audio_content))
+            
+            # Convert to mono, 16-bit, 16 kHz
+            audio = audio.set_channels(1)  # mono
+            audio = audio.set_sample_width(2)  # 16-bit = 2 bytes
+            audio = audio.set_frame_rate(16000)  # 16 kHz
+            
+            # Export as raw PCM
+            pcm_buffer = io.BytesIO()
+            audio.export(pcm_buffer, format="raw")
+            pcm_data = pcm_buffer.getvalue()
+            
+            print(f"[PCM Decode] Original size: {len(audio_content)} bytes")
+            print(f"[PCM Decode] PCM size: {len(pcm_data)} bytes")
+            print(f"[PCM Decode] Duration: {len(audio) / 1000:.2f} seconds")
+            
+            return pcm_data
+        except Exception as e:
+            raise Exception(f"Failed to decode audio to PCM: {str(e)}")
     
     def transcribe_audio_chunk(self, audio_content: bytes, use_gcs: bool = False, gcs_uri: str = None) -> list:
         """
-        Transcribe an audio chunk using Google Cloud Speech-to-Text API
+        Transcribe an audio chunk using Google Cloud Speech-to-Text API with streaming
         Configured for medical conversations with speaker diarization
-        Uses long-running recognition with inline audio or GCS URI
+        Streams PCM audio in small frames to avoid buffering and OOMs
         
         Args:
-            audio_content: Audio file content in bytes
-            use_gcs: Whether to use GCS URI instead of inline audio
-            gcs_uri: GCS URI if use_gcs is True
+            audio_content: Audio file content in bytes (any format)
+            use_gcs: Not used (kept for backward compatibility)
+            gcs_uri: Not used (kept for backward compatibility)
             
         Returns:
             List of dicts with speaker turns:
@@ -88,19 +100,15 @@ class SpeechToTextService:
                 - text (str): Text spoken by that speaker
         """
         
-        # Create audio object based on method
-        if use_gcs and gcs_uri:
-            audio = speech.RecognitionAudio(uri=gcs_uri)
-        else:
-            audio = speech.RecognitionAudio(content=audio_content)
+        # Step 1: Decode to raw PCM (mono, 16-bit, 16 kHz)
+        print(f"[Speech-to-Text] Decoding audio to PCM...")
+        pcm_data = self._decode_to_pcm(audio_content)
         
-        # Get sample rate and duration from the audio file (for logging)
-        sample_rate = self._get_sample_rate(audio_content) if not use_gcs else 48000
-        duration = self._get_audio_duration(audio_content) if not use_gcs else 0
-        
+        # Step 2: Configure for PCM streaming
         config = speech.RecognitionConfig(
-            encoding=speech.RecognitionConfig.AudioEncoding.WEBM_OPUS,
-            sample_rate_hertz=48000,  # Explicitly set to 48000 for WEBM Opus
+            encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
+            sample_rate_hertz=16000,
+            audio_channel_count=1,
             language_code="en-US",
             # Enable medical conversation model
             model="medical_conversation",
@@ -113,45 +121,58 @@ class SpeechToTextService:
             )
         )
         
+        streaming_config = speech.StreamingRecognitionConfig(
+            config=config,
+            interim_results=False
+        )
+        
         try:
-            # Use synchronous recognition for inline audio
-            if use_gcs:
-                # Use long-running for GCS (not currently used)
-                operation = self.client.long_running_recognize(config=config, audio=audio)
-                print(f"[Speech-to-Text] Started long-running recognition, waiting for result...")
-                response = operation.result(timeout=120)
-                print(f"[Speech-to-Text] Recognition completed")
-            else:
-                # Use synchronous for inline audio
-                print(f"[Speech-to-Text] Using synchronous recognition for inline audio")
-                print(f"[Speech-to-Text] Audio content size: {len(audio_content)} bytes")
-                response = self.client.recognize(config=config, audio=audio)
-                print(f"[Speech-to-Text] Synchronous recognition completed")
+            print(f"[Speech-to-Text] Starting streaming recognition")
+            print(f"[Speech-to-Text] PCM data size: {len(pcm_data)} bytes")
             
-            # Debug: Print response structure
-            print(f"[Speech-to-Text] Number of results: {len(response.results)}")
-            for i, result in enumerate(response.results):
-                print(f"[Speech-to-Text] Result {i}: {len(result.alternatives)} alternatives")
-                if result.alternatives:
-                    alt = result.alternatives[0]
-                    print(f"[Speech-to-Text] Result {i} transcript: {alt.transcript[:100] if alt.transcript else 'EMPTY'}")
-                    print(f"[Speech-to-Text] Result {i} has {len(alt.words)} words")
+            # Step 3: Stream PCM data in small frames (100-200ms chunks)
+            # At 16kHz, 16-bit, mono: 16000 samples/sec * 2 bytes/sample = 32000 bytes/sec
+            # 100ms = 3200 bytes, 200ms = 6400 bytes
+            # We'll use 150ms chunks = 4800 bytes
+            chunk_size = 4800  # ~150ms of audio
             
-            # Extract words with speaker tags from ALL results (not just last)
+            def generate_audio_chunks():
+                """Generator that yields audio chunks for streaming"""
+                for i in range(0, len(pcm_data), chunk_size):
+                    chunk = pcm_data[i:i + chunk_size]
+                    yield speech.StreamingRecognizeRequest(audio_content=chunk)
+            
+            # Stream the audio
+            requests = generate_audio_chunks()
+            responses = self.client.streaming_recognize(streaming_config, requests)
+            
+            print(f"[Speech-to-Text] Streaming recognition started, processing responses...")
+            
+            # Step 4: Collect results from streaming responses
             words = []
-            if response.results:
+            result_count = 0
+            
+            for response in responses:
+                result_count += 1
+                
+                # Only process final results (not interim)
                 for result in response.results:
-                    if result.alternatives:
+                    if result.is_final and result.alternatives:
                         alternative = result.alternatives[0]
+                        print(f"[Speech-to-Text] Final result {result_count}: {alternative.transcript[:100] if alternative.transcript else 'EMPTY'}")
+                        
+                        # Extract words with speaker tags
                         for word_info in alternative.words:
                             words.append({
                                 "word": word_info.word,
                                 "speakerTag": word_info.speaker_tag
                             })
             
+            print(f"[Speech-to-Text] Streaming completed")
+            print(f"[Speech-to-Text] Total results processed: {result_count}")
             print(f"[Speech-to-Text] Total words extracted: {len(words)}")
             
-            # Stitch words into speaker turns
+            # Step 5: Stitch words into speaker turns
             stitched_transcript = stitch_diarized_words(words)
             print(f"[Speech-to-Text] Stitched into {len(stitched_transcript)} speaker turns")
             

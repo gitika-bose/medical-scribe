@@ -65,7 +65,7 @@ pip install -r requirements.txt
    ```
 3. Set your project:
    ```bash
-   gcloud config set project YOUR_PROJECT_ID
+   gcloud config set project patient-scribe-app
    ```
 
 #### Enable Required APIs

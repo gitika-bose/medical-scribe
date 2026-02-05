@@ -1,0 +1,99 @@
+// Ref: https://www.ncbi.nlm.nih.gov/books/NBK482263/
+// Draft version 1 of the summary schema for clinical problem summarization
+{
+    "visit_summary": {
+        "problem_summary": "string",
+        "diagnosis_summary": "string",
+        "plan_summary": "string"
+    },
+    "details": [
+    // Each Problem Summary includes Problem, Diagnosis, and Plan sections
+    // Problems are listed in order of priority or relevance (most to least)
+        {
+            "problem": {
+                "problem_name": "string",
+                "description": "string",
+                "onset_timeframe": "string", // Can be specific date or duration like '2 weeks ago'
+                "resolved_timeframe": "string" // Can be specific date or duration like '2 weeks ago'
+            },
+            "diagnosis": [ // List of differential diagnoses, ordered by likelihood (most to least)
+                {
+                    "diagnosis_name": "string",
+                    "description": "string", // Description or reasoning for diagnosis
+                    "diagnosis_confidence": "high | medium | low", // Optional
+                    "key_takeaway": "string" // One-sentence summary of what matters most right now
+                }
+            ],
+            "plan": {
+                "actions": {
+                    "tests": [
+                        {
+                            "type": "string", // Lab Test, Imaging, Other
+                            "diagnostic_name": "string",
+                            "reason": "string",
+                            "response": "string", // Optional What the next steps should be based on results
+                            "recommended": "boolean", // Default true if recording only
+                            "verified": "boolean" // Default false if recording only. True if found in uploaded records.
+                            // Verified takes precedence over recommended
+                        }
+                    ],
+                    "procedures": [
+                        {
+                            "type": "string", // consultation, surgery, therapy, other
+                            "procedure_name": "string",
+                            "description": "string", // Description or reasoning for procedure
+                            "procedure_timeframe": "string", // Optional When the procedure is to be done. Can be specific date or duration like '2 weeks'
+                            "recommended": "boolean",
+                            "verified": "boolean"
+                        }
+                    ],
+                    "medications": [
+                        {
+                            "medication_name": "string",
+                            "dosage": "string",
+                            "frequency": "string",
+                            "duration": "string", // How long. Can be specific date or duration like '2 weeks'
+                            "description": "string", // Description or reasoning for medication
+                            "recommended": "boolean",
+                            "verified": "boolean"
+                        }
+                    ]
+                },
+                "next_steps": {
+                    "follow_up": [
+                        {
+                            "time_frame": "string", // When the follow-up should occur. Can be specific date or duration like '2 weeks'
+                            "description": "string" // Description or reasoning for follow-up
+                        }
+                    ],
+                    "watch_for": [
+                        {
+                            "symptom": "string",
+                            "what_to_do": "string" // call clinic, go to ER, mention at follow-up
+                        }
+                    ]
+                },
+                "guidance": {
+                    "education": [ // Eg. lifestyle changes, disease information, problem explanation, resources etc.
+                        {
+                            "topic": "string",
+                            "description": "string"
+                        }
+                    ],
+                    "instructions": [ // Specific instructions for the patient
+                        {
+                            "topic": "string",
+                            "description": "string"
+                        }
+                    ]
+                },
+                "open_questions": [ // Things that might not be clear. Only important questions to address.
+                    {
+                        "question": "string",
+                        "reason": "string"
+                    }
+                ]
+            }
+        }
+    ]
+}

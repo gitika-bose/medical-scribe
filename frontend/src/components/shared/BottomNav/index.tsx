@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router";
-import { User, Calendar } from "lucide-react";
+import { Home, Calendar, User } from "lucide-react";
 
 export function BottomNav() {
   const navigate = useNavigate();
@@ -16,8 +16,8 @@ export function BottomNav() {
               : "text-gray-600 hover:text-gray-900"
           }`}
         >
-          <User className="w-6 h-6" />
-          <span className="text-sm">Account</span>
+          <Home className="w-6 h-6" />
+          <span className="text-sm">Home</span>
         </button>
         
         <button
@@ -30,6 +30,18 @@ export function BottomNav() {
         >
           <Calendar className="w-6 h-6" />
           <span className="text-sm">Appointments</span>
+        </button>
+        
+        <button
+          onClick={() => navigate("/home")}
+          className={`flex flex-col items-center gap-1 px-6 py-2 transition-colors ${
+            location.pathname === "/account"
+              ? "text-blue-600"
+              : "text-gray-600 hover:text-gray-900"
+          }`}
+        >
+          <User className="w-6 h-6" />
+          <span className="text-sm">Account</span>
         </button>
       </div>
     </div>

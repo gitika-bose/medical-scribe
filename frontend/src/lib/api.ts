@@ -1,6 +1,7 @@
 import { auth } from '@/lib/firebase';
 
-const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+const API_URL_CRUD = import.meta.env.VITE_API_CRUD_URL || 'http://localhost:8080';
+const API_URL_PROCESSING = import.meta.env.VITE_API_PROCESSING_URL || 'http://localhost:8081';
 
 async function getAuthHeaders(): Promise<HeadersInit> {
   const user = auth.currentUser;
@@ -18,7 +19,7 @@ async function getAuthHeaders(): Promise<HeadersInit> {
 export async function startAppointment(): Promise<{ appointmentId: string }> {
   const headers = await getAuthHeaders();
   
-  const response = await fetch(`${API_URL}/appointments`, {
+  const response = await fetch(`${API_URL_CRUD}/appointments`, {
     method: 'POST',
     headers,
   });
@@ -45,7 +46,7 @@ export async function uploadAudioChunk(
   formData.append('audioChunk', audioChunk, 'chunk.webm');
 
   const response = await fetch(
-    `${API_URL}/appointments/${appointmentId}/audio-chunks`,
+    `${API_URL_CRUD}/appointments/${appointmentId}/audio-chunks`,
     {
       method: 'POST',
       headers: {
@@ -69,7 +70,7 @@ export async function generateQuestions(
   const headers = await getAuthHeaders();
 
   const response = await fetch(
-    `${API_URL}/appointments/${appointmentId}/generate-questions`,
+    `${API_URL_PROCESSING}/appointments/${appointmentId}/generate-questions`,
     {
       method: 'POST',
       headers,
@@ -100,7 +101,7 @@ export async function finalizeAppointment(
   }
 
   const response = await fetch(
-    `${API_URL}/appointments/${appointmentId}/finalize`,
+    `${API_URL_PROCESSING}/appointments/${appointmentId}/finalize`,
     {
       method: 'POST',
       headers: {
@@ -123,7 +124,7 @@ export async function finalizeAppointment(
 export async function getAppointments(): Promise<{ appointments: any[]; count: number }> {
   const headers = await getAuthHeaders();
 
-  const response = await fetch(`${API_URL}/appointments`, {
+  const response = await fetch(`${API_URL_CRUD}/appointments`, {
     method: 'GET',
     headers,
   });
@@ -138,7 +139,7 @@ export async function getAppointments(): Promise<{ appointments: any[]; count: n
 export async function getAppointment(appointmentId: string): Promise<any> {
   const headers = await getAuthHeaders();
 
-  const response = await fetch(`${API_URL}/appointments/${appointmentId}`, {
+  const response = await fetch(`${API_URL_CRUD}/appointments/${appointmentId}`, {
     method: 'GET',
     headers,
   });
@@ -165,7 +166,7 @@ export async function uploadRecording(
   formData.append('recording', recordingFile);
 
   const response = await fetch(
-    `${API_URL}/appointments/${appointmentId}/upload-recording`,
+    `${API_URL_CRUD}/appointments/${appointmentId}/upload-recording`,
     {
       method: 'POST',
       headers: {
@@ -188,7 +189,7 @@ export async function uploadRecording(
 export async function deleteAppointment(appointmentId: string): Promise<void> {
   const headers = await getAuthHeaders();
 
-  const response = await fetch(`${API_URL}/appointments/${appointmentId}`, {
+  const response = await fetch(`${API_URL_CRUD}/appointments/${appointmentId}`, {
     method: 'DELETE',
     headers,
   });

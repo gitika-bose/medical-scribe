@@ -2,68 +2,116 @@ import { useNavigate } from "react-router";
 import { BottomNav } from "@/components/shared/BottomNav";
 import { store } from "@/store";
 import { useAuth } from "@/hooks/useAuth";
-import { LogOut, Upload } from "lucide-react";
-import { startAppointment, uploadRecording } from "@/lib/api";
-import { useState, useRef } from "react";
+import { LogOut, Mic, X } from "lucide-react";
+import { startAppointment, uploadAudioChunk, generateQuestions, finalizeAppointment } from "@/lib/api";
+import { useState, useEffect } from "react";
+import { useAudioRecorder } from "@/hooks/useAudioRecorder";
 
 export function HomePage() {
   const navigate = useNavigate();
   const { signOut, user } = useAuth();
-  const [isStarting, setIsStarting] = useState(false);
+  const [isRecordingActive, setIsRecordingActive] = useState(false);
+  const [questions, setQuestions] = useState<string[] | null>(null);
+  const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { isRecording, startRecording, stopRecording, error: recordingError } = useAudioRecorder();
   const [error, setError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleStart = async () => {
-    try {
-      setIsStarting(true);
-      setError(null);
-
-      // Start appointment on backend
-      const { appointmentId } = await startAppointment();
-      
-      // Store appointment ID
-      store.startRecording(appointmentId);
-      
-      // Navigate to listening page
-      navigate("/listening");
-    } catch (err) {
-      console.error("Failed to start appointment:", err);
-      setError("Failed to start appointment. Please try again.");
-      setIsStarting(false);
-    }
-  };
-
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    try {
-      setError(null);
-      
-      // Create appointment first
-      const { appointmentId } = await startAppointment();
-      
-      // Start upload in background and navigate to appointments
-      uploadRecording(appointmentId, file)
-        .catch((err) => {
-          console.error("Failed to upload recording:", err);
-        });
-      
-      // Navigate to appointments page immediately
-      navigate("/appointments");
-      
-    } catch (err) {
-      console.error("Failed to start appointment:", err);
-      setError("Failed to start appointment. Please try again.");
-    }
+  const handleRecordingClick = async () => {
+    const appointmentId = store.getCurrentRecordingId();
     
-    // Reset file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+    if (!isRecordingActive) {
+      // Start new recording
+      try {
+        setError(null);
+
+        // Start appointment on backend
+        const { appointmentId: newAppointmentId } = await startAppointment();
+        
+        // Store appointment ID
+        store.startRecording(newAppointmentId);
+        
+        // Start recording with callback for 1-minute chunks
+        await startRecording(async (chunk: Blob) => {
+          try {
+            console.log("Uploading audio chunk...");
+            await uploadAudioChunk(newAppointmentId, chunk);
+            console.log("Audio chunk uploaded successfully");
+          } catch (err) {
+            console.error("Failed to upload audio chunk:", err);
+            setError("Failed to upload audio. Recording continues...");
+          }
+        });
+        
+        setIsRecordingActive(true);
+      } catch (err) {
+        console.error("Failed to start appointment:", err);
+        setError("Failed to start appointment. Please try again.");
+      }
+    }
+  };
+
+  const handleGenerateQuestions = async () => {
+    const appointmentId = store.getCurrentRecordingId();
+    if (!appointmentId) {
+      setError("No active appointment");
+      return;
+    }
+
+    try {
+      setIsGeneratingQuestions(true);
+      setError(null);
+      
+      const { questions: generatedQuestions } = await generateQuestions(appointmentId);
+      setQuestions(generatedQuestions);
+    } catch (err) {
+      console.error("Failed to generate questions:", err);
+      setError("Failed to generate questions. Please try again.");
+    } finally {
+      setIsGeneratingQuestions(false);
+    }
+  };
+
+  const closeQuestionsModal = () => {
+    setQuestions(null);
+  };
+
+  const handleEnd = async () => {
+    const appointmentId = store.getCurrentRecordingId();
+    
+    try {
+      setIsProcessing(true);
+      setError(null);
+
+      if (!appointmentId) {
+        throw new Error("No active appointment");
+      }
+
+      // Stop recording and get full audio (always stop, even if finalize fails)
+      const fullAudio = await stopRecording();
+
+      // Finalize appointment (generate SOAP note) with full audio
+      await finalizeAppointment(appointmentId, fullAudio);
+
+      // Don't save to store - will fetch from backend
+      store.endRecording();
+      
+      // Reset state
+      setIsRecordingActive(false);
+      setQuestions(null);
+      setIsProcessing(false);
+      
+      // Navigate to appointments list
+      navigate("/appointments");
+    } catch (err) {
+      console.error("Failed to end appointment:", err);
+      
+      // Always end recording session even if finalize failed
+      store.endRecording();
+      
+      setError("Failed to save appointment. Recording has been stopped.");
+      setIsRecordingActive(false);
+      setIsProcessing(false);
     }
   };
 
@@ -103,39 +151,112 @@ export function HomePage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col items-center justify-center p-6 gap-6">
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm max-w-md">
-            {error}
+      <div className="flex-1 flex flex-col items-center justify-center p-6">
+        <div className="w-full max-w-md">
+          {/* Error Messages */}
+          {(recordingError || error) && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+              {recordingError || error}
+            </div>
+          )}
+
+          {/* Recording Button - Always visible */}
+          <div className="flex flex-col items-center gap-6 mb-12">
+            <div className="relative">
+              <button
+                onClick={handleRecordingClick}
+                disabled={isRecordingActive || isProcessing}
+                className={`rounded-full flex items-center justify-center transition-all shadow-lg ${
+                  isRecordingActive 
+                    ? 'w-24 h-24'
+                    : 'w-36 h-36 hover:scale-105'
+                } ${
+                  isRecording 
+                    ? 'bg-red-100 animate-pulse' 
+                    : isRecordingActive 
+                      ? 'bg-gray-100'
+                      : 'bg-red-600 hover:bg-red-700'
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
+                aria-label={isRecordingActive ? "Recording" : "Start Recording"}
+              >
+                <Mic className={`${
+                  isRecordingActive 
+                    ? isRecording ? 'w-12 h-12 text-red-600' : 'w-12 h-12 text-gray-400'
+                    : 'w-16 h-16 text-white'
+                }`} />
+              </button>
+              {isRecordingActive && isRecording && (
+                <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2">
+                  <span className="text-white text-xs px-3 py-1 rounded-full bg-red-600">
+                    Recording
+                  </span>
+                </div>
+              )}
+            </div>
+            {isRecordingActive && isRecording && (
+              <p className="text-gray-600 text-center">
+                Listening and taking notes...
+              </p>
+            )}
           </div>
-        )}
-        <button
-          onClick={handleStart}
-          disabled={isStarting}
-          className="bg-blue-600 text-white rounded-full px-20 py-8 text-2xl hover:bg-blue-700 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isStarting ? "Starting..." : "Start"}
-        </button>
-        
-        <button
-          onClick={handleUploadClick}
-          className="flex items-center gap-3 bg-white text-blue-600 border-2 border-blue-600 rounded-full px-12 py-4 text-lg hover:bg-blue-50 transition-colors shadow-md"
-        >
-          <Upload className="w-6 h-6" />
-          <span>Upload</span>
-        </button>
-        
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="audio/*"
-          onChange={handleFileChange}
-          className="hidden"
-        />
+
+          {/* Controls - Show only when recording is active */}
+          {isRecordingActive && (
+            <div className="space-y-4">
+              <button
+                onClick={handleGenerateQuestions}
+                disabled={isGeneratingQuestions || questions !== null}
+                className={`w-full rounded-full py-4 px-6 transition-colors ${
+                  questions !== null
+                    ? "bg-green-100 text-green-700 cursor-default"
+                    : "bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                }`}
+              >
+                {isGeneratingQuestions ? "Generating..." : questions !== null ? "Questions Generated" : "Generate Questions"}
+              </button>
+              
+              <button
+                onClick={handleEnd}
+                disabled={isProcessing}
+                className="w-full bg-gray-900 text-white rounded-full py-4 px-6 hover:bg-gray-800 transition-colors disabled:opacity-50"
+              >
+                {isProcessing ? "Ending..." : "End"}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Bottom Navigation */}
       <BottomNav />
+
+      {/* Questions Modal */}
+      {questions && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-6 z-50">
+          <div className="bg-white rounded-lg max-w-md w-full p-6 relative">
+            {/* Close button */}
+            <button
+              onClick={closeQuestionsModal}
+              className="absolute top-4 right-4 p-2 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <X className="w-5 h-5 text-gray-500" />
+            </button>
+
+            {/* Modal content */}
+            <h2 className="text-xl font-semibold mb-4">Suggested Questions</h2>
+            <div className="space-y-3">
+              {questions.map((question, index) => (
+                <div
+                  key={index}
+                  className="p-4 bg-blue-50 border border-blue-100 rounded-lg"
+                >
+                  <p className="text-gray-800">{question}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router";
-import { ChevronRight, Calendar, ArrowLeft, Plus, Upload, Mic } from "lucide-react";
+import { ChevronRight, Calendar, Plus, Upload, Mic } from "lucide-react";
+import { BottomNav } from "@/components/shared/BottomNav";
 import { store } from "@/store";
 import { format } from "date-fns";
 import { startAppointment, getAppointments, uploadRecording } from "@/lib/api";
@@ -21,7 +22,22 @@ export function AppointmentsPage() {
       try {
         setIsLoading(true);
         const { appointments: fetchedAppointments } = await getAppointments();
-        setAppointments(fetchedAppointments);
+        
+        // Create mock appointment from v1-2 sample data
+        const v1_2_sampleData = await import("@/appSummary/sample/v1/v1-2_ent_claude.json");
+        const mockAppointment = {
+          appointmentId: "mock-appointment-v1-2",
+          Status: "Completed",
+          CreatedDate: v1_2_sampleData.default.date || new Date().toISOString(),
+          ProcessedSummary: {
+            Subjective: v1_2_sampleData.default.title,
+            Assessment: v1_2_sampleData.default.summary,
+          },
+          appSummaryV1_2: v1_2_sampleData.default
+        };
+        
+        // Add mock appointment at the beginning
+        setAppointments([mockAppointment, ...fetchedAppointments]);
       } catch (err) {
         console.error("Failed to fetch appointments:", err);
         setError("Failed to load appointments");
@@ -105,7 +121,22 @@ export function AppointmentsPage() {
     const interval = setInterval(async () => {
       try {
         const { appointments: fetchedAppointments } = await getAppointments();
-        setAppointments(fetchedAppointments);
+        
+        // Create mock appointment from v1-2 sample data
+        const v1_2_sampleData = await import("@/appSummary/sample/v1/v1-2_ent_claude.json");
+        const mockAppointment = {
+          appointmentId: "mock-appointment-v1-2",
+          Status: "Completed",
+          CreatedDate: v1_2_sampleData.default.date || new Date().toISOString(),
+          ProcessedSummary: {
+            Subjective: v1_2_sampleData.default.title,
+            Assessment: v1_2_sampleData.default.summary,
+          },
+          appSummaryV1_2: v1_2_sampleData.default
+        };
+        
+        // Add mock appointment at the beginning
+        setAppointments([mockAppointment, ...fetchedAppointments]);
       } catch (err) {
         console.error("Failed to refresh appointments:", err);
       }
@@ -115,19 +146,11 @@ export function AppointmentsPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-2xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => navigate("/home")}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <h1 className="text-xl">Appointments</h1>
-          </div>
+          <h1 className="text-xl">Appointments</h1>
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setShowDropdown(!showDropdown)}
@@ -173,7 +196,7 @@ export function AppointmentsPage() {
       </div>
 
       {/* Appointments List */}
-      <div className="max-w-2xl mx-auto p-6 pb-20">
+      <div className="flex-1 max-w-2xl mx-auto p-6 pb-20">
         {isLoading ? (
           <div className="text-center py-12">
             <p className="text-gray-600">Loading appointments...</p>
@@ -235,6 +258,9 @@ export function AppointmentsPage() {
           </div>
         </div>
       )}
+
+      {/* Bottom Navigation */}
+      <BottomNav />
     </div>
   );
 }

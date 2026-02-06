@@ -33,7 +33,7 @@ export function AppointmentDetailPage() {
         try {
           setIsLoading(true);
           // Import the v1-2 sample data
-          const sampleAppData = await import("@/appSumary/sample/v1/v1-2_gp_claude.json");
+          const sampleAppData = await import("@/appSummary/sample/v1/v1-2_gp_claude.json");
           const mockAppointment = {
             appointmentId: "mock-appointment-v1-2",
             Status: "Completed",

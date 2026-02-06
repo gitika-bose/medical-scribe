@@ -1,6 +1,7 @@
 from google.cloud import speech
 import io
-from pydub import AudioSegment
+import subprocess
+import threading
 
 def stitch_diarized_words(words):
     """
@@ -51,43 +52,81 @@ class SpeechToTextService:
     def __init__(self):
         self.client = speech.SpeechClient()
     
-    def _decode_to_pcm(self, audio_content: bytes) -> bytes:
+    def _stream_decode_to_pcm(self, audio_content: bytes, chunk_size: int = 4800):
         """
-        Decode any audio format to raw PCM (mono, 16-bit, 16 kHz)
+        Stream decode audio to PCM using ffmpeg pipe, yielding small chunks as they're decoded.
+        This avoids buffering the entire decoded audio in memory.
         
         Args:
             audio_content: Audio file content in any format (webm, mp3, wav, etc.)
+            chunk_size: Size of PCM chunks to yield (default 4800 bytes = ~150ms at 16kHz)
             
-        Returns:
-            Raw PCM audio bytes (mono, 16-bit, 16 kHz)
+        Yields:
+            PCM audio chunks (mono, 16-bit, 16 kHz)
         """
         try:
-            # Load audio using pydub (supports many formats via ffmpeg)
-            audio = AudioSegment.from_file(io.BytesIO(audio_content))
+            # Use ffmpeg to decode audio to raw PCM via pipe
+            # -i pipe:0 = read from stdin
+            # -f s16le = signed 16-bit little-endian PCM
+            # -acodec pcm_s16le = PCM codec
+            # -ar 16000 = 16 kHz sample rate
+            # -ac 1 = mono (1 channel)
+            # pipe:1 = write to stdout
+            process = subprocess.Popen(
+                [
+                    'ffmpeg',
+                    '-i', 'pipe:0',  # Input from stdin
+                    '-f', 's16le',   # Output format: signed 16-bit little-endian
+                    '-acodec', 'pcm_s16le',  # PCM codec
+                    '-ar', '16000',  # Sample rate: 16 kHz
+                    '-ac', '1',      # Channels: mono
+                    'pipe:1'         # Output to stdout
+                ],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
             
-            # Convert to mono, 16-bit, 16 kHz
-            audio = audio.set_channels(1)  # mono
-            audio = audio.set_sample_width(2)  # 16-bit = 2 bytes
-            audio = audio.set_frame_rate(16000)  # 16 kHz
+            # Write input audio to ffmpeg stdin in a separate thread
+            def write_input():
+                try:
+                    process.stdin.write(audio_content)
+                    process.stdin.close()
+                except Exception as e:
+                    print(f"[PCM Stream] Error writing to ffmpeg: {e}")
             
-            # Export as raw PCM
-            pcm_buffer = io.BytesIO()
-            audio.export(pcm_buffer, format="raw")
-            pcm_data = pcm_buffer.getvalue()
+            writer_thread = threading.Thread(target=write_input)
+            writer_thread.start()
             
-            print(f"[PCM Decode] Original size: {len(audio_content)} bytes")
-            print(f"[PCM Decode] PCM size: {len(pcm_data)} bytes")
-            print(f"[PCM Decode] Duration: {len(audio) / 1000:.2f} seconds")
+            # Read PCM output in chunks and yield immediately
+            total_bytes = 0
+            while True:
+                chunk = process.stdout.read(chunk_size)
+                if not chunk:
+                    break
+                total_bytes += len(chunk)
+                yield chunk
             
-            return pcm_data
+            # Wait for writer thread and process to complete
+            writer_thread.join()
+            process.wait()
+            
+            # Check for errors
+            if process.returncode != 0:
+                stderr_output = process.stderr.read().decode('utf-8', errors='ignore')
+                raise Exception(f"ffmpeg failed with return code {process.returncode}: {stderr_output}")
+            
+            print(f"[PCM Stream] Decoded {total_bytes} bytes of PCM audio")
+            print(f"[PCM Stream] Duration: ~{total_bytes / 32000:.2f} seconds")
+            
         except Exception as e:
-            raise Exception(f"Failed to decode audio to PCM: {str(e)}")
+            raise Exception(f"Failed to stream decode audio to PCM: {str(e)}")
     
     def transcribe_audio_chunk(self, audio_content: bytes, use_gcs: bool = False, gcs_uri: str = None) -> list:
         """
         Transcribe an audio chunk using Google Cloud Speech-to-Text API with streaming
         Configured for medical conversations with speaker diarization
-        Streams PCM audio in small frames to avoid buffering and OOMs
+        Streams PCM audio directly as it's decoded to avoid buffering and OOMs
         
         Args:
             audio_content: Audio file content in bytes (any format)
@@ -100,11 +139,10 @@ class SpeechToTextService:
                 - text (str): Text spoken by that speaker
         """
         
-        # Step 1: Decode to raw PCM (mono, 16-bit, 16 kHz)
-        print(f"[Speech-to-Text] Decoding audio to PCM...")
-        pcm_data = self._decode_to_pcm(audio_content)
+        print(f"[Speech-to-Text] Starting streaming decode and recognition")
+        print(f"[Speech-to-Text] Input audio size: {len(audio_content)} bytes")
         
-        # Step 2: Configure for PCM streaming
+        # Configure for PCM streaming
         config = speech.RecognitionConfig(
             encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
             sample_rate_hertz=16000,
@@ -127,28 +165,22 @@ class SpeechToTextService:
         )
         
         try:
-            print(f"[Speech-to-Text] Starting streaming recognition")
-            print(f"[Speech-to-Text] PCM data size: {len(pcm_data)} bytes")
+            # Generator that streams PCM chunks as they're decoded from ffmpeg
+            def generate_audio_requests():
+                """
+                Stream decode audio to PCM and yield StreamingRecognizeRequest objects.
+                This pipes audio through ffmpeg and sends PCM chunks immediately to Google STT.
+                """
+                for pcm_chunk in self._stream_decode_to_pcm(audio_content, chunk_size=4800):
+                    yield speech.StreamingRecognizeRequest(audio_content=pcm_chunk)
             
-            # Step 3: Stream PCM data in small frames (100-200ms chunks)
-            # At 16kHz, 16-bit, mono: 16000 samples/sec * 2 bytes/sample = 32000 bytes/sec
-            # 100ms = 3200 bytes, 200ms = 6400 bytes
-            # We'll use 150ms chunks = 4800 bytes
-            chunk_size = 4800  # ~150ms of audio
-            
-            def generate_audio_chunks():
-                """Generator that yields audio chunks for streaming"""
-                for i in range(0, len(pcm_data), chunk_size):
-                    chunk = pcm_data[i:i + chunk_size]
-                    yield speech.StreamingRecognizeRequest(audio_content=chunk)
-            
-            # Stream the audio
-            requests = generate_audio_chunks()
+            # Stream the audio to Google STT as it's being decoded
+            requests = generate_audio_requests()
             responses = self.client.streaming_recognize(streaming_config, requests)
             
             print(f"[Speech-to-Text] Streaming recognition started, processing responses...")
             
-            # Step 4: Collect results from streaming responses
+            # Collect results from streaming responses
             words = []
             result_count = 0
             
@@ -172,7 +204,7 @@ class SpeechToTextService:
             print(f"[Speech-to-Text] Total results processed: {result_count}")
             print(f"[Speech-to-Text] Total words extracted: {len(words)}")
             
-            # Step 5: Stitch words into speaker turns
+            # Stitch words into speaker turns
             stitched_transcript = stitch_diarized_words(words)
             print(f"[Speech-to-Text] Stitched into {len(stitched_transcript)} speaker turns")
             

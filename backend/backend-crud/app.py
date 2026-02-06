@@ -22,7 +22,7 @@ def health_check():
     """Health check endpoint to verify API is running"""
     return jsonify({
         'status': 'healthy',
-        'message': 'Medical Scribe API is running'
+        'message': 'Medical Scribe CRUD API is running'
     }), 200
 
 # Root endpoint
@@ -30,15 +30,13 @@ def health_check():
 def root():
     """Root endpoint with API information"""
     return jsonify({
-        'name': 'Medical Scribe API',
+        'name': 'Medical Scribe CRUD API',
         'version': '1.0.0',
         'endpoints': {
             'POST /appointments': 'Create a new appointment',
-            'POST /appointments/{id}/audio-chunks': 'Upload audio chunk for transcription',
-            'POST /appointments/{id}/generate-questions': 'Generate patient questions',
-            'POST /appointments/{id}/finalize': 'Finalize appointment with full audio',
+            'GET /appointments': 'Get all appointments for a user',
             'GET /appointments/{id}': 'Get appointment details',
-            'GET /appointments/search?q=<query>': 'Search appointments'
+            'DELETE /appointments/{id}': 'Delete appointment details'
         }
     }), 200
 

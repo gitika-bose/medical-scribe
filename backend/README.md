@@ -1,386 +1,161 @@
-# Medical Scribe Backend API
+# Medical Scribe Backend
 
-A Flask-based REST API for medical appointment transcription and management using Google Cloud services (Firestore, Speech-to-Text, Cloud Storage, Vertex AI).
+The Medical Scribe backend has been split into two microservices for better scalability and separation of concerns:
 
-## Features
+## Services
 
-- **Firebase Authentication**: Secure endpoints with Firebase ID token verification
-- **Real-time Transcription**: Convert audio chunks to text using Google Speech-to-Text API
-- **AI-Powered Questions**: Generate patient questions using Vertex AI (Gemini)
-- **SOAP Notes**: Automatically process transcripts into structured SOAP format
-- **Cloud Storage**: Store full audio recordings in Google Cloud Storage
-- **Search**: Full-text search across appointment summaries
+### 1. backend-crud
+Handles all CRUD (Create, Read, Update, Delete) operations for appointments.
 
-## Prerequisites
+**Endpoints:**
+- `POST /appointments` - Create a new appointment
+- `GET /appointments` - Get all appointments for a user
+- `GET /appointments/{id}` - Get appointment details
+- `DELETE /appointments/{id}` - Delete appointment
 
-- Python 3.8+
-- Google Cloud Platform account
-- Firebase project with Authentication enabled
-- Google Cloud services enabled:
-  - Firestore
-  - Cloud Speech-to-Text API
-  - Cloud Storage
-  - Vertex AI API
+**Dependencies:**
+- Flask
+- Firebase Admin SDK
+- Google Cloud Firestore
 
-## Setup Instructions
+[View backend-crud README](./backend-crud/README.md)
 
-### 1. Clone the Repository
+### 2. backend-processing
+Handles all audio processing, transcription, and AI-powered features.
 
-```bash
-cd backend
-```
+**Endpoints:**
+- `POST /appointments/{id}/audio-chunks` - Upload and transcribe audio chunks
+- `POST /appointments/{id}/generate-questions` - Generate patient questions
+- `POST /appointments/{id}/finalize` - Finalize appointment with SOAP notes
+- `POST /appointments/{id}/upload-recording` - Upload and process full recording
+- `GET /appointments/search?q={query}` - Search appointments
 
-### 2. Create Virtual Environment
+**Dependencies:**
+- Flask
+- Firebase Admin SDK
+- Google Cloud Speech-to-Text
+- Google Cloud Storage
+- Vertex AI (Gemini)
+- FFmpeg
 
-```bash
-# Windows
-python -m venv venv
-venv\Scripts\activate
+[View backend-processing README](./backend-processing/README.md)
 
-# macOS/Linux
-python3 -m venv venv
-source venv/bin/activate
-```
-
-### 3. Install Dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### 4. Configure Google Cloud
-
-#### Download Firebase Service Account Key
-
-1. Go to Firebase Console → Project Settings → Service Accounts
-2. Click "Generate New Private Key"
-3. Save the JSON file as `serviceAccountKey.json` in the backend directory
-
-#### Set Up Google Cloud
-
-1. Install Google Cloud SDK (gcloud CLI)
-2. Authenticate:
-   ```bash
-   gcloud auth application-default login
-   ```
-3. Set your project:
-   ```bash
-   gcloud config set project YOUR_PROJECT_ID
-   ```
-
-#### Enable Required APIs
-
-```bash
-gcloud services enable firestore.googleapis.com
-gcloud services enable speech.googleapis.com
-gcloud services enable storage.googleapis.com
-gcloud services enable aiplatform.googleapis.com
-```
-
-#### Create Cloud Storage Bucket
-
-```bash
-gcloud storage buckets create gs://YOUR_BUCKET_NAME --location=us-central1
-```
-
-### 5. Configure Environment Variables
-
-Create a `.env` file in the backend directory:
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env` with your values:
-
-```env
-FIREBASE_SERVICE_ACCOUNT_PATH=serviceAccountKey.json
-GCP_PROJECT_ID=your-project-id
-GCP_BUCKET_NAME=your-bucket-name
-GCP_LOCATION=us-central1
-VERTEX_AI_MODEL=gemini-1.5-pro
-```
-
-### 6. Run the Application
-
-```bash
-python app.py
-```
-
-The API will be available at `http://localhost:8080`
-
-## API Endpoints
-
-### 1. Create Appointment
-
-**POST** `/appointments`
-
-**Headers:**
-```
-Authorization: Bearer <firebase_id_token>
-```
-
-**Response:**
-```json
-{
-  "appointmentId": "uuid",
-  "status": "In Progress",
-  "message": "Appointment created successfully"
-}
-```
-
-### 2. Upload Audio Chunk
-
-**POST** `/appointments/{appointmentId}/audio-chunks`
-
-**Headers:**
-```
-Authorization: Bearer <firebase_id_token>
-Content-Type: multipart/form-data
-```
-
-**Body:**
-- `audioChunk`: Audio file (WAV format recommended)
-
-**Response:**
-```json
-{
-  "status": "uploaded",
-  "message": "Audio chunk processed and transcript updated",
-  "transcriptLength": 1234
-}
-```
-
-### 3. Generate Questions
-
-**POST** `/appointments/{appointmentId}/generate-questions`
-
-**Headers:**
-```
-Authorization: Bearer <firebase_id_token>
-```
-
-**Response:**
-```json
-{
-  "questions": [
-    "What are the side effects of this medication?",
-    "How long should I expect recovery to take?",
-    "When should I schedule a follow-up?"
-  ],
-  "message": "Questions generated successfully"
-}
-```
-
-### 4. Finalize Appointment
-
-**POST** `/appointments/{appointmentId}/finalize`
-
-**Headers:**
-```
-Authorization: Bearer <firebase_id_token>
-Content-Type: multipart/form-data
-```
-
-**Body:**
-- `fullAudio`: Complete audio file (WAV format)
-
-**Response:**
-```json
-{
-  "message": "Appointment finalized successfully",
-  "appointmentId": "uuid",
-  "recordingLink": "https://storage.googleapis.com/...",
-  "soapNotes": {
-    "Subjective": "...",
-    "Objective": "...",
-    "Assessment": "...",
-    "Plan": "...",
-    "OtherNotes": "..."
-  },
-  "status": "Completed"
-}
-```
-
-### 5. Get Appointment
-
-**GET** `/appointments/{appointmentId}`
-
-**Headers:**
-```
-Authorization: Bearer <firebase_id_token>
-```
-
-**Response:**
-```json
-{
-  "appointmentId": "uuid",
-  "userId": "firebase_user_id",
-  "RawTranscript": "...",
-  "ProcessedSummary": {...},
-  "RecordingLink": "...",
-  "Status": "Completed",
-  "CreatedDate": "2024-01-27T10:00:00",
-  "LastUpdated": "2024-01-27T10:30:00"
-}
-```
-
-### 6. Search Appointments
-
-**GET** `/appointments/search?q={searchQuery}`
-
-**Headers:**
-```
-Authorization: Bearer <firebase_id_token>
-```
-
-**Response:**
-```json
-{
-  "query": "diabetes",
-  "results": [
-    {
-      "appointmentId": "uuid",
-      "createdDate": "2024-01-27T10:00:00",
-      "status": "Completed"
-    }
-  ],
-  "count": 1
-}
-```
-
-## Project Structure
+## Architecture
 
 ```
-backend/
-├── app.py                          # Main Flask application
-├── config.py                       # Configuration and Firebase initialization
-├── requirements.txt                # Python dependencies
-├── .env.example                    # Environment variables template
-├── .gitignore                      # Git ignore rules
-├── routes/
-│   ├── __init__.py
-│   └── appointments.py             # Appointment endpoints
-└── utils/
-    ├── __init__.py
-    ├── auth.py                     # Firebase authentication decorator
-    ├── speech_to_text.py           # Google Speech-to-Text service
-    ├── storage.py                  # Google Cloud Storage service
-    └── vertex_ai.py                # Vertex AI (Gemini) service
+┌─────────────────┐
+│   Frontend      │
+└────────┬────────┘
+         │
+         ├──────────────────┬──────────────────┐
+         │                  │                  │
+         ▼                  ▼                  ▼
+┌─────────────────┐  ┌──────────────────┐  ┌──────────────────┐
+│  backend-crud   │  │ backend-processing│  │   Firestore      │
+│                 │  │                   │  │                  │
+│ - Create        │  │ - Transcription   │  │ - Appointments   │
+│ - Read          │  │ - AI Questions    │  │ - User Data      │
+│ - Update        │  │ - SOAP Notes      │  │                  │
+│ - Delete        │  │ - Search          │  │                  │
+└─────────────────┘  └──────────────────┘  └──────────────────┘
+                              │
+                              ▼
+                     ┌──────────────────┐
+                     │  Cloud Storage   │
+                     │                  │
+                     │ - Audio Files    │
+                     │ - Recordings     │
+                     └──────────────────┘
 ```
-
-## Firestore Data Structure
-
-### Appointments Collection
-
-```
-appointments/
-└── {appointmentId}
-    ├── appointmentId: string
-    ├── userId: string
-    ├── RawTranscript: string
-    ├── ProcessedSummary: {
-    │   ├── Subjective: string
-    │   ├── Objective: string
-    │   ├── Assessment: string
-    │   ├── Plan: string
-    │   └── OtherNotes: string
-    │   }
-    ├── RecordingLink: string
-    ├── Status: string ("In Progress" | "Completed")
-    ├── CreatedDate: string (ISO 8601)
-    ├── LastUpdated: string (ISO 8601)
-    └── CompletedDate: string (ISO 8601)
-```
-
-## Audio Requirements
-
-- **Format**: WAV (recommended)
-- **Encoding**: LINEAR16
-- **Sample Rate**: 16000 Hz
-- **Channels**: Mono (single channel)
-
-For audio chunks, ensure they're properly formatted for Google Speech-to-Text API.
-
-## Development
-
-### Running in Development Mode
-
-```bash
-export FLASK_ENV=development  # Windows: set FLASK_ENV=development
-python app.py
-```
-
-### Testing Endpoints
-
-You can use tools like:
-- Postman
-- cURL
-- Thunder Client (VS Code extension)
-
-Example cURL request:
-
-```bash
-curl -X POST http://localhost:8080/appointments \
-  -H "Authorization: Bearer YOUR_FIREBASE_TOKEN" \
-  -H "Content-Type: application/json"
-```
-
-## Security Considerations
-
-- Never commit `.env` file or `serviceAccountKey.json`
-- Always use HTTPS in production
-- Firebase tokens expire after 1 hour
-- Implement rate limiting for production
-- Set up proper CORS configuration for your frontend domain
-- Use signed URLs for Cloud Storage access instead of public URLs
 
 ## Deployment
 
-### Google Cloud Run (Recommended)
+Both services are designed to be deployed to Google Cloud Run as separate services.
 
-1. Create a `Dockerfile`:
-```dockerfile
-FROM python:3.9-slim
-WORKDIR /app
-COPY requirements.txt .
-RUN pip install -r requirements.txt
-COPY . .
-CMD ["gunicorn", "-b", "0.0.0.0:8080", "app:app"]
-```
-
-2. Deploy:
+### Deploy backend-crud
 ```bash
-gcloud run deploy medical-scribe-api \
+cd backend-crud
+gcloud run deploy backend-crud \
   --source . \
   --region us-central1 \
   --allow-unauthenticated
 ```
 
-## Troubleshooting
-
-### Common Issues
-
-1. **Authentication Error**: Ensure Firebase service account key is properly configured
-2. **Speech-to-Text Fails**: Check audio format (LINEAR16, 16000 Hz)
-3. **Firestore Permission Denied**: Verify Firestore rules allow authenticated access
-4. **Vertex AI Error**: Ensure API is enabled and model name is correct
-
-### Logs
-
-Check application logs:
+### Deploy backend-processing
 ```bash
-# Local
-tail -f logs/app.log
-
-# Cloud Run
-gcloud run logs read medical-scribe-api --region us-central1
+cd backend-processing
+gcloud run deploy backend-processing \
+  --source . \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --memory 2Gi \
+  --timeout 300
 ```
 
-## License
+## Environment Variables
 
-[Your License Here]
+Both services require environment variables. Copy `.env.example` to `.env` in each service directory and fill in the values.
 
-## Support
+### backend-crud
+- `FIREBASE_SERVICE_ACCOUNT_PATH`
+- `GCP_PROJECT_ID`
+- `FIRESTORE_DATABASE_ID`
 
-For issues and questions, please contact [your contact information].
+### backend-processing
+- `FIREBASE_SERVICE_ACCOUNT_PATH`
+- `GCP_PROJECT_ID`
+- `GCP_BUCKET_NAME`
+- `GCP_LOCATION`
+- `FIRESTORE_DATABASE_ID`
+- `VERTEX_AI_MODEL`
+
+## Authentication
+
+All endpoints require Firebase Authentication. The frontend must include the Firebase ID token in the Authorization header:
+
+```
+Authorization: Bearer <firebase-id-token>
+```
+
+## Original Backend
+
+The original monolithic backend is still available in the `backend` directory root for reference. It contains all the functionality that has now been split into the two microservices.
+
+## Migration Notes
+
+When migrating from the monolithic backend to the microservices:
+
+1. Update frontend API endpoints to point to the correct service
+2. CRUD operations → `backend-crud` service URL
+3. Processing operations → `backend-processing` service URL
+4. Ensure both services have access to the same Firestore database
+5. Configure CORS settings for both services
+6. Update any CI/CD pipelines to deploy both services
+
+## Local Development
+
+To run both services locally:
+
+```bash
+# Terminal 1 - CRUD Service
+cd backend-crud
+pip install -r requirements.txt
+python app.py
+
+# Terminal 2 - Processing Service
+cd backend-processing
+pip install -r requirements.txt
+python app.py
+```
+
+By default, both will try to run on port 8080. You'll need to change the port for one of them:
+
+```bash
+# Run CRUD on 8080
+cd backend-crud
+python app.py
+
+# Run Processing on 8081
+cd backend-processing
+PORT=8081 python app.py
+```

@@ -123,7 +123,7 @@ export function AppointmentsPage() {
         const { appointments: fetchedAppointments } = await getAppointments();
         
         // Create mock appointment from v1-2 sample data
-        const v1_2_sampleData = await import("@/appSumary/sample/v1/v1-2_ent_claude.json");
+        const v1_2_sampleData = await import("@/appSummary/sample/v1/v1-2_ent_claude.json");
         const mockAppointment = {
           appointmentId: "mock-appointment-v1-2",
           Status: "Completed",

@@ -1,0 +1,93 @@
+{
+    "name": "string",
+    "doctor_name": "string",
+    "location": "string",
+    "visit_type": "string",
+    "date": "string",
+    "summary": "string",
+    "diagnosis": {
+        "summary": "string",
+        "details": [
+            {
+                "name": "string",
+                "description": "string",
+                "severity": "high | medium | low",
+                "key_takeaway": "string"
+            }
+        ]
+    },
+    "plan": {
+        "details": {
+            "actions": {
+                "summary": "string",
+                "tests": [
+                    {
+                        "type": "string",
+                        "diagnostic_name": "string",
+                        "reason": "string",
+                        "response": "string",
+                        "recommended": "boolean",
+                        "verified": "boolean"
+                    }
+                ],
+                "procedures": [
+                    {
+                        "type": "string",
+                        "procedure_name": "string",
+                        "description": "string",
+                        "procedure_timeframe": "string",
+                        "recommended": "boolean",
+                        "verified": "boolean"
+                    }
+                ],
+                "medications": [
+                    {
+                        "medication_name": "string",
+                        "dosage": "string",
+                        "frequency": "string",
+                        "duration": "string",
+                        "description": "string",
+                        "recommended": "boolean",
+                        "verified": "boolean"
+                    }
+                ]
+            },
+            "next_steps": {
+                "summary": "string",
+                "follow_up": [
+                    {
+                        "time_frame": "string",
+                        "description": "string"
+                    }
+                ],
+                "watch_for": [
+                    {
+                        "symptom": "string",
+                        "what_to_do": "string"
+                    }
+                ]
+            },
+            "guidance": {
+                "summary": "string",
+                "education": [
+                    {
+                        "topic": "string",
+                        "description": "string"
+                    }
+                ],
+                "instructions": [
+                    {
+                        "topic": "string",
+                        "description": "string"
+                    }
+                ]
+            },
+            "open_questions": [
+                {
+                    "question": "string",
+                    "reason": "string"
+                }
+            ]
+        }
+    }
+}

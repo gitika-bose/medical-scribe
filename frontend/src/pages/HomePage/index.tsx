@@ -4,8 +4,18 @@ import { store } from "@/store";
 import { useAuth } from "@/hooks/useAuth";
 import { LogOut, Mic, X } from "lucide-react";
 import { startAppointment, uploadAudioChunk, generateQuestions, finalizeAppointment } from "@/lib/api";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAudioRecorder } from "@/hooks/useAudioRecorder";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/app/components/ui/alert-dialog";
 
 export function HomePage() {
   const navigate = useNavigate();
@@ -16,6 +26,58 @@ export function HomePage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const { isRecording, startRecording, stopRecording, error: recordingError } = useAudioRecorder();
   const [error, setError] = useState<string | null>(null);
+  const [showEndDialog, setShowEndDialog] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const autoTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const durationTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Cleanup effect
+  useEffect(() => {
+    return () => {
+      if (autoTimeoutRef.current) {
+        clearTimeout(autoTimeoutRef.current);
+      }
+      if (durationTimerRef.current) {
+        clearInterval(durationTimerRef.current);
+      }
+    };
+  }, []);
+
+  // Auto-timeout after 30 seconds
+  useEffect(() => {
+    if (isRecordingActive && isRecording) {
+      // Start duration timer
+      setRecordingDuration(0);
+      durationTimerRef.current = setInterval(() => {
+        setRecordingDuration(prev => prev + 1);
+      }, 1000);
+
+      // Set 30-second auto-timeout
+      autoTimeoutRef.current = setTimeout(() => {
+        console.log("Auto-timeout: Stopping recording after 30 seconds");
+        handleStopRecording();
+      }, 30000); // 30 seconds
+    } else {
+      // Clear timers when not recording
+      if (autoTimeoutRef.current) {
+        clearTimeout(autoTimeoutRef.current);
+        autoTimeoutRef.current = null;
+      }
+      if (durationTimerRef.current) {
+        clearInterval(durationTimerRef.current);
+        durationTimerRef.current = null;
+      }
+    }
+
+    return () => {
+      if (autoTimeoutRef.current) {
+        clearTimeout(autoTimeoutRef.current);
+      }
+      if (durationTimerRef.current) {
+        clearInterval(durationTimerRef.current);
+      }
+    };
+  }, [isRecordingActive, isRecording]);
 
   const handleRecordingClick = async () => {
     const appointmentId = store.getCurrentRecordingId();
@@ -76,43 +138,76 @@ export function HomePage() {
     setQuestions(null);
   };
 
-  const handleEnd = async () => {
+  const handleEndClick = () => {
+    // Show confirmation dialog
+    setShowEndDialog(true);
+  };
+
+  const handleStopRecording = async () => {
     const appointmentId = store.getCurrentRecordingId();
     
+    // Clear timers
+    if (autoTimeoutRef.current) {
+      clearTimeout(autoTimeoutRef.current);
+      autoTimeoutRef.current = null;
+    }
+    if (durationTimerRef.current) {
+      clearInterval(durationTimerRef.current);
+      durationTimerRef.current = null;
+    }
+
     try {
       setIsProcessing(true);
       setError(null);
+      setShowEndDialog(false);
 
       if (!appointmentId) {
         throw new Error("No active appointment");
       }
 
-      // Stop recording and get full audio (always stop, even if finalize fails)
+      // Stop recording and get full audio
       const fullAudio = await stopRecording();
 
-      // Finalize appointment (generate SOAP note) with full audio
-      await finalizeAppointment(appointmentId, fullAudio);
-
-      // Don't save to store - will fetch from backend
+      // Store the appointment ID for metadata page
+      store.setLastCompletedAppointmentId(appointmentId);
+      
+      // End recording session
       store.endRecording();
       
       // Reset state
       setIsRecordingActive(false);
       setQuestions(null);
       setIsProcessing(false);
-      
-      // Navigate to appointments list
-      navigate("/appointments");
+
+      // Start finalize in background (don't wait for it)
+      finalizeAppointment(appointmentId, fullAudio).catch((err) => {
+        console.error("Background finalization error:", err);
+        // Error handling is done in the background, user already navigated
+      });
+
+      // Navigate to metadata page immediately
+      navigate("/appointment-metadata");
     } catch (err) {
-      console.error("Failed to end appointment:", err);
+      console.error("Failed to stop recording:", err);
       
-      // Always end recording session even if finalize failed
+      // Always end recording session even if stop failed
+      if (appointmentId) {
+        store.setLastCompletedAppointmentId(appointmentId);
+      }
       store.endRecording();
       
-      setError("Failed to save appointment. Recording has been stopped.");
+      setError("Failed to save recording. Please try again.");
       setIsRecordingActive(false);
       setIsProcessing(false);
+      setShowEndDialog(false);
+      
+      // Still navigate to metadata page
+      navigate("/appointment-metadata");
     }
+  };
+
+  const handleCancelEnd = () => {
+    setShowEndDialog(false);
   };
 
   const handleSignOut = async () => {
@@ -216,7 +311,7 @@ export function HomePage() {
               </button>
               
               <button
-                onClick={handleEnd}
+                onClick={handleEndClick}
                 disabled={isProcessing}
                 className="w-full bg-gray-900 text-white rounded-full py-4 px-6 hover:bg-gray-800 transition-colors disabled:opacity-50"
               >
@@ -229,6 +324,24 @@ export function HomePage() {
 
       {/* Bottom Navigation */}
       <BottomNav />
+
+      {/* End Recording Confirmation Dialog */}
+      <AlertDialog open={showEndDialog} onOpenChange={setShowEndDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Stop Recording?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to stop the recording? This will end the appointment session.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelEnd}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleStopRecording}>
+              Yes, Stop Recording
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Questions Modal */}
       {questions && (

@@ -10,6 +10,7 @@ export interface Appointment {
 
 let appointments: Appointment[] = [];
 let currentRecordingId: string | null = null;
+let lastCompletedAppointmentId: string | null = null;
 
 export const store = {
   getAppointments: () => appointments,
@@ -39,5 +40,15 @@ export const store = {
     const id = currentRecordingId;
     currentRecordingId = null;
     return id;
+  },
+  
+  setLastCompletedAppointmentId: (appointmentId: string) => {
+    lastCompletedAppointmentId = appointmentId;
+  },
+  
+  getLastCompletedAppointmentId: () => lastCompletedAppointmentId,
+  
+  clearLastCompletedAppointmentId: () => {
+    lastCompletedAppointmentId = null;
   },
 };

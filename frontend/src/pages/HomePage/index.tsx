@@ -79,11 +79,11 @@ export function HomePage() {
         setRecordingDuration(prev => prev + 1);
       }, 1000);
 
-      // Set 30-second auto-timeout
+      // Set 30-minutes auto-timeout
       autoTimeoutRef.current = setTimeout(() => {
-        console.log("Auto-timeout: Stopping recording after 30 seconds");
+        console.log("Auto-timeout: Stopping recording after 30 minutes");
         handleStopRecording();
-      }, 30000); // 30 seconds
+      }, 1800000); // 30 minutes
     } else {
       // Clear timers when not recording
       if (autoTimeoutRef.current) {

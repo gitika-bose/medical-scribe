@@ -247,10 +247,6 @@ export function AppointmentsPage() {
           <div className="text-center py-12">
             <p className="text-gray-600">Loading appointments...</p>
           </div>
-        ) : error ? (
-          <div className="text-center py-12">
-            <p className="text-red-600">{error}</p>
-          </div>
         ) : allAppointments.length === 0 ? (
           <div className="text-center py-12">
             <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />

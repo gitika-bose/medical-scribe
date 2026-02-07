@@ -252,7 +252,7 @@ export async function fetchAppointments(): Promise<AppointmentWithId[]> {
 }
 
 // Get single appointment directly from Firestore
-export async function getSingleAppointment(appointmentId: string): Promise<Appointment | null> {
+export async function getSingleAppointment(appointmentId: string): Promise<AppointmentWithId | null> {
   const user = auth.currentUser;
   if (!user) {
     const error = new Error("User not authenticated");
@@ -284,6 +284,7 @@ export async function getSingleAppointment(appointmentId: string): Promise<Appoi
     }
 
     return {
+      appointmentId: appointmentId,
       status: data.status || 'InProgress',
       appointmentDate: data.appointmentDate.toDate().toISOString(),
       title: data.title,
@@ -372,6 +373,18 @@ export async function deleteAppointment(appointmentId: string): Promise<void> {
     }
 
     await deleteDoc(appointmentRef);
+  
+    const token = await user.getIdToken();
+
+    const response = await fetch(
+    `${API_URL_PROCESSING}/appointments/${appointmentId}`,
+    {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        // Don't set Content-Type - let browser set it with boundary for FormData
+      }
+    } )
   } catch (error) {
     console.error('Failed to delete appointment:', error);
     throw new Error('Failed to delete appointment');

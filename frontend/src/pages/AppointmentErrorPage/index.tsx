@@ -1,16 +1,16 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router";
 import { ArrowLeft, AlertCircle, MessageSquare } from "lucide-react";
-import { BottomNav } from "@/components/shared";
+import { BottomNav, DeleteAppointmentButton } from "@/components/shared";
 import { format } from "date-fns";
-import { getSingleAppointment, type Appointment } from "@/lib/api";
+import { getSingleAppointment, type AppointmentWithId } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 
 export function AppointmentErrorPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, loading: authLoading } = useAuth();
-  const [appointment, setAppointment] = useState<Appointment | null>(null);
+  const [appointment, setAppointment] = useState<AppointmentWithId | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -165,6 +165,12 @@ export function AppointmentErrorPage() {
           <MessageSquare className="w-5 h-5" />
           <span>Submit Feedback</span>
         </button>
+
+        {/* Delete Button */}
+        <DeleteAppointmentButton 
+          appointmentId={id!}
+          onDeleteError={setError}
+        />
       </div>
 
       {/* Bottom Navigation */}

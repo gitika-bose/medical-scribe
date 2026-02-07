@@ -313,12 +313,6 @@ Return ONLY a JSON array of question strings, nothing else. Format: ["question 1
             soap_notes = json.loads(json_text)
 
             return soap_notes
-            # # Validate the structure
-            # required_keys = ["Assessment", "Plan", "OtherNotes"]
-            # if all(key in soap_notes for key in required_keys):
-            #     return soap_notes
-            # else:
-            #     raise ValueError("Invalid SOAP format returned")
         
         except json.JSONDecodeError as e:
             raise Exception(f"Failed to parse JSON response. Error: {str(e)}. Response text: {response.text if response and hasattr(response, 'text') else 'No response'}")

@@ -48,7 +48,7 @@ def handle_appointments(user_id):
         appointment_data = {
             'appointmentId': appointment_id,
             'userId': user_id,
-            'RawTranscript': '',
+            'rawTranscript': '',
             'CreatedDate': datetime.utcnow().isoformat(),
             'LastUpdated': datetime.utcnow().isoformat(),
             'Status': 'In Progress',
@@ -68,15 +68,12 @@ def handle_appointments(user_id):
         return jsonify({'error': str(e)}), 500
 
 
-@appointments_bp.route('/appointments/<appointment_id>', methods=['GET', 'DELETE'])
+@appointments_bp.route('/appointments/<appointment_id>', methods=['GET'])
 @verify_firebase_token
 def handle_appointment(user_id, appointment_id):
     """
     GET /appointments/{appointmentId}
     Fetches appointment data for the specified appointment ID
-    
-    DELETE /appointments/{appointmentId}
-    Deletes the specified appointment
     """
     try:
         # Get appointment from Firestore
@@ -92,21 +89,7 @@ def handle_appointment(user_id, appointment_id):
         if appointment_data.get('userId') != user_id:
             return jsonify({'error': 'Unauthorized'}), 403
         
-        # Handle based on HTTP method
-        if request.method == 'GET':
-            return jsonify(appointment_data), 200
-        
-        elif request.method == 'DELETE':
-            # Note: Storage deletion is handled by the processing service
-            # This service only handles Firestore CRUD operations
-            
-            # Delete the appointment from Firestore
-            appointment_ref.delete()
-            
-            return jsonify({
-                'message': 'Appointment deleted successfully',
-                'appointmentId': appointment_id
-            }), 200
+        return jsonify(appointment_data), 200
     
     except Exception as e:
         return jsonify({'error': str(e)}), 500

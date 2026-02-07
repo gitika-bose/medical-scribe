@@ -3,49 +3,6 @@ import io
 import subprocess
 import threading
 
-def stitch_diarized_words(words):
-    """
-    Groups diarized words into speaker turns.
-
-    Input:
-        words: list of dicts with keys:
-            - word (str)
-            - speakerTag (int)
-
-    Output:
-        list of dicts:
-            - speaker (int)
-            - text (str)
-    """
-    if not words:
-        return []
-
-    stitched = []
-    current_speaker = words[0]["speakerTag"]
-    current_words = []
-
-    for w in words:
-        speaker = w["speakerTag"]
-        word = w["word"]
-
-        if speaker != current_speaker:
-            stitched.append({
-                "speaker": current_speaker,
-                "text": " ".join(current_words)
-            })
-            current_speaker = speaker
-            current_words = [word]
-        else:
-            current_words.append(word)
-
-    # flush last segment
-    stitched.append({
-        "speaker": current_speaker,
-        "text": " ".join(current_words)
-    })
-
-    return stitched
-
 class SpeechToTextService:
     """Service for converting audio chunks to text using Google Cloud Speech-to-Text"""
     
@@ -122,10 +79,10 @@ class SpeechToTextService:
         except Exception as e:
             raise Exception(f"Failed to stream decode audio to PCM: {str(e)}")
     
-    def transcribe_audio_chunk(self, audio_content: bytes, use_gcs: bool = False, gcs_uri: str = None) -> list:
+    def transcribe_audio_chunk(self, audio_content: bytes, use_gcs: bool = False, gcs_uri: str = None) -> str:
         """
         Transcribe an audio chunk using Google Cloud Speech-to-Text API with streaming
-        Configured for medical conversations with speaker diarization
+        Configured for medical conversations without speaker diarization
         Streams PCM audio directly as it's decoded to avoid buffering and OOMs
         
         Args:
@@ -134,9 +91,7 @@ class SpeechToTextService:
             gcs_uri: Not used (kept for backward compatibility)
             
         Returns:
-            List of dicts with speaker turns:
-                - speaker (int): Speaker tag
-                - text (str): Text spoken by that speaker
+            String containing the transcribed text
         """
         
         print(f"[Speech-to-Text] Starting streaming decode and recognition")
@@ -151,12 +106,7 @@ class SpeechToTextService:
             # Enable medical conversation model
             model="medical_conversation",
             use_enhanced=True,
-            enable_automatic_punctuation=True,
-            diarization_config=speech.SpeakerDiarizationConfig(
-                enable_speaker_diarization=True,
-                min_speaker_count=2,
-                max_speaker_count=2,
-            )
+            enable_automatic_punctuation=True
         )
         
         streaming_config = speech.StreamingRecognitionConfig(
@@ -180,8 +130,8 @@ class SpeechToTextService:
             
             print(f"[Speech-to-Text] Streaming recognition started, processing responses...")
             
-            # Collect results from streaming responses
-            words = []
+            # Collect transcript text from streaming responses
+            transcript_parts = []
             result_count = 0
             
             for response in responses:
@@ -191,24 +141,20 @@ class SpeechToTextService:
                 for result in response.results:
                     if result.is_final and result.alternatives:
                         alternative = result.alternatives[0]
-                        print(f"[Speech-to-Text] Final result {result_count}: {alternative.transcript[:100] if alternative.transcript else 'EMPTY'}")
+                        transcript_text = alternative.transcript
+                        print(f"[Speech-to-Text] Final result {result_count}: {transcript_text[:100] if transcript_text else 'EMPTY'}")
                         
-                        # Extract words with speaker tags
-                        for word_info in alternative.words:
-                            words.append({
-                                "word": word_info.word,
-                                "speakerTag": word_info.speaker_tag
-                            })
+                        if transcript_text:
+                            transcript_parts.append(transcript_text)
             
             print(f"[Speech-to-Text] Streaming completed")
             print(f"[Speech-to-Text] Total results processed: {result_count}")
-            print(f"[Speech-to-Text] Total words extracted: {len(words)}")
             
-            # Stitch words into speaker turns
-            stitched_transcript = stitch_diarized_words(words)
-            print(f"[Speech-to-Text] Stitched into {len(stitched_transcript)} speaker turns")
+            # Join all transcript parts with space
+            full_transcript = " ".join(transcript_parts)
+            print(f"[Speech-to-Text] Full transcript length: {len(full_transcript)} characters")
             
-            return stitched_transcript
+            return full_transcript
         
         except Exception as e:
             raise Exception(f"Speech-to-text transcription failed: {str(e)}")

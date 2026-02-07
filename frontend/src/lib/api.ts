@@ -87,17 +87,17 @@ export async function uploadAudioChunk(
     const formData = new FormData();
     formData.append('audioChunk', audioChunk, 'chunk.webm');
 
-    const response = await fetch(
-      `${API_URL_CRUD}/appointments/${appointmentId}/audio-chunks`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          // Don't set Content-Type - let browser set it with boundary for FormData
-        },
-        body: formData,
-      }
-    );
+  const response = await fetch(
+    `${API_URL_PROCESSING}/appointments/${appointmentId}/audio-chunks`,
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        // Don't set Content-Type - let browser set it with boundary for FormData
+      },
+      body: formData,
+    }
+  );
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -330,17 +330,17 @@ export async function uploadRecording(
     const formData = new FormData();
     formData.append('recording', recordingFile);
 
-    const response = await fetch(
-      `${API_URL_CRUD}/appointments/${appointmentId}/upload-recording`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          // Don't set Content-Type - let browser set it with boundary for FormData
-        },
-        body: formData,
-      }
-    );
+  const response = await fetch(
+    `${API_URL_PROCESSING}/appointments/${appointmentId}/upload-recording`,
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        // Don't set Content-Type - let browser set it with boundary for FormData
+      },
+      body: formData,
+    }
+  );
 
     if (!response.ok) {
       const errorText = await response.text();

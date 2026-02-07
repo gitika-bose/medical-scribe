@@ -62,18 +62,15 @@ export function AppointmentsPage() {
   useEffect(() => {
     if (authLoading || !user) return;
 
-    console.log('🎧 Setting up listener for InProgress appointments');
     
     const unsubscribe = listenToInProgressAppointments(
       (updatedInProgressAppointments) => {
-        console.log('📡 Received InProgress appointments update:', updatedInProgressAppointments.length);
         setInProgressAppointments(updatedInProgressAppointments);
         
         // Refresh full appointment list to catch status changes
         // (when an appointment moves from InProgress to Completed/Error)
         fetchAppointments()
           .then((refreshedAppointments) => {
-            console.log('🔄 Refreshed all appointments:', refreshedAppointments.length);
             setAppointments(refreshedAppointments);
           })
           .catch((err) => {
@@ -87,7 +84,6 @@ export function AppointmentsPage() {
     );
 
     return () => {
-      console.log('🛑 Cleaning up InProgress appointments listener');
       unsubscribe();
     };
   }, [user, authLoading]);

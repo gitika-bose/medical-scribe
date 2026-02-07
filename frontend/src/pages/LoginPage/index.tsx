@@ -33,7 +33,12 @@ export function LoginPage() {
     <div className="min-h-screen bg-white flex items-center justify-center p-6">
       <div className="w-full max-w-sm">
         <div className="text-center mb-12">
-          <h1 className="text-3xl mb-2">Welcome</h1>
+          <img 
+            src="/logo/android-chrome-512x512.png" 
+            alt="Juno Logo" 
+            className="w-64 h-64 mx-auto mb-6"
+          />
+          <h1 className="text-3xl mb-2">Juno</h1>
           <p className="text-gray-600">Sign in to continue</p>
         </div>
         

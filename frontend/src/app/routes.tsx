@@ -3,6 +3,8 @@ import { LoginPage } from "@/pages/LoginPage";
 import { HomePage } from "@/pages/HomePage";
 import { AppointmentsPage } from "@/pages/AppointmentsPage";
 import { AppointmentDetailPage } from "@/pages/AppointmentDetailPage";
+import { AppointmentErrorPage } from "@/pages/AppointmentErrorPage";
+import { AppointmentMetadataPage } from "@/pages/AppointmentMetadataPage";
 import { ProtectedRoute } from "@/components/shared/ProtectedRoute";
 
 export const router = createBrowserRouter([
@@ -27,6 +29,14 @@ export const router = createBrowserRouter([
     ),
   },
   {
+    path: "/appointment-metadata",
+    element: (
+      <ProtectedRoute>
+        <AppointmentMetadataPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
     path: "/appointments",
     element: (
       <ProtectedRoute>
@@ -39,6 +49,14 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute>
         <AppointmentDetailPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/appointments/:id/error",
+    element: (
+      <ProtectedRoute>
+        <AppointmentErrorPage />
       </ProtectedRoute>
     ),
   },

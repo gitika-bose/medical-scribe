@@ -35,8 +35,7 @@ def root():
         'endpoints': {
             'POST /appointments': 'Create a new appointment',
             'GET /appointments': 'Get all appointments for a user',
-            'GET /appointments/{id}': 'Get appointment details',
-            'DELETE /appointments/{id}': 'Delete appointment details'
+            'GET /appointments/{id}': 'Get appointment details'
         }
     }), 200
 

@@ -46,7 +46,7 @@ export async function uploadAudioChunk(
   formData.append('audioChunk', audioChunk, 'chunk.webm');
 
   const response = await fetch(
-    `${API_URL_CRUD}/appointments/${appointmentId}/audio-chunks`,
+    `${API_URL_PROCESSING}/appointments/${appointmentId}/audio-chunks`,
     {
       method: 'POST',
       headers: {
@@ -166,7 +166,7 @@ export async function uploadRecording(
   formData.append('recording', recordingFile);
 
   const response = await fetch(
-    `${API_URL_CRUD}/appointments/${appointmentId}/upload-recording`,
+    `${API_URL_PROCESSING}/appointments/${appointmentId}/upload-recording`,
     {
       method: 'POST',
       headers: {

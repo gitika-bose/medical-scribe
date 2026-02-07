@@ -146,46 +146,7 @@ Return ONLY a JSON array of question strings, nothing else. Format: ["question 1
         Returns:
             Dictionary with SOAP format and other notes
         """
-        
-#         prompt = f"""You are a medical transcription AI. Process the following transcript of a conversation between doctor and patient. 
-#         First, identify which of the two speakers is the doctor and patient. Treat the doctor's words as ground truth for this.
-#         Then, organize it into a structured note format and categorize it in SOAP.
 
-# SOAP Format:
-# - Subjective: Patient-reported symptoms, history, concerns, and feelings. DON'T RETURN THIS IN THE RESPONSE.
-# - Objective: Observable findings, vital signs, physical examination results. DON'T RETURN THIS IN THE RESPONSE.
-# - Assessment: Clinical interpretation, diagnosis, and evaluation. RETURN THIS.
-# - Plan: Treatment plans, follow-up instructions, prescriptions, and next steps. RETURN THIS.
-
-# Additional Requirements:
-# 1. Remove all filler words (um, uh, like, you know, etc.) and clean up the text for clarity
-# 3. If there's relevant information that doesn't fit SOAP, include it in "OtherNotes"
-# 4. Maintain HIPAA compliance - use clear, professional language
-# 5. Avoid subjective opinions entirely and do not hallucinate - stick to facts
-# 7. DO NOT add any knowledge outside of the transcript while summarizing
-# 8. To make it patient friendly, use simple language and structure into bullet points 
-# 10. Leave a section blank or short if there are less (or no) relevant details. Do not repeat details.
-
-# Raw Transcript:
-# {raw_transcript}
-
-# Return ONLY a valid JSON object with bullet points structured as arrays. Use this exact structure:
-# {{
-#     "Assessment": {{
-#         "diagnosis": ["diagnosis 1", "diagnosis 2"]
-#     }},
-#     "Plan": {{
-#         "medications": ["medication 1", "medication 2"],
-#         "treatments": ["treatment 1", "treatment 2"],
-#         "followUp": ["follow-up instruction 1", "follow-up instruction 2"],
-#         "lifestyle": ["lifestyle recommendation 1", "lifestyle recommendation 2"],
-#         "additionalInstructions": ["instruction 1", "instruction 2"]
-#     }},
-#     "OtherNotes": "any additional relevant information"
-# }}
-
-# If a subsection has no information, use an empty array [] or empty string "". Do not omit fields.
-# """
         prompt = f"""You are a medical transcription AI. Process the following transcript of a conversation between doctor and patient. 
         First, identify which of the two speakers is the doctor and patient. Treat the doctor's words as ground truth for this.
         Then, organize it into a structured format as below.
@@ -204,83 +165,96 @@ Return ONLY a JSON array of question strings, nothing else. Format: ["question 1
 
         Return ONLY a valid JSON object. Use this exact structure:
         {{
-            "diagnosis": [ // List of differential diagnoses. If multiple problems lead to the same diagnosis, include all the problems in the description for the one diagnosis.
+            "title": "string", // Title of the appointment or visit, e.g., "Annual Checkup", "Follow-up for Blood Pressure"
+            "doctor_name": "string",
+            "location": "string",
+            "summary": "string", // Short summary of the visit, including key points from the reason for visit, doctor's diagnosis, solution and todos.
+            /* Reason for visit as provided by the patient. Don't invent and deviate from the actual reason for visit provided by the patient.  */
+            "reason_for_visit": [
                 {{
-                    "diagnosis_name": "string",
-                    "description": "string", // Description or reasoning for diagnosis
-                    "severity": "high | medium | low", // Optional, relative ranking
-                    "key_takeaway": "string" // One-sentence summary of what matters most right now
+                    "reason": "string", // Reason for visit as provided by the patient, e.g., "Routine checkup", "High blood pressure", "Follow-up on lab results"
+                    "description": "string" // Additional details about the reason for visit, e.g., "Daily headaches for the past week", "Blood pressure readings consistently above 140/90"
                 }}
             ],
-            "plan": {{
-                "actions": {{
-                    "tests": [ // What tests should the patient plan to take, if any
-                        {{
-                            "type": "string", // Lab Test, Imaging, Other
-                            "diagnostic_name": "string",
-                            "description": "string",
-                            "recommended": "boolean", // Default true if recording only
-                            "verified": "boolean" // Default false if recording only. True if found in uploaded records.
-                            // Verified takes precedence over recommended
-                        }}
-                    ],
-                    "procedures": [ // What procedures should the patient schedule, if any
-                        {{
-                            "type": "string", // consultation, surgery, therapy, other
-                            "procedure_name": "string",
-                            "description": "string", // Description or reasoning for procedure
-                            "procedure_timeframe": "string", // Optional When the procedure is to be done. Can be specific date or duration like '2 weeks'
-                            "recommended": "boolean",
-                            "verified": "boolean"
-                        }}
-                    ],
-                    "medications": [ // What medications should the patient take, if any
-                        {{
-                            "medication_name": "string",
-                            "dosage": "string",
-                            "frequency": "string",
-                            "duration": "string", // How long. Can be specific date or duration like '2 weeks'
-                            "description": "string", // Description or reasoning for medication
-                            "recommended": "boolean",
-                            "verified": "boolean"
-                        }}
-                    ]
-                }},
-                "next_steps": {{ // Do not repeat anything covered in the actions section
-                    "follow_up": [
-                        {{
-                            "time_frame": "string", // When the follow-up should occur. Can be specific date or duration like '2 weeks'
-                            "description": "string" // Description or reasoning for follow-up
-                        }}
-                    ],
-                    "watch_for": [
-                        {{
-                            "symptom": "string",
-                            "what_to_do": "string" // call clinic, go to ER, mention at follow-up
-                        }}
-                    ]
-                }},
-                "guidance": {{ // Do not repeat anything covered in the guidance section
-                    "education": [ // Eg. lifestyle changes, disease information, problem explanation, resources etc.
-                        {{
-                            "topic": "string",
-                            "description": "string"
-                        }}
-                    ],
-                    "instructions": [ // Specific instructions for the patient
-                        {{
-                            "topic": "string",
-                            "description": "string"
-                        }}
-                    ]
-                }},
-                "open_questions": [ // Things that were NOT clear after the appointment. Only important questions to address.
+            /* Diagnosis given by the doctor of the problem. Don't invent and deviate from the actual diagnosis provided by the doctor. */
+            "diagnosis": {{
+                "details": [
                     {{
-                        "question": "string",
-                        "reason": "string"
+                        "title": "string", // Title of the diagnosis exactly as mentioned by the doctor, e.g., "Hypertension", "Type 2 Diabetes" 
+                        "description": "string", // Description and explaination for diagnosis
+                        "severity": "high | medium | low" // As labelled by the doctor. Unless doctor labels the severity, leave it out. Do not invent or assume severity level. E.g. if doctor says "Your blood pressure is a bit high, but we can manage it with lifestyle changes and medication", you can label it as "medium". But if doctor doesn't provide any indication of severity, leave it out.
                     }}
                 ]
-            }}
+            }},
+            /* Todos are action items for the patient. Don't invent and deviate from the todos provided explicitly by the doctor.  */
+            // Todos can be of type "Tests", "Medication", "Procedure", "Others" - ONLY.
+            // If there is any relation between todos, mention that. E.g. if the doctor recommends getting a fasting cholesterol level test done at the lab, and based on the results, may recommend starting a cholesterol medication, you can mention that relation in the description of the respective todos. But do not invent any relation that is not explicitly mentioned by the doctor.
+            "todos": [
+                {{ 
+                    // Sample for type test. Group tests that belong together. Eg, Vitamin D and B12 test can be grouped together as they are both vitamin tests
+                    "type": "string",
+                    "title": "string", // Title of the TEST todo, e.g. "Cholesterol level Test", "Vitamin D and B12", "Immunity Tests (COVID-19, Flu, Strep)"
+                    "description": "string", // Description of the TEST todo, e.g. "Get fasting cholesterol level test done at the lab", "Get Vitamin D and B12 levels checked", "Get tested for COVID-19, Flu and Strep as experiencing symptoms of cough, fever and sore throat"
+                    "recommended": "boolean", // Whether the todo is recommended by the doctor.
+                    "verified": "boolean" // Whether the todo is verified by the doctor reports. False by default.
+                }},
+                {{
+                    // Sample for type medication. 
+                    // Keep each medication as a separate todo even if they belong together. Eg, if the doctor recommends starting both Metformin and Glipizide, create 2 separate todos
+                    // Add the dosage in the title
+                    "type": "string", 
+                    "title": "string", // Title of the MEDICATION todo, e.g. "Metformin 500mg", "Glipizide 5mg", "Vitamin D supplement 2000 IU"
+                    "dosage": "string", // Dosage for the medication, e.g. "500mg", "5mg"
+                    "frequency": "string", // Frequency of the medication, e.g. "Twice a day", "Every 8 hours",
+                    "timing": "string", // Timing for the medication, e.g. "Take with meals", "Take on an empty stomach", "Once in the morning and once at night"
+                    "duration": "string", // Duration for the medication, e.g. "For 2 weeks", "Indefinitely until next follow-up"
+                    // Description reason and instructions for Medication. Or specific note about it e.g. change from previous dosage, side effect to watch for, reaction with other medication or food.
+                    // E.g. "Start daily and increase to twice a day after 1 week if no side effects. Watch for signs of low blood sugar such as dizziness, sweating and confusion. Avoid alcohol while on this medication."
+                    "description": "string", 
+                    "recommended": "boolean",
+                    "verified": "boolean"
+                }},
+                {{
+                    // Sample for type procedure. 
+                    // Keep each procedure as a separate todo even if they belong together. Eg, if the doctor recommends both colonoscopy and endoscopy, create 2 separate todos
+                    "type": "string",
+                    "title": "string", // Title of the PROCEDURE todo, e.g. "Colonoscopy", "Knee MRI", "Physical Therapy"
+                    "description": "string", // Description, Reason and Instructions for the PROCEDURE todo. Also add any details mentioned for it. E.g. "Patient is over 50 years old.", "Evaluate persistent knee pain and rule out meniscus tear. Avoid strenuous activity until then.", "Improve mobility and strengthen muscles after knee injury. Start in 2 weeks after initial rest and ice treatment."
+                    "timeframe": "string", // Timeframe for the procedure, e.g. "Within the next month", "As soon as possible", "Within 2 weeks"
+                    "recommended": "boolean",
+                    "verified": "boolean"
+                }},
+                {{
+                    // Sample for type Other. Others can be any other type of todo that doesn't fit into Tests, Medication or Procedure.
+                    // Eg, Care instructions such as wound care, nasal spray care etc, lifestyle changes suggested such as diet and exercise recommendations etc.
+                    // Group insturctions that belong together. E.g. A leg injury might warrant RICE and light stretches, which can be grouped together. But if care instructions for different conditions, keep them separate. Eg, care instructions for leg ulcer and care instructions for nasal congestion should be kept as separate todos even if they are given during the same consultation.
+                    "type": "string",
+                    "title": "string", // Title of the todo, e.g. "Rest and stretch leg", "Use DASH diet for blood pressure control", "Saline and Flonase spray for nasal congestion",
+                    // Description, Reason and Instructions for the OTHER todo. Also add any details mentioned for it. 
+                    // E.g. "Clean the wound with saline and apply antibiotic ointment daily until next follow-up.", "Adopt DASH diet which emphasizes fruits, vegetables, whole grains and lean proteins to help with blood pressure control. Limit sodium intake to less than 1500mg per day.", "Use saline spray first to moisturize the nose and reduce side effects of dryness, followed by Flonase to reduce inflammation and control turbinate swelling. Follow up in 1 week if symptoms persist."
+                    "description": "string", 
+                    "recommended": "boolean",
+                    "verified": "boolean"
+                }}
+            ],
+            "follow_up": [
+                {{
+                    "time_frame": "string", // Time frame for follow-up, e.g. "In 1 month", "In 3 months", "In 1 year"
+                    // Description, reason and instructions for follow-up
+                    // E.g. "Evaluate blood pressure control and adjust medications as needed.", Repeat blood tests to monitor cholesterol levels.", "Annual checkup and preventive care."
+                    "description": "string" 
+                }}
+            ],
+            /* Learnings are concepts or insights given during the consultation. DO NOT invent information, only document what was discussed by the doctor */
+            "learnings": [
+                {{
+                    "title": "string", // Title of the learning, e.g. "Hypertension", "Dandruff", "Use of humidifier for deviated nasal septum"
+                    // Description or information shared for the the learning. Keep it short.
+                    // DO NOT add anything yourself, only what was shared by the doctor. The patient wants to search the internet for more information later, by themselves.
+                    // E.g. "Hypertension is a chronic medical condition where the blood pressure in the arteries is persistently elevated. It can lead to serious complications such as heart attack, stroke and kidney failure if not managed properly.", "Dandruff is a common scalp condition that causes flaky skin. It can be caused by dry skin, sensitivity to hair products and skin conditions such as seborrheic dermatitis.", "A deviated nasal septum can cause nasal obstruction and contribute to snoring. Using a humidifier can help keep the nasal passages moist and reduce congestion."
+                    "description": "string" 
+                }}
+            ]
         }}
         """
         

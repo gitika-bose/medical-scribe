@@ -37,6 +37,7 @@ def root():
             'POST /appointments/{id}/generate-questions': 'Generate patient questions',
             'POST /appointments/{id}/finalize': 'Finalize appointment with full audio',
             'POST /appointments/{id}/upload-recording': 'Create appointment using full audio',
+            'DELETE /appointments/{id}': 'Delete appointment and associated files',
             'GET /appointments/search?q=<query>': 'Search appointments'
         }
     }), 200

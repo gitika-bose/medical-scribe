@@ -5,7 +5,8 @@ import {
   signOut as firebaseSignOut,
   onAuthStateChanged 
 } from 'firebase/auth';
-import { auth, googleProvider } from '@/lib/firebase';
+import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
+import { auth, googleProvider, db } from '@/lib/firebase';
 
 interface AuthContextType {
   user: User | null;
@@ -33,7 +34,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithGoogle = async () => {
     try {
-      await signInWithPopup(auth, googleProvider);
+      const result = await signInWithPopup(auth, googleProvider);
+      const user = result.user;
+      
+      // Create user document in Firestore if it doesn't exist
+      const userRef = doc(db, 'users', user.uid);
+      const userSnap = await getDoc(userRef);
+      
+      if (!userSnap.exists()) {
+        await setDoc(userRef, {
+          email: user.email || '',
+          displayName: user.displayName || 'Anonymous',
+          createdAt: Timestamp.now(),
+        });
+      }
     } catch (error) {
       console.error('Error signing in with Google:', error);
       throw error;

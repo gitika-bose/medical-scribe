@@ -2,7 +2,7 @@ import { useNavigate } from "react-router";
 import { BottomNav } from "@/components/shared/BottomNav";
 import { store } from "@/store";
 import { useAuth } from "@/hooks/useAuth";
-import { LogOut, Mic, X } from "lucide-react";
+import { Mic, X } from "lucide-react";
 import { startAppointment, uploadAudioChunk, generateQuestions, finalizeAppointment } from "@/lib/api";
 import { useState, useEffect, useRef } from "react";
 import { useAudioRecorder } from "@/hooks/useAudioRecorder";
@@ -265,28 +265,17 @@ export function HomePage() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      {/* Header with Sign Out */}
-      <div className="p-4 flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          {user?.photoURL && (
-            <img 
-              src={user.photoURL} 
-              alt="Profile" 
-              className="w-10 h-10 rounded-full"
-            />
-          )}
-          <div>
-            <p className="text-sm font-medium">{user?.displayName}</p>
-            <p className="text-xs text-gray-500">{user?.email}</p>
-          </div>
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
+          <h1 className="text-xl font-semibold">Juno</h1>
+          <button
+            onClick={handleSignOut}
+            className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <span className="text-sm">Sign out</span>
+          </button>
         </div>
-        <button
-          onClick={handleSignOut}
-          className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <LogOut className="w-4 h-4" />
-          <span className="text-sm">Sign Out</span>
-        </button>
       </div>
 
       {/* Main Content */}

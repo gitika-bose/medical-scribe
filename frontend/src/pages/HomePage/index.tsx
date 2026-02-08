@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router";
+import { useNavigate, useBlocker } from "react-router";
 import { BottomNav } from "@/components/shared/BottomNav";
 import { store } from "@/store";
 import { useAuth } from "@/hooks/useAuth";
@@ -28,6 +28,7 @@ export function HomePage() {
   const [error, setError] = useState<string | null>(null);
   const [showEndDialog, setShowEndDialog] = useState(false);
   const [showConsentDialog, setShowConsentDialog] = useState(false);
+  const [showNavigationDialog, setShowNavigationDialog] = useState(false);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const autoTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const durationTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -105,6 +106,36 @@ export function HomePage() {
       }
     };
   }, [isRecordingActive, isRecording]);
+
+  // Prevent browser navigation and tab closing during recording
+  useEffect(() => {
+    if (isRecordingActive) {
+      const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+        e.preventDefault();
+        e.returnValue = ''; // Chrome requires returnValue to be set
+        return ''; // Some browsers show this message
+      };
+
+      window.addEventListener('beforeunload', handleBeforeUnload);
+
+      return () => {
+        window.removeEventListener('beforeunload', handleBeforeUnload);
+      };
+    }
+  }, [isRecordingActive]);
+
+  // Block navigation when recording is active
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      isRecordingActive && currentLocation.pathname !== nextLocation.pathname
+  );
+
+  // Handle navigation blocker state changes
+  useEffect(() => {
+    if (blocker.state === "blocked") {
+      setShowNavigationDialog(true);
+    }
+  }, [blocker.state]);
 
   const handleRecordingClick = () => {
     if (!isRecordingActive) {
@@ -265,7 +296,80 @@ export function HomePage() {
     setShowEndDialog(false);
   };
 
+  const handleCancelNavigation = () => {
+    setShowNavigationDialog(false);
+    if (blocker.state === "blocked") {
+      blocker.reset?.();
+    }
+  };
+
+  const handleConfirmNavigation = async () => {
+    setShowNavigationDialog(false);
+    
+    // End the recording
+    const appointmentId = store.getCurrentRecordingId();
+    
+    // Clear timers
+    if (autoTimeoutRef.current) {
+      clearTimeout(autoTimeoutRef.current);
+      autoTimeoutRef.current = null;
+    }
+    if (durationTimerRef.current) {
+      clearInterval(durationTimerRef.current);
+      durationTimerRef.current = null;
+    }
+
+    try {
+      if (appointmentId) {
+        // Stop recording
+        const fullAudio = await stopRecording();
+        
+        // Store the appointment ID
+        store.setLastCompletedAppointmentId(appointmentId);
+        
+        // End recording session
+        store.endRecording();
+        
+        // Reset state
+        setIsRecordingActive(false);
+        setQuestions(null);
+
+        // Start finalize in background
+        if (fullAudio) {
+          finalizeAppointment(appointmentId, fullAudio).catch((err) => {
+            console.error("Background finalization error:", err);
+          });
+        }
+      } else {
+        // Just end the session if no appointment ID
+        store.endRecording();
+        setIsRecordingActive(false);
+        setQuestions(null);
+      }
+    } catch (err) {
+      console.error("Failed to stop recording:", err);
+      
+      // Always end recording session
+      if (appointmentId) {
+        store.setLastCompletedAppointmentId(appointmentId);
+      }
+      store.endRecording();
+      setIsRecordingActive(false);
+      setQuestions(null);
+    }
+
+    // Proceed with navigation
+    if (blocker.state === "blocked") {
+      blocker.proceed?.();
+    }
+  };
+
   const handleSignOut = async () => {
+    // Prevent sign out during recording
+    if (isRecordingActive) {
+      return;
+    }
+    
     try {
       await signOut();
       navigate("/");
@@ -282,7 +386,13 @@ export function HomePage() {
           <h1 className="text-xl font-semibold">Juno</h1>
           <button
             onClick={handleSignOut}
-            className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            disabled={isRecordingActive}
+            className={`px-4 py-2 rounded-lg transition-colors ${
+              isRecordingActive
+                ? "text-gray-400 cursor-not-allowed opacity-50"
+                : "text-gray-700 hover:bg-gray-100"
+            }`}
+            title={isRecordingActive ? "Cannot sign out during recording" : "Sign out"}
           >
             <span className="text-sm">Sign out</span>
           </button>
@@ -404,6 +514,24 @@ export function HomePage() {
             <AlertDialogCancel onClick={handleCancelEnd}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleStopRecording}>
               Yes, Stop Recording
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Navigation Blocked Dialog */}
+      <AlertDialog open={showNavigationDialog} onOpenChange={setShowNavigationDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Recording in Progress</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have an active recording. If you navigate away, the recording will be stopped and saved. Do you want to continue?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelNavigation}>Stay on Page</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmNavigation}>
+              Stop Recording & Leave
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

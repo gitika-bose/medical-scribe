@@ -166,8 +166,6 @@ Return ONLY a JSON array of question strings, nothing else. Format: ["question 1
         Return ONLY a valid JSON object. Use this exact structure:
         {{
             "title": "string", // Title of the appointment or visit, e.g., "Annual Checkup", "Follow-up for Blood Pressure"
-            "doctor_name": "string",
-            "location": "string",
             "summary": "string", // Short summary of the visit, including key points from the reason for visit, doctor's diagnosis, solution and todos.
             /* Reason for visit as provided by the patient. Don't invent and deviate from the actual reason for visit provided by the patient.  */
             "reason_for_visit": [

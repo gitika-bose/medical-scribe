@@ -6,6 +6,7 @@ import { Mic, X } from "lucide-react";
 import { startAppointment, uploadAudioChunk, generateQuestions, finalizeAppointment, checkProcessingServiceHealth } from "@/lib/api";
 import { useState, useEffect, useRef } from "react";
 import { useAudioRecorder } from "@/hooks/useAudioRecorder";
+import { analyticsEvents } from "@/lib/firebase";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -150,20 +151,13 @@ export function HomePage() {
     
     try {
       setError(null);
-
-      // Check API health before starting appointment
-      console.log("Checking API health...");
-      const isHealthy = await checkProcessingServiceHealth();
-      
-      if (!isHealthy) {
-        console.error("API health check failed");
-        setError("Service is currently unavailable. Please try again.");
-        return;
-      }
       
       console.log("API health check passed");
 
       const { appointmentId: newAppointmentId } = await startAppointment();
+      
+      // Log analytics event for starting recording
+      analyticsEvents.startRecording(newAppointmentId);
       
       // Store appointment ID
       store.startRecording(newAppointmentId);
@@ -201,6 +195,9 @@ export function HomePage() {
     try {
       setIsGeneratingQuestions(true);
       setError(null);
+      
+      // Log analytics event for generating questions
+      analyticsEvents.generateQuestions(appointmentId);
       
       const { questions: generatedQuestions } = await generateQuestions(appointmentId);
       
@@ -441,7 +438,7 @@ export function HomePage() {
                     ? 'bg-red-100 animate-pulse' 
                     : isRecordingActive 
                       ? 'bg-gray-100'
-                      : 'bg-red-600 hover:bg-red-700'
+                      : 'bg-red-700 hover:bg-red-900'
                 } disabled:opacity-50 disabled:cursor-not-allowed`}
                 aria-label={isRecordingActive ? "Recording" : "Start Recording"}
               >

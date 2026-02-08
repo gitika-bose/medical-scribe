@@ -1,4 +1,4 @@
-import { auth, db } from '@/lib/firebase';
+import { auth, db, analyticsEvents } from '@/lib/firebase';
 import { 
   collection, 
   query, 
@@ -16,7 +16,6 @@ import {
   type Unsubscribe
 } from 'firebase/firestore';
 
-const API_URL_CRUD = import.meta.env.VITE_API_CRUD_URL || 'http://localhost:8080';
 const API_URL_PROCESSING = import.meta.env.VITE_API_PROCESSING_URL || 'http://localhost:8081';
 
 // Health check function
@@ -71,6 +70,7 @@ export async function startAppointment(): Promise<{ appointmentId: string }> {
     const appointmentData = {
       status: 'InProgress' as const,
       appointmentDate: Timestamp.fromDate(new Date()),
+      createdDate: Timestamp.fromDate(new Date())
     };
     
     await setDoc(appointmentRef, appointmentData);
@@ -213,6 +213,9 @@ export async function finalizeAppointment(
       formData.append('fullAudio', fullAudio, 'recording.webm');
     }
 
+    // Log analytics event for finalizing appointment
+    analyticsEvents.finalizeAppointment(appointmentId);
+    
     const response = await fetch(
       `${API_URL_PROCESSING}/appointments/${appointmentId}/finalize`,
       {
@@ -289,6 +292,7 @@ export async function fetchAppointments(): Promise<AppointmentWithId[]> {
     const appointmentsRef = collection(db, "users", user.uid, "appointments");
     const querySnapshot = await getDocs(appointmentsRef);
     const appointments: AppointmentWithId[] = [];
+    const currentTime = new Date();
     
     querySnapshot.forEach((docSnap) => {
       try {
@@ -298,6 +302,42 @@ export async function fetchAppointments(): Promise<AppointmentWithId[]> {
         if (!data.appointmentDate) {
           console.warn(`⚠️ Skipping appointment ${docSnap.id} - missing required fields`);
           return;
+        }
+        
+        // Check if appointment needs to be marked as Error
+        // Condition: status is "InProgress" AND currentTime - createdDate > 1 hour
+        if (data.status === 'InProgress' && data.createdDate) {
+          const createdDate = data.createdDate.toDate();
+          const timeDifferenceMs = currentTime.getTime() - createdDate.getTime();
+          const oneHourInMs = 60 * 60 * 1000; // 1 hour in milliseconds
+          
+          if (timeDifferenceMs > oneHourInMs) {
+            // Update the appointment status to Error in Firebase
+            const appointmentRef = doc(db, "users", user.uid, "appointments", docSnap.id);
+            updateDoc(appointmentRef, {
+              status: 'Error',
+              error: 'Appointment exceeded 1 hour in InProgress state'
+            }).then(() => {
+              console.log(`✅ Appointment ${docSnap.id} status updated to Error (exceeded 1 hour)`);
+            }).catch((updateErr) => {
+              console.error(`❌ Failed to update appointment ${docSnap.id} to Error:`, updateErr);
+            });
+            
+            // Add to appointments list with Error status
+            appointments.push({
+              appointmentId: docSnap.id,
+              status: 'Error',
+              appointmentDate: data.appointmentDate.toDate().toISOString(),
+              title: data.title,
+              doctor: data.doctor,
+              location: data.location,
+              processedSummary: data.processedSummary,
+              rawTranscript: data.rawTranscript,
+              recordingLink: data.recordingLink,
+              error: data.error || 'Appointment exceeded 1 hour in InProgress state',
+            });
+            return;
+          }
         }
         
         appointments.push({
@@ -427,6 +467,9 @@ export async function uploadRecording(
 
     const formData = new FormData();
     formData.append('recording', recordingFile);
+
+    // Log analytics event for uploading recording
+    analyticsEvents.uploadRecording(appointmentId, recordingFile.size);
 
   const response = await fetch(
     `${API_URL_PROCESSING}/appointments/${appointmentId}/upload-recording`,

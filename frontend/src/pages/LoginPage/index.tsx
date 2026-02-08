@@ -2,6 +2,7 @@ import { useNavigate } from "react-router";
 import { Mail } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect, useState } from "react";
+import { analyticsEvents } from "@/lib/firebase";
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -21,6 +22,10 @@ export function LoginPage() {
       setLoading(true);
       setError(null);
       await signInWithGoogle();
+      
+      // Log analytics event for user login
+      analyticsEvents.userLogin('google');
+      
       // Navigation will happen automatically via useEffect when user state updates
     } catch (error) {
       console.error("Login error:", error);

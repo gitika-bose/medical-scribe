@@ -24,8 +24,21 @@ export function AppointmentsPage() {
   const [showDropdown, setShowDropdown] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [inProgressAppointments, setInProgressAppointments] = useState<AppointmentWithId[]>([]);
+  const [isRecordingActive, setIsRecordingActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Check if recording is active
+  useEffect(() => {
+    const checkRecordingState = () => {
+      setIsRecordingActive(store.isRecordingActive());
+    };
+
+    checkRecordingState();
+    const interval = setInterval(checkRecordingState, 500);
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Initial load of all appointments
   useEffect(() => {
@@ -204,8 +217,13 @@ export function AppointmentsPage() {
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setShowDropdown(!showDropdown)}
-              disabled={isStarting || isProcessing}
-              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-full hover:bg-blue-700 transition-colors disabled:opacity-50"
+              disabled={isStarting || isProcessing || isRecordingActive}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full transition-colors ${
+                isRecordingActive
+                  ? "bg-gray-400 text-white cursor-not-allowed opacity-50"
+                  : "bg-blue-600 text-white hover:bg-blue-700"
+              } disabled:opacity-50`}
+              title={isRecordingActive ? "Cannot start new appointment during recording" : "New appointment"}
             >
               <Plus className="w-5 h-5" />
               <span>

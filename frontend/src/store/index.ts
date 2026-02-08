@@ -11,6 +11,7 @@ export interface Appointment {
 let appointments: Appointment[] = [];
 let currentRecordingId: string | null = null;
 let lastCompletedAppointmentId: string | null = null;
+let isRecordingActive: boolean = false;
 
 export const store = {
   getAppointments: () => appointments,
@@ -31,6 +32,7 @@ export const store = {
   
   startRecording: (appointmentId?: string) => {
     currentRecordingId = appointmentId || Date.now().toString();
+    isRecordingActive = true;
     return currentRecordingId;
   },
   
@@ -39,8 +41,11 @@ export const store = {
   endRecording: () => {
     const id = currentRecordingId;
     currentRecordingId = null;
+    isRecordingActive = false;
     return id;
   },
+  
+  isRecordingActive: () => isRecordingActive,
   
   setLastCompletedAppointmentId: (appointmentId: string) => {
     lastCompletedAppointmentId = appointmentId;

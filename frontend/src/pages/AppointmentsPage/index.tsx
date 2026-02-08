@@ -25,8 +25,21 @@ export function AppointmentsPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [inProgressAppointments, setInProgressAppointments] = useState<AppointmentWithId[]>([]);
   const [isRecordingActive, setIsRecordingActive] = useState(false);
+  const [isRecordingActive, setIsRecordingActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Check if recording is active
+  useEffect(() => {
+    const checkRecordingState = () => {
+      setIsRecordingActive(store.isRecordingActive());
+    };
+
+    checkRecordingState();
+    const interval = setInterval(checkRecordingState, 500);
+
+    return () => clearInterval(interval);
+  }, []);
 
   // Check if recording is active
   useEffect(() => {
@@ -224,6 +237,13 @@ export function AppointmentsPage() {
                   : "bg-blue-600 text-white hover:bg-blue-700"
               } disabled:opacity-50`}
               title={isRecordingActive ? "Cannot start new appointment during recording" : "New appointment"}
+              disabled={isStarting || isProcessing || isRecordingActive}
+              className={`flex items-center gap-2 px-4 py-2 rounded-full transition-colors ${
+                isRecordingActive
+                  ? "bg-gray-400 text-white cursor-not-allowed opacity-50"
+                  : "bg-blue-600 text-white hover:bg-blue-700"
+              } disabled:opacity-50`}
+              title={isRecordingActive ? "Cannot start new appointment during recording" : "New appointment"}
             >
               <Plus className="w-5 h-5" />
               <span>
@@ -255,6 +275,7 @@ export function AppointmentsPage() {
             <input
               ref={fileInputRef}
               type="file"
+              accept="audio/*,.wav,.mp3,.webm,.ogg,.m4a,.aac,.flac,.opus,.amr"
               accept="audio/*,.wav,.mp3,.webm,.ogg,.m4a,.aac,.flac,.opus,.amr"
               onChange={handleFileChange}
               className="hidden"

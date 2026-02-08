@@ -35,7 +35,6 @@ export async function checkProcessingServiceHealth(): Promise<boolean> {
     }
     
     const data = await response.json();
-    console.log('✅ Processing service is healthy:', data);
     return data.status === 'healthy';
   } catch (error) {
     console.error('❌ Processing service health check error:', error);
@@ -200,7 +199,6 @@ export async function finalizeAppointment(
           status: 'Error',
           error: 'Service unavailable'
         });
-        console.log('✅ Appointment status set to Error due to unhealthy service');
       } catch (updateErr) {
         console.error('❌ Failed to update appointment status to Error:', updateErr);
       }
@@ -230,7 +228,10 @@ export async function finalizeAppointment(
     if (!response.ok) {
       const errorText = await response.json();
       console.error('❌ Finalize appointment error:', errorText);
-      throw new Error(`Failed to finalize appointment: ${errorText.message || response.statusText}`);
+      const errorMessage = errorText && typeof errorText === 'object' && 'error' in errorText 
+        ? errorText['error'] 
+        : response.statusText;
+      throw new Error(`Failed to finalize appointment: ${errorMessage}`);
     }
 
     return response.json();
@@ -249,7 +250,6 @@ export async function finalizeAppointment(
           status: 'Error',
           error: errorMsg
         });
-        console.log('✅ Appointment status set to Error due to finalization failure');
       }
     } catch (updateErr) {
       console.error('❌ Failed to update appointment status to Error:', updateErr);
@@ -416,7 +416,6 @@ export async function uploadRecording(
           status: 'Error',
           error: 'Service unavailable'
         });
-        console.log('✅ Appointment status set to Error due to unhealthy service');
       } catch (updateErr) {
         console.error('❌ Failed to update appointment status to Error:', updateErr);
       }
@@ -463,7 +462,6 @@ export async function uploadRecording(
           status: 'Error',
           error: errorMsg
         });
-        console.log('✅ Appointment status set to Error due to upload recording failure');
       }
     } catch (updateErr) {
       console.error('❌ Failed to update appointment status to Error:', updateErr);
@@ -610,7 +608,6 @@ export function listenToInProgressAppointments(
         // Sort by date descending
         appointments.sort((a, b) => new Date(b.appointmentDate).getTime() - new Date(a.appointmentDate).getTime());
         
-        console.log('📡 InProgress appointments updated:', appointments.length);
         onUpdate(appointments);
       },
       (error) => {

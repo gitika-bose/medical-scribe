@@ -9,6 +9,7 @@ import uuid
 import json
 import io
 from pydub import AudioSegment
+from functools import wraps
 
 # Initialize Blueprint
 appointments_bp = Blueprint('appointments', __name__)
@@ -33,6 +34,19 @@ def get_services():
         vertex_ai_service = VertexAIService(GCP_PROJECT_ID, GCP_LOCATION, VERTEX_AI_MODEL)
     
     return speech_service, storage_service, vertex_ai_service
+
+
+@appointments_bp.route('/health', methods=['GET'])
+def health_check():
+    """
+    GET /health
+    Quick health check endpoint to verify service is online
+    """
+    return jsonify({
+        'status': 'healthy',
+        'service': 'backend-processing',
+        'timestamp': datetime.utcnow().isoformat()
+    }), 200
 
 
 @appointments_bp.route('/appointments/<appointment_id>/audio-chunks', methods=['POST'])

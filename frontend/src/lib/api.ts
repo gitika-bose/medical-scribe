@@ -19,6 +19,30 @@ import {
 const API_URL_CRUD = import.meta.env.VITE_API_CRUD_URL || 'http://localhost:8080';
 const API_URL_PROCESSING = import.meta.env.VITE_API_PROCESSING_URL || 'http://localhost:8081';
 
+// Health check function
+export async function checkProcessingServiceHealth(): Promise<boolean> {
+  try {
+    const response = await fetch(`${API_URL_PROCESSING}/health`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    
+    if (!response.ok) {
+      console.error('❌ Processing service health check failed:', response.statusText);
+      return false;
+    }
+    
+    const data = await response.json();
+    console.log('✅ Processing service is healthy:', data);
+    return data.status === 'healthy';
+  } catch (error) {
+    console.error('❌ Processing service health check error:', error);
+    return false;
+  }
+}
+
 async function getAuthHeaders(): Promise<HeadersInit> {
   const user = auth.currentUser;
   if (!user) {
@@ -80,6 +104,14 @@ export async function uploadAudioChunk(
     console.warn('⚠️ Skipping upload of empty audio chunk');
     return;
   }
+
+  // Check service health before uploading
+  const isHealthy = await checkProcessingServiceHealth();
+  if (!isHealthy) {
+    const error = new Error('Service is currently unavailable. Please try again later.');
+    console.error('❌ Failed to upload audio chunk:', error);
+    throw error;
+  }
   
   try {
     const token = await user.getIdToken();
@@ -114,6 +146,12 @@ export async function uploadAudioChunk(
 export async function generateQuestions(
   appointmentId: string
 ): Promise<{ questions: string[] }> {
+  // Check service health before generating questions
+  const isHealthy = await checkProcessingServiceHealth();
+  if (!isHealthy) {
+    throw new Error('Service is currently unavailable. Please try again later.');
+  }
+
   const headers = await getAuthHeaders();
 
   const response = await fetch(
@@ -147,8 +185,29 @@ export async function finalizeAppointment(
     console.error('❌ Failed to finalize appointment:', error);
     throw error;
   }
-  
+
   try {
+    // Check service health before finalizing
+    const isHealthy = await checkProcessingServiceHealth();
+    if (!isHealthy) {
+      const error = new Error('Service is currently unavailable. Please try again later.');
+      console.error('❌ Failed to finalize appointment:', error);
+      
+      // Set appointment status to error in Firestore
+      try {
+        const appointmentRef = doc(db, 'users', user.uid, 'appointments', appointmentId);
+        await updateDoc(appointmentRef, {
+          status: 'Error',
+          error: 'Service not available'
+        });
+        console.log('✅ Appointment status set to Error due to unhealthy service');
+      } catch (updateErr) {
+        console.error('❌ Failed to update appointment status to Error:', updateErr);
+      }
+      
+      throw error;
+    }
+    
     const token = await user.getIdToken();
 
     const formData = new FormData();
@@ -178,6 +237,24 @@ export async function finalizeAppointment(
   } catch (err) {
     console.error('❌ Failed to finalize appointment:', err);
     const errorMsg = err instanceof Error ? err.message : 'Failed to finalize appointment';
+    
+    // Set appointment status to error in Firestore if not already done
+    try {
+      const appointmentRef = doc(db, 'users', user.uid, 'appointments', appointmentId);
+      const docSnap = await getDoc(appointmentRef);
+      
+      // Only update if status is not already Error
+      if (docSnap.exists() && docSnap.data().status !== 'Error') {
+        await updateDoc(appointmentRef, {
+          status: 'Error',
+          error: errorMsg
+        });
+        console.log('✅ Appointment status set to Error due to finalization failure');
+      }
+    } catch (updateErr) {
+      console.error('❌ Failed to update appointment status to Error:', updateErr);
+    }
+    
     throw new Error(errorMsg);
   }
 }
@@ -324,8 +401,29 @@ export async function uploadRecording(
     console.error('❌ Failed to upload recording:', error);
     throw error;
   }
-  
+
   try {
+    // Check service health before uploading recording
+    const isHealthy = await checkProcessingServiceHealth();
+    if (!isHealthy) {
+      const error = new Error('Service is currently unavailable. Please try again later.');
+      console.error('❌ Failed to upload recording:', error);
+      
+      // Set appointment status to error in Firestore
+      try {
+        const appointmentRef = doc(db, 'users', user.uid, 'appointments', appointmentId);
+        await updateDoc(appointmentRef, {
+          status: 'Error',
+          error: 'Service not available'
+        });
+        console.log('✅ Appointment status set to Error due to unhealthy service');
+      } catch (updateErr) {
+        console.error('❌ Failed to update appointment status to Error:', updateErr);
+      }
+      
+      throw error;
+    }
+    
     const token = await user.getIdToken();
 
     const formData = new FormData();
@@ -353,6 +451,24 @@ export async function uploadRecording(
   } catch (err) {
     console.error('❌ Failed to upload recording:', err);
     const errorMsg = err instanceof Error ? err.message : 'Failed to upload recording';
+    
+    // Set appointment status to error in Firestore if not already done
+    try {
+      const appointmentRef = doc(db, 'users', user.uid, 'appointments', appointmentId);
+      const docSnap = await getDoc(appointmentRef);
+      
+      // Only update if status is not already Error
+      if (docSnap.exists() && docSnap.data().status !== 'Error') {
+        await updateDoc(appointmentRef, {
+          status: 'Error',
+          error: errorMsg
+        });
+        console.log('✅ Appointment status set to Error due to upload recording failure');
+      }
+    } catch (updateErr) {
+      console.error('❌ Failed to update appointment status to Error:', updateErr);
+    }
+    
     throw new Error(errorMsg);
   }
 }

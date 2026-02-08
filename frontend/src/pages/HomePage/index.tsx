@@ -3,7 +3,7 @@ import { BottomNav } from "@/components/shared/BottomNav";
 import { store } from "@/store";
 import { useAuth } from "@/hooks/useAuth";
 import { Mic, X } from "lucide-react";
-import { startAppointment, uploadAudioChunk, generateQuestions, finalizeAppointment } from "@/lib/api";
+import { startAppointment, uploadAudioChunk, generateQuestions, finalizeAppointment, checkProcessingServiceHealth } from "@/lib/api";
 import { useState, useEffect, useRef } from "react";
 import { useAudioRecorder } from "@/hooks/useAudioRecorder";
 import {
@@ -70,7 +70,7 @@ export function HomePage() {
     };
   }, [error]);
 
-  // Auto-timeout after 30 seconds
+  // Auto-timeout after 30 minutes
   useEffect(() => {
     if (isRecordingActive && isRecording) {
       // Start duration timer
@@ -119,7 +119,18 @@ export function HomePage() {
     try {
       setError(null);
 
-      // Start appointment on backend
+      // Check API health before starting appointment
+      console.log("Checking API health...");
+      const isHealthy = await checkProcessingServiceHealth();
+      
+      if (!isHealthy) {
+        console.error("API health check failed");
+        setError("Service is currently unavailable. Please try again.");
+        return;
+      }
+      
+      console.log("API health check passed");
+
       const { appointmentId: newAppointmentId } = await startAppointment();
       
       // Store appointment ID

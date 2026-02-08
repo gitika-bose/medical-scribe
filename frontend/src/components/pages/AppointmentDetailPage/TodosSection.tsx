@@ -68,25 +68,24 @@ export function TodosSection({ todos }: TodosSectionProps) {
           {todo.description && (
             <p className="text-base text-gray-600 mt-1">{todo.description}</p>
           )}
-          
-          {/* Medication specific details */}
-          {todo.type.toLowerCase() === "medication" && (todo.dosage || todo.frequency || todo.timing || todo.duration) && (
-            <div className="flex flex-wrap gap-4 mt-2 text-base text-gray-700">
-              {todo.dosage && <span>💊 {todo.dosage}</span>}
-              {todo.frequency && <span>⏱️ {todo.frequency}</span>}
-              {todo.timing && <span>🕐 {todo.timing}</span>}
-              {todo.duration && <span>📅 {todo.duration}</span>}
-            </div>
-          )}
-          
-          {/* Procedure specific details */}
-          {todo.type.toLowerCase() === "procedure" && todo.timeframe && (
-            <div className="flex flex-wrap gap-4 mt-2 text-base text-gray-700">
-              <span>📅 {todo.timeframe}</span>
-            </div>
-          )}
         </div>
       </div>
+      {/* Medication specific details */}
+      {todo.type.toLowerCase() === "medication" && (todo.dosage || todo.frequency || todo.timing || todo.duration) && (
+        <div className="flex flex-wrap gap-2 mt-2 text-base text-gray-700">
+          {todo.dosage && <span>💊 {todo.dosage}</span>}
+          {todo.frequency && <span>⏱️ {todo.frequency}</span>}
+          {todo.timing && <span>🕐 {todo.timing}</span>}
+          {todo.duration && <span>📅 {todo.duration}</span>}
+        </div>
+      )}
+      
+      {/* Procedure specific details */}
+      {todo.type.toLowerCase() === "procedure" && todo.timeframe && (
+        <div className="flex flex-wrap gap-4 mt-2 text-base text-gray-700">
+          <span>📅 {todo.timeframe}</span>
+        </div>
+      )}
     </div>
   ));
 

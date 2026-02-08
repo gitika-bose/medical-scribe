@@ -27,15 +27,6 @@ export function DiagnosisSection({ diagnosis }: DiagnosisSectionProps) {
     <div key={index} className="border-l-4 border-red-500 pl-4 py-2">
       <div className="flex items-center gap-2 mb-1">
         <h3 className="font-semibold text-gray-900">{detail.title}</h3>
-        {detail.severity && (
-          <span className={`text-xs px-2 py-1 rounded ${
-            detail.severity === 'high' ? 'bg-red-100 text-red-700' :
-            detail.severity === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-            'bg-green-100 text-green-700'
-          }`}>
-            {detail.severity}
-          </span>
-        )}
       </div>
       <p className="text-base text-gray-600">{detail.description}</p>
     </div>

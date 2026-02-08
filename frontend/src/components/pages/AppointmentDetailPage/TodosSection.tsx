@@ -24,13 +24,13 @@ function getTodoIcon(type: string) {
   const lowerType = type.toLowerCase();
   
   if (lowerType === "medication") {
-    return <Pill className="w-5 h-5 text-blue-600" />;
+    return <Pill className="w-5 h-5 text-blue-500" />;
   } else if (lowerType === "tests" || lowerType === "test") {
-    return <FlaskConical className="w-5 h-5 text-green-600" />;
+    return <FlaskConical className="w-5 h-5 text-green-500" />;
   } else if (lowerType === "procedure") {
-    return <Stethoscope className="w-5 h-5 text-purple-600" />;
+    return <Stethoscope className="w-5 h-5 text-purple-500" />;
   } else {
-    return <ClipboardList className="w-5 h-5 text-orange-600" />;
+    return <ClipboardList className="w-5 h-5 text-orange-500" />;
   }
 }
 

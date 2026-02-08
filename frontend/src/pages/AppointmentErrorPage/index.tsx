@@ -93,7 +93,7 @@ export function AppointmentErrorPage() {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-xl text-red-600">{getAppointmentTitle()}</h1>
+            <h1 className="text-xl text-[#845460]-600">{getAppointmentTitle()}</h1>
             <p className="text-sm text-gray-500">
               {format(new Date(appointment.appointmentDate), "MMM d, yyyy 'at' h:mm a")}
             </p>
@@ -104,18 +104,18 @@ export function AppointmentErrorPage() {
       {/* Content */}
       <div className="flex-1 max-w-2xl mx-auto p-6 pb-20 space-y-6">
         {/* Error Alert */}
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+        <div className="bg-[#845460]-50 border border-[#845460]-200 rounded-lg p-6">
           <div className="flex items-start gap-4">
-            <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-1" />
+            <AlertCircle className="w-6 h-6 text-[#845460]-600 flex-shrink-0 mt-1" />
             <div className="flex-1">
-              <h2 className="text-lg font-semibold text-red-900 mb-2">
+              <h2 className="text-lg font-semibold text-[#845460]-900 mb-2">
                 Processing Error
               </h2>
-              <p className="text-red-800 mb-4">
+              <p className="text-[#845460]-800 mb-4">
                 We encountered an error while processing this appointment.
               </p>
               {appointment.error && (
-                <div className="bg-white rounded border border-red-200 p-4">
+                <div className="bg-white rounded border border-[#845460]-200 p-4">
                   <p className="text-sm font-mono text-gray-700 whitespace-pre-wrap">
                     {appointment.error}
                   </p>

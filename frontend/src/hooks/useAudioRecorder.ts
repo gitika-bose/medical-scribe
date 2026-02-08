@@ -141,7 +141,34 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
         return;
       }
 
-      mediaRecorder.onstop = () => {
+      // Store the chunks that are part of the current recording segment
+      const currentChunks: Blob[] = [];
+
+      // Set up data handler to capture any remaining data
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          currentChunks.push(event.data);
+          allChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = async () => {
+        // Upload the last chunk if there's any data
+        if (currentChunks.length > 0 && onChunkReadyRef.current) {
+          const lastChunk = new Blob(currentChunks, { type: 'audio/webm' });
+          const chunkSizeMB = (lastChunk.size / (1024 * 1024)).toFixed(2);
+          console.log(`[AudioRecorder] Final segment on stop: ${chunkSizeMB} MB`);
+          
+          try {
+            await onChunkReadyRef.current(lastChunk);
+            console.log(`[AudioRecorder] Final chunk uploaded successfully`);
+          } catch (err) {
+            console.error(`[AudioRecorder] Failed to upload final chunk:`, err);
+          }
+        } else {
+          console.log(`[AudioRecorder] No final chunk to upload (already sent or empty)`);
+        }
+
         // Stop stream
         if (streamRef.current) {
           streamRef.current.getTracks().forEach(track => track.stop());

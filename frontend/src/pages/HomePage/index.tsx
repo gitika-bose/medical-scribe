@@ -33,6 +33,7 @@ export function HomePage() {
   const autoTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const durationTimerRef = useRef<NodeJS.Timeout | null>(null);
   const errorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isIntentionalEndRef = useRef(false);
 
   // Cleanup effect
   useEffect(() => {
@@ -124,10 +125,10 @@ export function HomePage() {
     }
   }, [isRecordingActive]);
 
-  // Block navigation when recording is active
+  // Block navigation when recording is active (unless it's an intentional end)
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
-      isRecordingActive && currentLocation.pathname !== nextLocation.pathname
+      isRecordingActive && currentLocation.pathname !== nextLocation.pathname && !isIntentionalEndRef.current
   );
 
   // Handle navigation blocker state changes
@@ -271,8 +272,16 @@ export function HomePage() {
         // Error handling is done in the background, user already navigated
       });
 
+      // Mark this as an intentional end to prevent blocker dialog
+      isIntentionalEndRef.current = true;
+      
       // Navigate to metadata page immediately
       navigate("/appointment-metadata");
+      
+      // Reset the flag after navigation
+      setTimeout(() => {
+        isIntentionalEndRef.current = false;
+      }, 100);
     } catch (err) {
       console.error("Failed to stop recording:", err);
       
@@ -287,8 +296,16 @@ export function HomePage() {
       setIsProcessing(false);
       setShowEndDialog(false);
       
+      // Mark this as an intentional end to prevent blocker dialog
+      isIntentionalEndRef.current = true;
+      
       // Still navigate to metadata page
       navigate("/appointment-metadata");
+      
+      // Reset the flag after navigation
+      setTimeout(() => {
+        isIntentionalEndRef.current = false;
+      }, 100);
     }
   };
 

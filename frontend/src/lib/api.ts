@@ -228,9 +228,9 @@ export async function finalizeAppointment(
     );
 
     if (!response.ok) {
-      const errorText = await response.text();
+      const errorText = await response.json();
       console.error('❌ Finalize appointment error:', errorText);
-      throw new Error(`Failed to finalize appointment: ${response.statusText}`);
+      throw new Error(`Failed to finalize appointment: ${errorText.message || response.statusText}`);
     }
 
     return response.json();

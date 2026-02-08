@@ -177,7 +177,7 @@ export function DocumentsUpload({ savedDocs, onSavedDocsChange }: DocumentsUploa
 
           {/* Error Message */}
           {saveError && (
-            <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded p-3">
+            <div className="text-sm text-red-600 bg-red-50 border border-red-300 rounded p-3">
               {saveError}
             </div>
           )}

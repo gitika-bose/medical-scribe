@@ -9,6 +9,7 @@ import {
 import { format } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { analyticsEvents } from "@/lib/firebase";
 import {
   SummarySection,
   ReasonForVisitSection,
@@ -50,6 +51,9 @@ export function AppointmentDetailPage() {
         
         if (appointmentData) {
           setAppointment(appointmentData);
+          
+          // Log analytics event for viewing appointment detail
+          analyticsEvents.viewAppointmentDetail(id);
         } else {
           const errorMsg = "Appointment not found";
           setError(errorMsg);

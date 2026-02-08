@@ -32,7 +32,7 @@ export function BottomNav() {
   };
 
   return (
-    <div className="border-t border-gray-200 bg-white">
+    <div className="border-t border-gray-200 bg-white flex-shrink-0">
       <div className="flex items-center justify-around py-4 max-w-2xl mx-auto">
         <button
           onClick={() => handleNavigation("/home")}

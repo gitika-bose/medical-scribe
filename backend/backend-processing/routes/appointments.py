@@ -340,6 +340,11 @@ def upload_recording(user_id, appointment_id):
             'lastUpdated': datetime.utcnow().isoformat(),
         })
 
+
+        appointment_ref = db.collection('users').document(user_id).collection('appointments').document(appointment_id)
+        appointment_doc = appointment_ref.get()
+        appointment_data = appointment_doc.to_dict()
+
         curr_title = appointment_data.get("title")
         new_title = soap_notes.get("title")
         if new_title and not curr_title:
@@ -389,7 +394,7 @@ def finalize_appointment(user_id, appointment_id):
         _, store_service, ai_service = get_services()
         
         # Check if recording already exists
-        existing_recording_url = appointment_data.get('RecordingLink', '')
+        existing_recording_url = appointment_data.get('recordingLink', '')
         
         # PART 1: Upload full audio to Cloud Storage (only if not already uploaded)
         if existing_recording_url:
@@ -438,6 +443,10 @@ def finalize_appointment(user_id, appointment_id):
             'status': 'Completed',
             'lastUpdated': datetime.utcnow().isoformat(),
         })
+
+        appointment_ref = db.collection('users').document(user_id).collection('appointments').document(appointment_id)
+        appointment_doc = appointment_ref.get()
+        appointment_data = appointment_doc.to_dict()
 
         curr_title = appointment_data.get("title")
         new_title = soap_notes.get("title")

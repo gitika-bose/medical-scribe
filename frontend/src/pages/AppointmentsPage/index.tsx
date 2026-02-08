@@ -237,7 +237,7 @@ export function AppointmentsPage() {
             <input
               ref={fileInputRef}
               type="file"
-              accept="audio/*"
+              accept="audio/*,.wav,.mp3,.webm,.ogg,.m4a,.aac,.flac,.opus,.amr"
               onChange={handleFileChange}
               className="hidden"
             />
@@ -246,7 +246,7 @@ export function AppointmentsPage() {
       </div>
 
       {/* Appointments List */}
-      <div className="flex-1 max-w-2xl min-w-xl mx-auto p-6 pb-20">
+      <div className="flex-1 max-w-2xl md:max-w-2xl lg:max-w-2xl w-full mx-auto p-6 pb-20">
         {isLoading ? (
           <div className="text-center py-12">
             <p className="text-gray-600">Loading appointments...</p>

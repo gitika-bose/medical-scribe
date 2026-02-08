@@ -135,6 +135,12 @@ export function AppointmentErrorPage() {
                 {format(new Date(appointment.appointmentDate), "MMMM d, yyyy 'at' h:mm a")}
               </p>
             </div>
+            {appointment.title && (
+              <div>
+                <p className="text-sm text-gray-500">Title</p>
+                <p className="text-gray-900">{appointment.title}</p>
+              </div>
+            )}
             {appointment.doctor && (
               <div>
                 <p className="text-sm text-gray-500">Doctor</p>
@@ -147,10 +153,6 @@ export function AppointmentErrorPage() {
                 <p className="text-gray-900">{appointment.location}</p>
               </div>
             )}
-            <div>
-              <p className="text-sm text-gray-500">Appointment ID</p>
-              <p className="text-gray-900 font-mono text-sm">{appointment.appointmentId}</p>
-            </div>
           </div>
         </div>
 

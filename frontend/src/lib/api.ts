@@ -198,7 +198,7 @@ export async function finalizeAppointment(
         const appointmentRef = doc(db, 'users', user.uid, 'appointments', appointmentId);
         await updateDoc(appointmentRef, {
           status: 'Error',
-          error: 'Service not available'
+          error: 'Service unavailable'
         });
         console.log('✅ Appointment status set to Error due to unhealthy service');
       } catch (updateErr) {
@@ -236,7 +236,7 @@ export async function finalizeAppointment(
     return response.json();
   } catch (err) {
     console.error('❌ Failed to finalize appointment:', err);
-    const errorMsg = err instanceof Error ? err.message : 'Failed to finalize appointment';
+    const errorMsg = err instanceof Error ? err.message : 'Failed to finalize recording';
     
     // Set appointment status to error in Firestore if not already done
     try {
@@ -414,7 +414,7 @@ export async function uploadRecording(
         const appointmentRef = doc(db, 'users', user.uid, 'appointments', appointmentId);
         await updateDoc(appointmentRef, {
           status: 'Error',
-          error: 'Service not available'
+          error: 'Service unavailable'
         });
         console.log('✅ Appointment status set to Error due to unhealthy service');
       } catch (updateErr) {

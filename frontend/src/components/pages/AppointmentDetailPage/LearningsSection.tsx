@@ -31,7 +31,7 @@ export function LearningsSection({ learnings }: LearningsSectionProps) {
   return (
     <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
       <h2 className="text-lg font-semibold mb-4">Key Learnings</h2>
-      <ReadMore items={learningItems} initialCount={3} />
+      <ReadMore items={learningItems} initialCount={2} />
     </div>
   );
 }

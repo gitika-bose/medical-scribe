@@ -121,9 +121,7 @@ export function AppointmentsPage() {
     try {
       setIsStarting(true);
       setShowDropdown(false);
-      const { appointmentId } = await startAppointment();
-      store.startRecording(appointmentId);
-      navigate("/listening");
+      navigate("/home");
     } catch (err) {
       console.error("Failed to start appointment:", err);
       const errorMsg = err instanceof Error ? err.message : "Failed to start appointment";
@@ -145,6 +143,9 @@ export function AppointmentsPage() {
       // Create appointment first
       const { appointmentId } = await startAppointment();
       
+      // Store the appointment ID for metadata page
+      store.setLastCompletedAppointmentId(appointmentId);
+      
       // Set processing state and start upload in background
       setIsProcessing(true);
       toast.success("Upload started! Processing in background...");
@@ -162,6 +163,9 @@ export function AppointmentsPage() {
           toast.error(errorMsg);
           setIsProcessing(false);
         });
+      
+      // Navigate to metadata page immediately
+      navigate("/appointment-metadata");
       
     } catch (err) {
       console.error("Failed to start appointment:", err);
@@ -246,10 +250,6 @@ export function AppointmentsPage() {
         {isLoading ? (
           <div className="text-center py-12">
             <p className="text-gray-600">Loading appointments...</p>
-          </div>
-        ) : error ? (
-          <div className="text-center py-12">
-            <p className="text-red-600">{error}</p>
           </div>
         ) : allAppointments.length === 0 ? (
           <div className="text-center py-12">

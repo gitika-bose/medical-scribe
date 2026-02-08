@@ -21,14 +21,6 @@ export const router = createBrowserRouter([
     ),
   },
   {
-    path: "/listening",
-    element: (
-      <ProtectedRoute>
-        <HomePage />
-      </ProtectedRoute>
-    ),
-  },
-  {
     path: "/appointment-metadata",
     element: (
       <ProtectedRoute>

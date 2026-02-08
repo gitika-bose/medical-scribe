@@ -9,6 +9,7 @@ import uuid
 import json
 import io
 from pydub import AudioSegment
+from functools import wraps
 
 # Initialize Blueprint
 appointments_bp = Blueprint('appointments', __name__)
@@ -33,6 +34,19 @@ def get_services():
         vertex_ai_service = VertexAIService(GCP_PROJECT_ID, GCP_LOCATION, VERTEX_AI_MODEL)
     
     return speech_service, storage_service, vertex_ai_service
+
+
+@appointments_bp.route('/health', methods=['GET'])
+def health_check():
+    """
+    GET /health
+    Quick health check endpoint to verify service is online
+    """
+    return jsonify({
+        'status': 'healthy',
+        'service': 'backend-processing',
+        'timestamp': datetime.utcnow().isoformat()
+    }), 200
 
 
 @appointments_bp.route('/appointments/<appointment_id>/audio-chunks', methods=['POST'])
@@ -91,7 +105,7 @@ def upload_audio_chunk(user_id, appointment_id):
         appointment_data = appointment_doc.to_dict()
         
         # Append to existing transcript
-        current_transcript = appointment_data.get('RawTranscript', '')
+        current_transcript = appointment_data.get('rawTranscript', '')
         print(f"[Audio Chunk] Current transcript length: {len(current_transcript)}")
         
         if current_transcript:
@@ -141,7 +155,7 @@ def generate_questions(user_id, appointment_id):
         appointment_data = appointment_doc.to_dict()
         
         # Get current transcript
-        transcript = appointment_data.get('RawTranscript', '')
+        transcript = appointment_data.get('rawTranscript', '')
         
         if not transcript:
             return jsonify({'error': 'No transcript available yet'}), 400
@@ -318,14 +332,21 @@ def upload_recording(user_id, appointment_id):
             print(f"[Upload Recording] Error generating SOAP notes: {str(e)}")
             return jsonify({'error': f'SOAP processing failed: {str(e)}', 'status': 'failed'}), 500
         
+        soap_notes["version"] = "1"
         # Update appointment in Firestore
         appointment_ref.update({
             'processedSummary': soap_notes,
-            'title':soap_notes.title,
             'status': 'Completed',
             'lastUpdated': datetime.utcnow().isoformat(),
         })
-        
+
+        curr_title = appointment_data.get("title")
+        new_title = soap_notes.get("title")
+        if new_title and not curr_title:
+            appointment_ref.update({
+                'title': new_title
+            })
+        print(f"Current title: {str(curr_title)}, new title: {str(new_title)}")
         print(f"[Upload Recording] Appointment finalized successfully")
         
         return jsonify({
@@ -338,6 +359,10 @@ def upload_recording(user_id, appointment_id):
         }), 200
     
     except Exception as e:
+        appointment_ref.update({
+            'status': 'Error',
+            'lastUpdated': datetime.utcnow().isoformat(),
+        })
         print(f"[Upload Recording] Unexpected error: {str(e)}")
         return jsonify({'error': str(e), 'status': 'failed'}), 500
 
@@ -396,7 +421,7 @@ def finalize_appointment(user_id, appointment_id):
         
   
         # PART 2: Process transcript to SOAP format
-        raw_transcript = appointment_data.get('RawTranscript', '')
+        raw_transcript = appointment_data.get('rawTranscript', '')
         
         if not raw_transcript:
             return jsonify({'error': 'No transcript available to process'}), 400
@@ -406,13 +431,21 @@ def finalize_appointment(user_id, appointment_id):
         except Exception as e:
             return jsonify({'error': f'SOAP processing failed: {str(e)}'}), 500
         
+        soap_notes["version"] = "1"
         # Update appointment in Firestore
         appointment_ref.update({
             'processedSummary': soap_notes,
-            'title':soap_notes.title,
             'status': 'Completed',
             'lastUpdated': datetime.utcnow().isoformat(),
         })
+
+        curr_title = appointment_data.get("title")
+        new_title = soap_notes.get("title")
+        if new_title and not curr_title:
+            appointment_ref.update({
+                'title': new_title
+            })
+        print(f"Current title: {str(curr_title)}, new title: {str(new_title)}")
         
         return jsonify({
             'message': 'Appointment finalized successfully',

@@ -386,7 +386,7 @@ export function HomePage() {
     
     try {
       await signOut();
-      navigate("/");
+      navigate("/login");
     } catch (error) {
       console.error("Sign out error:", error);
     }

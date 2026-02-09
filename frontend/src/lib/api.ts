@@ -298,6 +298,8 @@ export async function fetchAppointments(): Promise<AppointmentWithId[]> {
       try {
         const data = docSnap.data();
         
+        console.log(data)
+
         // Validate required fields
         if (!data.appointmentDate) {
           console.warn(`⚠️ Skipping appointment ${docSnap.id} - missing required fields`);

@@ -35,16 +35,19 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-6">
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-sm">
-        <div className="text-center mb-12">
+        {/* Logo and Header - positioned higher */}
+        <div className="text-center mb-8">
           <img 
             src="/logo/android-chrome-512x512.png" 
             alt="Juno Logo" 
-            className="w-64 h-64 mx-auto mb-6"
+            className="w-32 h-32 mx-auto mb-4"
           />
-          <h1 className="text-3xl mb-2">Juno</h1>
-          <p className="text-gray-600">Sign in to continue</p>
+          <h1 className="text-4xl font-bold mb-3">Welcome to Juno</h1>
+          <p className="text-gray-600 text-base">
+            Sign in to get started or try it it out as a guest
+          </p>
         </div>
         
         {error && (
@@ -53,16 +56,30 @@ export function LoginPage() {
           </div>
         )}
         
+        {/* Sign in button */}
         <button
           onClick={handleGmailLogin}
           disabled={loading}
-          className="w-full bg-white border-2 border-gray-300 rounded-full py-4 px-6 flex items-center justify-center gap-3 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full bg-white border-2 border-gray-300 rounded-full py-4 px-6 flex items-center justify-center gap-3 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-8"
         >
           <Mail className="w-5 h-5 text-red-500" />
           <span className="text-gray-900">
-            {loading ? "Signing in..." : "Continue with Gmail"}
+            {loading ? "Signing in..." : "Sign in with Gmail"}
           </span>
         </button>
+
+        {/* Try as guest - moved lower with more spacing */}
+        <div className="text-center mt-8">
+          <button
+            onClick={() => {
+              analyticsEvents.tryAsGuest();
+              navigate("/guest/home");
+            }}
+            className="text-blue-600 hover:text-blue-700 hover:underline transition-colors"
+          >
+            Try as a guest?
+          </button>
+        </div>
       </div>
     </div>
   );

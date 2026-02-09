@@ -81,4 +81,7 @@ export const analyticsEvents = {
       file_size: fileSize 
     });
   },
+  tryAsGuest: () => {
+    logAnalyticsEvent('try_as_guest');
+  },
 };

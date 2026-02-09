@@ -170,7 +170,7 @@ export function GuestAppointmentsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Sign in to try this feature</AlertDialogTitle>
             <AlertDialogDescription>
-              You need to sign in to create new appointments and access all features.
+              You need to sign in to create new appointments and access all features. You can check out some sample appointments for a preview.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -180,9 +180,18 @@ export function GuestAppointmentsPage() {
             >
               Cancel
             </button>
-            <AlertDialogAction onClick={handleSignIn}>
+            <button
+              onClick={() => setShowSignInDialog(false)}
+              className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors border border-gray-300"
+            >
+              Mock Appointments
+            </button>
+            <button
+              onClick={handleSignIn}
+              className="px-4 py-2 bg-blue-600 text-white hover:bg-blue-700 rounded-lg transition-colors"
+            >
               Go to Login
-            </AlertDialogAction>
+            </button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

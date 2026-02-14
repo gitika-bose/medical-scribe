@@ -1,5 +1,18 @@
 {
   "projects": {
     "default": "patient-scribe-app"
-  }
+  },
+  "targets": {
+    "patient-scribe-app": {
+      "hosting": {
+        "landing": [
+          "meetjuno-landing"
+        ],
+        "app": [
+          "patient-scribe-app"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }

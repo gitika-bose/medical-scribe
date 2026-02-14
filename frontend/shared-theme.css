@@ -1,0 +1,45 @@
+/* Shared color scheme for Juno app and landing page */
+:root {
+  --font-size: 16px;
+  --background: #ffffff;
+  --foreground: oklch(0.145 0 0);
+  --card: #ffffff;
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: #030213;
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.95 0.0058 264.53);
+  --secondary-foreground: #030213;
+  --muted: #ececf0;
+  --muted-foreground: #717182;
+  --accent: #e9ebef;
+  --accent-foreground: #030213;
+  --destructive: #d4183d;
+  --destructive-foreground: #ffffff;
+  --border: rgba(0, 0, 0, 0.1);
+  --input: transparent;
+  --input-background: #f3f3f5;
+  --switch-background: #cbced4;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --ring: oklch(0.708 0 0);
+  --radius: 0.625rem;
+  
+  /* Brand colors */
+  --color-red-50:  #fbf0ed;
+  --color-red-300: #e2c1c6;
+  --color-red-500: #db7f67;
+  --color-red-600: #db7f67;
+  --color-red-700: #a12808;
+  --color-red-900: #8d2307;
+  --color-blue-50:  #e3eef5;
+  --color-blue-300: #77b6d7;
+  --color-blue-500: #63a2ca;
+  --color-blue-600: #3d86b4;
+  --color-blue-700: #326e94;
+  --color-blue-900: #1d1e2c;
+  --color-purple-500: #d8a4d4;
+  --color-orange-500: #dbbea1;
+  --color-green-500: #a37b73;
+}

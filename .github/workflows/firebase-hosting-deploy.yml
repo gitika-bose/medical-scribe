@@ -1,0 +1,27 @@
+name: Deploy App to Firebase Hosting
+on:
+  push:
+    branches:
+      - deploy
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install & build app frontend
+        working-directory: frontend/app
+        run: |
+          npm ci
+          npm run build
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Deploy to Firebase Hosting (App)
+        working-directory: frontend
+        run: firebase deploy --only hosting:app
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}

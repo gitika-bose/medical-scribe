@@ -24,4 +24,7 @@ jobs:
         working-directory: frontend
         run: firebase deploy --only hosting:app
         env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_PATIENT_SCRIBE_APP }}
+          projectId: patient-scribe-app
+          entryPoint: frontend

@@ -14,7 +14,7 @@ jobs:
       - name: Install & build landing frontend
         working-directory: frontend/landing
         run: |
-          npm ci
+          npm ci --force
           npm run build
 
       - name: Deploy to Firebase Hosting (Landing)

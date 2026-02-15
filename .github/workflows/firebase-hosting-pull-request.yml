@@ -17,7 +17,7 @@ jobs:
       - name: Install & build frontend
         working-directory: frontend/app
         run: |
-          npm ci
+          npm ci --force
           npm run build
 
       - name: Deploy preview

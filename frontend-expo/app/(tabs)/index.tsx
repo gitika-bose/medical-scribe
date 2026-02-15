@@ -33,12 +33,13 @@ export default function HomeScreen() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [recordingDuration, setRecordingDuration] = useState(0);
+  const [firstChunkUploaded, setFirstChunkUploaded] = useState(false);
 
   // Dialogs
   const [showEndDialog, setShowEndDialog] = useState(false);
   const [showConsentDialog, setShowConsentDialog] = useState(false);
 
-  const { isRecording, startRecording, stopRecording, error: recordingError } =
+  const { isRecording, startRecording, stopRecording, flushChunk, error: recordingError } =
     useAudioRecorder();
 
   const autoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -123,12 +124,14 @@ export default function HomeScreen() {
           console.log('Uploading audio chunk...');
           await uploadAudioChunk(newAppointmentId, chunkUri);
           console.log('Audio chunk uploaded successfully');
+          setFirstChunkUploaded(true);
         } catch (err) {
           console.error('Failed to upload audio chunk:', err);
           setError('Failed to upload audio. Recording continues...');
         }
       });
 
+      setFirstChunkUploaded(false);
       setIsRecordingActive(true);
     } catch (err) {
       console.error('Failed to start appointment:', err);
@@ -150,18 +153,35 @@ export default function HomeScreen() {
     try {
       setIsGeneratingQuestions(true);
       setError(null);
+
+      // If no chunk has been uploaded yet, force-flush the current segment
+      // so the backend has a transcript to work with.
+      if (!firstChunkUploaded) {
+        console.log('[GenerateQuestions] No chunk uploaded yet — flushing current segment...');
+        await flushChunk();
+        // flushChunk triggers the onChunkReady callback which sets firstChunkUploaded
+      }
+
       analyticsEvents.generateQuestions(appointmentId);
       const { questions: generatedQuestions } = await generateQuestions(appointmentId);
 
       if (!generatedQuestions || generatedQuestions.length === 0) {
-        setError('No questions available at this time');
+        setError('No questions generated — the conversation may be too short.');
         setQuestions(null);
       } else {
         setQuestions(generatedQuestions);
       }
     } catch (err) {
-      console.error('Failed to generate questions:', err);
-      setError('No questions available at this time');
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      console.error('Failed to generate questions:', message);
+
+      if (message.toLowerCase().includes('no transcript')) {
+        setError('Still transcribing audio — please wait a moment and try again.');
+      } else if (message.toLowerCase().includes('unavailable')) {
+        setError('Service is currently unavailable. Please try again later.');
+      } else {
+        setError(`Failed to generate questions: ${message}`);
+      }
       setQuestions(null);
     } finally {
       setIsGeneratingQuestions(false);
@@ -191,23 +211,24 @@ export default function HomeScreen() {
 
       if (!appointmentId) throw new Error('No active appointment');
 
-      // Stop recording – returns the last chunk URI (full audio lives on server)
-      const _lastChunkUri = await stopRecording();
+      // Stop recording – returns the last chunk URI
+      const lastChunkUri = await stopRecording();
 
       store.setLastCompletedAppointmentId(appointmentId);
       store.endRecording();
 
       setIsRecordingActive(false);
       setQuestions(null);
+      setFirstChunkUploaded(false);
       setIsProcessing(false);
 
-      // Finalize in background (server already has all chunks)
-      finalizeAppointment(appointmentId, null).catch((err) => {
+      // Finalize in background (pass last chunk as audio fallback for recording link)
+      finalizeAppointment(appointmentId, lastChunkUri).catch((err) => {
         console.error('Background finalization error:', err);
       });
 
-      // TODO: Navigate to metadata page when implemented
-      // router.push('/appointment-metadata');
+      // Navigate to metadata page
+      router.push('/appointment-metadata' as any);
     } catch (err) {
       console.error('Failed to stop recording:', err);
 
@@ -218,8 +239,12 @@ export default function HomeScreen() {
 
       setError('Failed to save recording. Please try again.');
       setIsRecordingActive(false);
+      setFirstChunkUploaded(false);
       setIsProcessing(false);
       setShowEndDialog(false);
+
+      // Still navigate to metadata page
+      router.push('/appointment-metadata' as any);
     }
   };
 

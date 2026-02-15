@@ -1,17 +1,19 @@
 import { useState, useRef, useCallback } from 'react';
 import {
-  AudioModule,
+  useAudioRecorder as useExpoAudioRecorder,
   requestRecordingPermissionsAsync,
   setAudioModeAsync,
   IOSOutputFormat,
   AudioQuality,
 } from 'expo-audio';
-import type { AudioRecorder, RecordingOptions } from 'expo-audio';
+import type { RecordingOptions } from 'expo-audio';
 
 interface UseAudioRecorderReturn {
   isRecording: boolean;
   startRecording: (onChunkReady: (chunkUri: string) => void) => Promise<void>;
   stopRecording: () => Promise<string | null>;
+  /** Force-flush the current recording segment: uploads it immediately and starts a new one. */
+  flushChunk: () => Promise<string | null>;
   error: string | null;
 }
 
@@ -51,54 +53,52 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
   const [isRecording, setIsRecording] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const recorderRef = useRef<AudioRecorder | null>(null);
+  // Use expo-audio's hook to properly create the recorder (handles both native & web)
+  const recorder = useExpoAudioRecorder(RECORDING_OPTIONS);
+
   const chunkIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const onChunkReadyRef = useRef<((uri: string) => void) | null>(null);
+  const onChunkReadyRef = useRef<((uri: string) => void | Promise<void>) | null>(null);
+  const isRecordingRef = useRef(false);
 
   // -------------------------------------------------------------------------
   // Helpers
   // -------------------------------------------------------------------------
 
-  const createAndStartRecording = useCallback(async (): Promise<AudioRecorder> => {
-    const recorder = new AudioModule.AudioRecorder(RECORDING_OPTIONS);
-    await recorder.prepareToRecordAsync();
-    recorder.record();
-    return recorder;
-  }, []);
-
   /**
    * Stop the current recording segment, fire the chunk callback, and
-   * optionally start a new segment.
+   * optionally start a new segment by re-preparing the same recorder.
    */
-  const rotateSegment = useCallback(async (startNew: boolean): Promise<string | null> => {
-    const currentRecorder = recorderRef.current;
-    if (!currentRecorder) return null;
+  const rotateSegment = useCallback(
+    async (startNew: boolean): Promise<string | null> => {
+      if (!isRecordingRef.current) return null;
 
-    try {
-      await currentRecorder.stop();
-      const uri = currentRecorder.getStatus().url;
-      recorderRef.current = null;
+      try {
+        await recorder.stop();
+        const uri = recorder.getStatus().url;
 
-      if (uri && onChunkReadyRef.current) {
-        console.log(`[AudioRecorder] Segment complete: ${uri}`);
-        try {
-          onChunkReadyRef.current(uri);
-        } catch (err) {
-          console.error('[AudioRecorder] Failed to deliver chunk:', err);
+        if (uri && onChunkReadyRef.current) {
+          console.log(`[AudioRecorder] Segment complete: ${uri}`);
+          try {
+            await onChunkReadyRef.current(uri);
+          } catch (err) {
+            console.error('[AudioRecorder] Failed to deliver chunk:', err);
+          }
         }
-      }
 
-      if (startNew) {
-        recorderRef.current = await createAndStartRecording();
-        console.log('[AudioRecorder] Started new recording segment');
-      }
+        if (startNew) {
+          await recorder.prepareToRecordAsync();
+          recorder.record();
+          console.log('[AudioRecorder] Started new recording segment');
+        }
 
-      return uri;
-    } catch (err) {
-      console.error('[AudioRecorder] Error rotating segment:', err);
-      return null;
-    }
-  }, [createAndStartRecording]);
+        return uri;
+      } catch (err) {
+        console.error('[AudioRecorder] Error rotating segment:', err);
+        return null;
+      }
+    },
+    [recorder],
+  );
 
   // -------------------------------------------------------------------------
   // Public API
@@ -123,8 +123,10 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
 
         onChunkReadyRef.current = onChunkReady;
 
-        // Start the first segment
-        recorderRef.current = await createAndStartRecording();
+        // Prepare and start the recorder
+        await recorder.prepareToRecordAsync();
+        recorder.record();
+        isRecordingRef.current = true;
         setIsRecording(true);
         console.log('[AudioRecorder] Recording started');
 
@@ -139,8 +141,31 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
         throw err;
       }
     },
-    [createAndStartRecording, rotateSegment],
+    [recorder, rotateSegment],
   );
+
+  /**
+   * Force-flush the current recording segment immediately.
+   * Uploads it via the onChunkReady callback, starts a new segment,
+   * and resets the 30-second chunk interval timer.
+   */
+  const flushChunk = useCallback(async (): Promise<string | null> => {
+    if (!isRecordingRef.current) return null;
+
+    // Reset the periodic interval so the next auto-rotate is a full 30s from now
+    if (chunkIntervalRef.current) {
+      clearInterval(chunkIntervalRef.current);
+    }
+
+    const uri = await rotateSegment(true);
+
+    // Restart the interval
+    chunkIntervalRef.current = setInterval(() => {
+      rotateSegment(true);
+    }, CHUNK_INTERVAL_MS);
+
+    return uri;
+  }, [rotateSegment]);
 
   const stopRecording = useCallback(async (): Promise<string | null> => {
     // Clear the chunk interval
@@ -159,6 +184,7 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
       });
     } catch (_) {}
 
+    isRecordingRef.current = false;
     setIsRecording(false);
     onChunkReadyRef.current = null;
     console.log('[AudioRecorder] Recording stopped');
@@ -170,6 +196,7 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
     isRecording,
     startRecording,
     stopRecording,
+    flushChunk,
     error,
   };
 }

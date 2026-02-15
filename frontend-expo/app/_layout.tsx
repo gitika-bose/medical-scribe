@@ -15,8 +15,8 @@ export {
 } from 'expo-router';
 
 export const unstable_settings = {
-  // Ensure that reloading on `/modal` keeps a back button present.
-  initialRouteName: 'login',
+  // Ensure that reloading keeps the correct route on web refresh.
+  initialRouteName: '(tabs)',
 };
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -77,22 +77,39 @@ function RootLayoutNav() {
     }
   }, [user, loading, segments]);
 
-  // Show a loading spinner while auth state is being determined
-  if (loading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
-        <ActivityIndicator size="large" color="#2563EB" />
-      </View>
-    );
-  }
-
+  // Keep the Stack always mounted so URL-based routing is preserved on web refresh.
+  // Overlay a loading spinner on top while auth state is being determined.
   return (
     <ThemeProvider value={LightTheme}>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="login" />
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-      </Stack>
+      <View style={{ flex: 1 }}>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="login" />
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="appointment/[id]" />
+          <Stack.Screen name="appointment-error/[id]" />
+          <Stack.Screen name="appointment-metadata" />
+          <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+        </Stack>
+
+        {/* Full-screen loading overlay – keeps the navigator mounted underneath */}
+        {loading && (
+          <View
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              justifyContent: 'center',
+              alignItems: 'center',
+              backgroundColor: '#fff',
+              zIndex: 999,
+            }}
+          >
+            <ActivityIndicator size="large" color="#2563EB" />
+          </View>
+        )}
+      </View>
     </ThemeProvider>
   );
 }

@@ -1,0 +1,570 @@
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  Timestamp,
+  query,
+  where,
+  onSnapshot,
+  type Unsubscribe,
+} from 'firebase/firestore';
+import { Platform } from 'react-native';
+
+import { auth, db, checkProcessingServiceHealth } from './firebase';
+import { analyticsEvents } from './analytics';
+
+const API_URL_PROCESSING = process.env.EXPO_PUBLIC_API_PROCESSING_URL;
+
+// =============================================================================
+// Auth helpers (internal)
+// =============================================================================
+
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  const user = auth.currentUser;
+  if (!user) throw new Error('User not authenticated');
+  const token = await user.getIdToken();
+  return {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  };
+}
+
+// =============================================================================
+// Types
+// =============================================================================
+
+export interface Appointment {
+  status: 'InProgress' | 'Completed' | 'Error';
+  appointmentDate: string;
+  title?: string;
+  doctor?: string;
+  location?: string;
+  processedSummary?: any;
+  rawTranscript?: string;
+  recordingLink?: string;
+  error?: string;
+}
+
+export interface AppointmentWithId extends Appointment {
+  appointmentId: string;
+}
+
+// =============================================================================
+// Appointments API
+// =============================================================================
+
+export async function startAppointment(): Promise<{ appointmentId: string }> {
+  const user = auth.currentUser;
+  if (!user) throw new Error('User not authenticated');
+
+  try {
+    const appointmentsRef = collection(db, 'users', user.uid, 'appointments');
+    const appointmentRef = doc(appointmentsRef);
+    const appointmentId = appointmentRef.id;
+
+    await setDoc(appointmentRef, {
+      status: 'InProgress' as const,
+      appointmentDate: Timestamp.fromDate(new Date()),
+      createdDate: Timestamp.fromDate(new Date()),
+    });
+
+    return { appointmentId };
+  } catch (error) {
+    console.error('Failed to create appointment:', error);
+    throw new Error('Failed to start appointment');
+  }
+}
+
+/**
+ * Helper: append an audio file to FormData from a URI string or Blob.
+ * On web, blob: URLs are fetched to obtain an actual Blob.
+ * On native (React Native), the { uri, type, name } convention is used.
+ */
+async function appendAudioToFormData(
+  formData: FormData,
+  fieldName: string,
+  audio: string | Blob,
+  fileName: string,
+  mimeType: string,
+): Promise<void> {
+  if (audio instanceof Blob) {
+    formData.append(fieldName, audio, fileName);
+  } else if (Platform.OS === 'web' && audio.startsWith('blob:')) {
+    // Web: blob URL → fetch actual Blob
+    const resp = await fetch(audio);
+    const blob = await resp.blob();
+    formData.append(fieldName, blob, fileName);
+  } else {
+    // React Native file URI
+    formData.append(fieldName, {
+      uri: audio,
+      type: mimeType,
+      name: fileName,
+    } as any);
+  }
+}
+
+/**
+ * Upload an audio chunk.
+ * Accepts a file URI string (React Native), a blob URL (web), or a Blob.
+ */
+export async function uploadAudioChunk(
+  appointmentId: string,
+  audioChunk: string | Blob,
+): Promise<void> {
+  const user = auth.currentUser;
+  if (!user) throw new Error('User not authenticated');
+  if (!appointmentId) throw new Error('Invalid appointment ID');
+
+  const isHealthy = await checkProcessingServiceHealth();
+  if (!isHealthy) {
+    throw new Error('Service is currently unavailable. Please try again later.');
+  }
+
+  try {
+    const token = await user.getIdToken();
+    const formData = new FormData();
+
+    // Choose extension/mime based on platform
+    const isWeb = Platform.OS === 'web';
+    const chunkName = isWeb ? 'chunk.webm' : 'chunk.m4a';
+    const chunkMime = isWeb ? 'audio/webm' : 'audio/m4a';
+
+    await appendAudioToFormData(formData, 'audioChunk', audioChunk, chunkName, chunkMime);
+
+    const response = await fetch(
+      `${API_URL_PROCESSING}/appointments/${appointmentId}/audio-chunks`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      },
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Upload audio chunk error:', errorText);
+      throw new Error(`Failed to upload audio chunk: ${response.statusText}`);
+    }
+  } catch (err) {
+    console.error('❌ Failed to upload audio chunk:', err);
+    throw new Error(err instanceof Error ? err.message : 'Failed to upload audio chunk');
+  }
+}
+
+export async function generateQuestions(
+  appointmentId: string,
+): Promise<{ questions: string[] }> {
+  const isHealthy = await checkProcessingServiceHealth();
+  if (!isHealthy) {
+    throw new Error('Service is currently unavailable. Please try again later.');
+  }
+
+  const headers = await getAuthHeaders();
+  const response = await fetch(
+    `${API_URL_PROCESSING}/appointments/${appointmentId}/generate-questions`,
+    { method: 'POST', headers },
+  );
+
+  if (!response.ok) {
+    // Try to extract the actual error message from the backend response
+    let errorMessage = response.statusText;
+    try {
+      const errorBody = await response.json();
+      if (errorBody?.error) {
+        errorMessage = errorBody.error;
+      }
+    } catch (_) {
+      // Ignore JSON parse errors; fall back to statusText
+    }
+    throw new Error(errorMessage);
+  }
+  return response.json();
+}
+
+export async function finalizeAppointment(
+  appointmentId: string,
+  fullAudioUri: string | null,
+): Promise<{ soapNotes: any }> {
+  const user = auth.currentUser;
+  if (!user) throw new Error('User not authenticated');
+  if (!appointmentId) throw new Error('Invalid appointment ID');
+
+  try {
+    const isHealthy = await checkProcessingServiceHealth();
+    if (!isHealthy) {
+      try {
+        const ref = doc(db, 'users', user.uid, 'appointments', appointmentId);
+        await updateDoc(ref, { status: 'Error', error: 'Service unavailable' });
+      } catch (_) {}
+      throw new Error('Service is currently unavailable. Please try again later.');
+    }
+
+    const token = await user.getIdToken();
+    const formData = new FormData();
+
+    if (fullAudioUri) {
+      const isWeb = Platform.OS === 'web';
+      const audioName = isWeb ? 'recording.webm' : 'recording.m4a';
+      const audioMime = isWeb ? 'audio/webm' : 'audio/m4a';
+      await appendAudioToFormData(formData, 'fullAudio', fullAudioUri, audioName, audioMime);
+    }
+
+    analyticsEvents.finalizeAppointment(appointmentId);
+
+    const response = await fetch(
+      `${API_URL_PROCESSING}/appointments/${appointmentId}/finalize`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      },
+    );
+
+    if (!response.ok) {
+      const errorText = await response.json().catch(() => response.statusText);
+      const errorMessage =
+        errorText && typeof errorText === 'object' && 'error' in errorText
+          ? errorText.error
+          : response.statusText;
+      throw new Error(`Failed to finalize appointment: ${errorMessage}`);
+    }
+
+    return response.json();
+  } catch (err) {
+    console.error('❌ Failed to finalize appointment:', err);
+    const errorMsg = err instanceof Error ? err.message : 'Failed to finalize recording';
+
+    try {
+      const ref = doc(db, 'users', user.uid, 'appointments', appointmentId);
+      const snap = await getDoc(ref);
+      if (snap.exists() && snap.data()?.status !== 'Error') {
+        await updateDoc(ref, { status: 'Error', error: errorMsg });
+      }
+    } catch (_) {}
+
+    throw new Error(errorMsg);
+  }
+}
+
+// =============================================================================
+// Fetch / Query helpers
+// =============================================================================
+
+/** Fetch all appointments for the current user from Firestore. */
+export async function fetchAppointments(): Promise<AppointmentWithId[]> {
+  const user = auth.currentUser;
+  if (!user) throw new Error('User not authenticated');
+
+  try {
+    const appointmentsRef = collection(db, 'users', user.uid, 'appointments');
+    const querySnapshot = await getDocs(appointmentsRef);
+    const appointments: AppointmentWithId[] = [];
+    const currentTime = new Date();
+
+    querySnapshot.forEach((docSnap) => {
+      try {
+        const data = docSnap.data();
+
+        if (!data.appointmentDate) {
+          console.warn(`⚠️ Skipping appointment ${docSnap.id} - missing required fields`);
+          return;
+        }
+
+        // Mark stale InProgress appointments as Error
+        if (data.status === 'InProgress' && data.createdDate) {
+          const createdDate = data.createdDate.toDate();
+          const timeDifferenceMs = currentTime.getTime() - createdDate.getTime();
+          const oneHourInMs = 60 * 60 * 1000;
+
+          if (timeDifferenceMs > oneHourInMs) {
+            const appointmentRef = doc(db, 'users', user.uid, 'appointments', docSnap.id);
+            updateDoc(appointmentRef, {
+              status: 'Error',
+              error: 'Appointment exceeded 1 hour in InProgress state',
+            }).catch((updateErr) => {
+              console.error(`❌ Failed to update appointment ${docSnap.id} to Error:`, updateErr);
+            });
+
+            appointments.push({
+              appointmentId: docSnap.id,
+              status: 'Error',
+              appointmentDate: data.appointmentDate.toDate().toISOString(),
+              title: data.title,
+              doctor: data.doctor,
+              location: data.location,
+              processedSummary: data.processedSummary,
+              rawTranscript: data.rawTranscript,
+              recordingLink: data.recordingLink,
+              error: data.error || 'Appointment exceeded 1 hour in InProgress state',
+            });
+            return;
+          }
+        }
+
+        appointments.push({
+          appointmentId: docSnap.id,
+          status: data.status || 'InProgress',
+          appointmentDate: data.appointmentDate.toDate().toISOString(),
+          title: data.title,
+          doctor: data.doctor,
+          location: data.location,
+          processedSummary: data.processedSummary,
+          rawTranscript: data.rawTranscript,
+          recordingLink: data.recordingLink,
+          error: data.error,
+        });
+      } catch (docErr) {
+        console.error(`❌ Failed to process appointment ${docSnap.id}:`, docErr);
+      }
+    });
+
+    appointments.sort(
+      (a, b) => new Date(b.appointmentDate).getTime() - new Date(a.appointmentDate).getTime(),
+    );
+
+    return appointments;
+  } catch (err) {
+    console.error('❌ Failed to fetch appointments:', err);
+    throw new Error(err instanceof Error ? err.message : 'Failed to load appointments');
+  }
+}
+
+/** Get a single appointment by ID from Firestore. */
+export async function getSingleAppointment(
+  appointmentId: string,
+): Promise<AppointmentWithId | null> {
+  const user = auth.currentUser;
+  if (!user) throw new Error('User not authenticated');
+  if (!appointmentId) throw new Error('Invalid appointment ID');
+
+  try {
+    const appointmentRef = doc(db, 'users', user.uid, 'appointments', appointmentId);
+    const docSnap = await getDoc(appointmentRef);
+
+    if (!docSnap.exists()) {
+      console.warn(`⚠️ Appointment ${appointmentId} not found`);
+      return null;
+    }
+
+    const data = docSnap.data();
+
+    if (!data.appointmentDate) {
+      throw new Error('Appointment data is incomplete');
+    }
+
+    return {
+      appointmentId,
+      status: data.status || 'InProgress',
+      appointmentDate: data.appointmentDate.toDate().toISOString(),
+      title: data.title,
+      doctor: data.doctor,
+      location: data.location,
+      processedSummary: data.processedSummary,
+      rawTranscript: data.rawTranscript,
+      recordingLink: data.recordingLink,
+      error: data.error,
+    };
+  } catch (err) {
+    console.error('❌ Failed to fetch appointment:', err);
+    throw new Error(err instanceof Error ? err.message : 'Failed to load appointment');
+  }
+}
+
+/** Delete an appointment from Firestore and the processing backend. */
+export async function deleteAppointment(appointmentId: string): Promise<void> {
+  const user = auth.currentUser;
+  if (!user) throw new Error('User not authenticated');
+
+  try {
+    const appointmentRef = doc(db, 'users', user.uid, 'appointments', appointmentId);
+    const docSnap = await getDoc(appointmentRef);
+
+    if (!docSnap.exists()) {
+      throw new Error('Appointment not found');
+    }
+
+    await deleteDoc(appointmentRef);
+
+    // Best-effort delete from processing backend
+    try {
+      const token = await user.getIdToken();
+      await fetch(`${API_URL_PROCESSING}/appointments/${appointmentId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } catch (_) {
+      // Ignore backend errors – Firestore doc is already deleted
+    }
+  } catch (error) {
+    console.error('Failed to delete appointment:', error);
+    throw new Error('Failed to delete appointment');
+  }
+}
+
+/** Update appointment metadata (title, doctor, location, date). */
+export async function updateAppointmentMetadata(
+  appointmentId: string,
+  metadata: {
+    title?: string;
+    doctor?: string;
+    location?: string;
+    appointmentDate?: Date;
+  },
+): Promise<void> {
+  const user = auth.currentUser;
+  if (!user) throw new Error('User not authenticated');
+
+  try {
+    const appointmentRef = doc(db, 'users', user.uid, 'appointments', appointmentId);
+    const docSnap = await getDoc(appointmentRef);
+
+    if (!docSnap.exists()) {
+      throw new Error('Appointment not found');
+    }
+
+    const updates: any = {};
+    if (metadata.title !== undefined) updates.title = metadata.title;
+    if (metadata.doctor !== undefined) updates.doctor = metadata.doctor;
+    if (metadata.location !== undefined) updates.location = metadata.location;
+    if (metadata.appointmentDate) {
+      updates.appointmentDate = Timestamp.fromDate(metadata.appointmentDate);
+    }
+
+    await updateDoc(appointmentRef, updates);
+  } catch (error) {
+    console.error('Failed to update appointment metadata:', error);
+    throw new Error('Failed to update appointment metadata');
+  }
+}
+
+/** Upload a pre-recorded audio file for processing. */
+export async function uploadRecording(
+  appointmentId: string,
+  fileUri: string,
+  fileName: string = 'recording.m4a',
+): Promise<{ status: string; soapNotes: any; recordingLink: string }> {
+  const user = auth.currentUser;
+  if (!user) throw new Error('User not authenticated');
+  if (!appointmentId) throw new Error('Invalid appointment ID');
+
+  try {
+    const isHealthy = await checkProcessingServiceHealth();
+    if (!isHealthy) {
+      try {
+        const ref = doc(db, 'users', user.uid, 'appointments', appointmentId);
+        await updateDoc(ref, { status: 'Error', error: 'Service unavailable' });
+      } catch (_) {}
+      throw new Error('Service is currently unavailable. Please try again later.');
+    }
+
+    const token = await user.getIdToken();
+    const formData = new FormData();
+
+    formData.append('recording', {
+      uri: fileUri,
+      type: 'audio/m4a',
+      name: fileName,
+    } as any);
+
+    analyticsEvents.uploadRecording(appointmentId);
+
+    const response = await fetch(
+      `${API_URL_PROCESSING}/appointments/${appointmentId}/upload-recording`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      },
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Upload recording error:', errorText);
+      throw new Error(`Failed to upload recording: ${response.statusText}`);
+    }
+
+    return response.json();
+  } catch (err) {
+    console.error('❌ Failed to upload recording:', err);
+    const errorMsg = err instanceof Error ? err.message : 'Failed to upload recording';
+
+    try {
+      const ref = doc(db, 'users', user.uid, 'appointments', appointmentId);
+      const snap = await getDoc(ref);
+      if (snap.exists() && snap.data()?.status !== 'Error') {
+        await updateDoc(ref, { status: 'Error', error: errorMsg });
+      }
+    } catch (_) {}
+
+    throw new Error(errorMsg);
+  }
+}
+
+/** Listen to InProgress appointments in real-time via Firestore onSnapshot. */
+export function listenToInProgressAppointments(
+  onUpdate: (appointments: AppointmentWithId[]) => void,
+  onError?: (error: Error) => void,
+): Unsubscribe {
+  const user = auth.currentUser;
+  if (!user) {
+    const error = new Error('User not authenticated');
+    if (onError) onError(error);
+    return () => {};
+  }
+
+  try {
+    const appointmentsRef = collection(db, 'users', user.uid, 'appointments');
+    const q = query(appointmentsRef, where('status', '==', 'InProgress'));
+
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const appointments: AppointmentWithId[] = [];
+
+        snapshot.forEach((docSnap) => {
+          try {
+            const data = docSnap.data();
+            if (!data.appointmentDate) return;
+
+            appointments.push({
+              appointmentId: docSnap.id,
+              status: data.status || 'InProgress',
+              appointmentDate: data.appointmentDate.toDate().toISOString(),
+              title: data.title,
+              doctor: data.doctor,
+              location: data.location,
+              processedSummary: data.processedSummary,
+              rawTranscript: data.rawTranscript,
+              recordingLink: data.recordingLink,
+              error: data.error,
+            });
+          } catch (docErr) {
+            console.error(`❌ Failed to process appointment ${docSnap.id}:`, docErr);
+          }
+        });
+
+        appointments.sort(
+          (a, b) =>
+            new Date(b.appointmentDate).getTime() - new Date(a.appointmentDate).getTime(),
+        );
+
+        onUpdate(appointments);
+      },
+      (error) => {
+        console.error('❌ Listener error:', error);
+        if (onError) onError(error as Error);
+      },
+    );
+
+    return unsubscribe;
+  } catch (err) {
+    console.error('❌ Failed to setup listener:', err);
+    if (onError) onError(err instanceof Error ? err : new Error('Failed to setup listener'));
+    return () => {};
+  }
+}

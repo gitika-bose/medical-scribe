@@ -11,11 +11,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       - name: Install & build app frontend
         working-directory: frontend/app
         run: |
-          rm -rf node_modules package-lock.json
           npm install
+          npm rebuild lightningcss --build-from-source
           npm run build
 
       - name: Install Firebase CLI

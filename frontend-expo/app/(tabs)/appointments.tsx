@@ -20,6 +20,7 @@ import {
   type AppointmentWithId,
 } from '@/api/appointments';
 import { formatAppointmentDate } from '@/utils/formatDate';
+import { GuestDisclaimer } from '@/components/shared/GuestDisclaimer';
 
 export default function AppointmentsScreen() {
   const router = useRouter();
@@ -122,11 +123,7 @@ export default function AppointmentsScreen() {
   };
 
   const handleAppointmentClick = (appointment: AppointmentWithId) => {
-    if (appointment.status === 'Error') {
-      router.push(`/appointment-error/${appointment.appointmentId}` as any);
-    } else {
-      router.push(`/appointment/${appointment.appointmentId}` as any);
-    }
+    router.push(`/appointment/${appointment.appointmentId}` as any);
   };
 
   const getAppointmentTitle = (appointment: AppointmentWithId): string => {
@@ -240,6 +237,9 @@ export default function AppointmentsScreen() {
           )}
         </View>
       </View>
+
+      {/* Guest disclaimer banner */}
+      <GuestDisclaimer />
 
       {/* List */}
       {isLoading ? (

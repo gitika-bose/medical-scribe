@@ -14,6 +14,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { store } from '@/store';
 import { updateAppointmentMetadata } from '@/api/appointments';
+import { GuestDisclaimer } from '@/components/shared/GuestDisclaimer';
 
 export default function AppointmentMetadataScreen() {
   const router = useRouter();
@@ -90,6 +91,9 @@ export default function AppointmentMetadataScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
+      {/* Guest disclaimer banner */}
+      <GuestDisclaimer />
+
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}

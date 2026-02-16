@@ -3,11 +3,13 @@ import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { View, ActivityIndicator } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import 'react-native-reanimated';
 
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
+import { GuestDisclaimer } from '@/components/shared/GuestDisclaimer';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -62,19 +64,34 @@ function RootLayoutNav() {
   const { user, loading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
+  const [routingReady, setRoutingReady] = useState(false);
 
   useEffect(() => {
     if (loading) return;
 
-    const inAuthScreen = segments[0] === 'login';
+    // Read AsyncStorage fresh every time so we never act on stale state
+    (async () => {
+      const value = await AsyncStorage.getItem('hasSeenOnboarding');
+      const seenOnboarding = value === 'true';
 
-    if (!user && !inAuthScreen) {
-      // Not logged in and not on login page → redirect to login
-      router.replace('/login');
-    } else if (user && inAuthScreen) {
-      // Logged in but still on login page → redirect to tabs
-      router.replace('/(tabs)');
-    }
+      const inAuthScreen = segments[0] === 'login';
+      const inOnboarding = segments[0] === ('onboarding' as typeof segments[0]);
+
+      if (!user && !inAuthScreen && !inOnboarding) {
+        if (!seenOnboarding) {
+          // Haven't seen onboarding → show onboarding first
+          router.replace('/onboarding' as any);
+        } else {
+          // Already seen onboarding → go to login
+          router.replace('/login');
+        }
+      } else if (user && (inAuthScreen || inOnboarding)) {
+        // Logged in but still on login/onboarding page → redirect to tabs
+        router.replace('/(tabs)');
+      }
+
+      if (!routingReady) setRoutingReady(true);
+    })();
   }, [user, loading, segments]);
 
   // Keep the Stack always mounted so URL-based routing is preserved on web refresh.
@@ -83,6 +100,7 @@ function RootLayoutNav() {
     <ThemeProvider value={LightTheme}>
       <View style={{ flex: 1 }}>
         <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="onboarding" />
           <Stack.Screen name="login" />
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="appointment/[id]" />
@@ -91,8 +109,11 @@ function RootLayoutNav() {
           <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
         </Stack>
 
+        {/* Guest account disclaimer – absolute overlay at top of every screen */}
+        <GuestDisclaimer />
+
         {/* Full-screen loading overlay – keeps the navigator mounted underneath */}
-        {loading && (
+        {(loading || !routingReady) && (
           <View
             style={{
               position: 'absolute',

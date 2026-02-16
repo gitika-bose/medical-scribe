@@ -14,6 +14,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { getSingleAppointment, type AppointmentWithId } from '@/api/appointments';
 import { formatAppointmentDate, formatAppointmentDateLong } from '@/utils/formatDate';
 import { DeleteAppointmentButton } from '@/components/shared/DeleteAppointmentButton';
+import { GuestDisclaimer } from '@/components/shared/GuestDisclaimer';
 
 export default function AppointmentErrorScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -132,6 +133,9 @@ export default function AppointmentErrorScreen() {
           </Text>
         </View>
       </View>
+
+      {/* Guest disclaimer banner */}
+      <GuestDisclaimer />
 
       {/* Content */}
       <ScrollView

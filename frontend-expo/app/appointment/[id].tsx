@@ -15,6 +15,7 @@ import { getSingleAppointment, type Appointment } from '@/api/appointments';
 import { analyticsEvents } from '@/api/analytics';
 import { formatAppointmentDate } from '@/utils/formatDate';
 import { DeleteAppointmentButton } from '@/components/shared/DeleteAppointmentButton';
+import { GuestDisclaimer } from '@/components/shared/GuestDisclaimer';
 import {
   SummarySection,
   ReasonForVisitSection,
@@ -162,6 +163,9 @@ export default function AppointmentDetailScreen() {
           </Text>
         </View>
       </View>
+
+      {/* Guest disclaimer banner */}
+      <GuestDisclaimer />
 
       {/* Content */}
       <ScrollView

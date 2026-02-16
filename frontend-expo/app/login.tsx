@@ -11,12 +11,15 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
 import { analyticsEvents } from '@/api/analytics';
 import { Ionicons } from '@expo/vector-icons';
+import { AlertModal } from '@/components/shared/AlertModal';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { signInWithGoogle, user, isGoogleSignInReady } = useAuth();
+  const { signInWithGoogle, signInAsGuest, user, isGoogleSignInReady } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [guestLoading, setGuestLoading] = useState(false);
+  const [showGuestConsent, setShowGuestConsent] = useState(false);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -31,7 +34,6 @@ export default function LoginScreen() {
       setError(null);
       await signInWithGoogle();
       analyticsEvents.userLogin('google');
-      // Navigation happens via useEffect when user state updates
     } catch (err) {
       console.error('Login error:', err);
       setError('Failed to sign in. Please try again.');
@@ -39,6 +41,31 @@ export default function LoginScreen() {
       setLoading(false);
     }
   };
+
+  const handleGuestClick = () => {
+    setShowGuestConsent(true);
+  };
+
+  const handleGuestConsentAgree = async () => {
+    setShowGuestConsent(false);
+    try {
+      setGuestLoading(true);
+      setError(null);
+      await signInAsGuest();
+      analyticsEvents.tryAsGuest();
+    } catch (err) {
+      console.error('Guest login error:', err);
+      setError('Failed to sign in as guest. Please try again.');
+    } finally {
+      setGuestLoading(false);
+    }
+  };
+
+  const handleGuestConsentCancel = () => {
+    setShowGuestConsent(false);
+  };
+
+  const isAnyLoading = loading || guestLoading;
 
   return (
     <View style={styles.container}>
@@ -65,9 +92,9 @@ export default function LoginScreen() {
 
         {/* Sign in button */}
         <TouchableOpacity
-          style={[styles.signInButton, (loading || !isGoogleSignInReady) && styles.signInButtonDisabled]}
+          style={[styles.signInButton, (isAnyLoading || !isGoogleSignInReady) && styles.buttonDisabled]}
           onPress={handleGmailLogin}
-          disabled={loading || !isGoogleSignInReady}
+          disabled={isAnyLoading || !isGoogleSignInReady}
           activeOpacity={0.7}
         >
           {loading ? (
@@ -80,19 +107,41 @@ export default function LoginScreen() {
           </Text>
         </TouchableOpacity>
 
-        {/* Try as guest */}
-        <View style={styles.guestContainer}>
-          <TouchableOpacity
-            onPress={() => {
-              analyticsEvents.tryAsGuest();
-              // TODO: Navigate to guest home when implemented
-              // router.push('/guest/home');
-            }}
-          >
-            <Text style={styles.guestText}>Try as a guest?</Text>
-          </TouchableOpacity>
+        {/* Divider */}
+        <View style={styles.divider}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>or</Text>
+          <View style={styles.dividerLine} />
         </View>
+
+        {/* Try as guest button */}
+        <TouchableOpacity
+          style={[styles.guestButton, isAnyLoading && styles.buttonDisabled]}
+          onPress={handleGuestClick}
+          disabled={isAnyLoading}
+          activeOpacity={0.7}
+        >
+          {guestLoading ? (
+            <ActivityIndicator size="small" color="#2563EB" />
+          ) : (
+            <Ionicons name="person-outline" size={20} color="#2563EB" />
+          )}
+          <Text style={styles.guestButtonText}>
+            {guestLoading ? 'Signing in as guest...' : 'Try as a Guest'}
+          </Text>
+        </TouchableOpacity>
       </View>
+
+      {/* Guest consent popup */}
+      <AlertModal
+        visible={showGuestConsent}
+        title="Guest Account Notice"
+        description={'Guest account data is shared and public.\nPlease delete your data after use.'}
+        confirmLabel="I Agree"
+        cancelLabel="Cancel"
+        onConfirm={handleGuestConsentAgree}
+        onCancel={handleGuestConsentCancel}
+      />
     </View>
   );
 }
@@ -152,21 +201,44 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingVertical: 16,
     paddingHorizontal: 24,
-    marginBottom: 32,
   },
-  signInButtonDisabled: {
+  buttonDisabled: {
     opacity: 0.5,
   },
   signInText: {
     fontSize: 16,
     color: '#111',
   },
-  guestContainer: {
+  divider: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 32,
+    marginVertical: 24,
   },
-  guestText: {
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E5E7EB',
+  },
+  dividerText: {
+    marginHorizontal: 16,
+    fontSize: 14,
+    color: '#9CA3AF',
+  },
+  guestButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+    backgroundColor: '#EFF6FF',
+    borderWidth: 2,
+    borderColor: '#BFDBFE',
+    borderRadius: 999,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+  },
+  guestButtonText: {
     fontSize: 16,
     color: '#2563EB',
+    fontWeight: '500',
   },
 });

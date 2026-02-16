@@ -9,7 +9,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import 'react-native-reanimated';
 
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
-import { GuestDisclaimer } from '@/components/shared/GuestDisclaimer';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -108,9 +107,6 @@ function RootLayoutNav() {
           <Stack.Screen name="appointment-metadata" />
           <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
         </Stack>
-
-        {/* Guest account disclaimer – absolute overlay at top of every screen */}
-        <GuestDisclaimer />
 
         {/* Full-screen loading overlay – keeps the navigator mounted underneath */}
         {(loading || !routingReady) && (

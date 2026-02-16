@@ -20,6 +20,7 @@ import {
 } from '@/api/appointments';
 import { analyticsEvents } from '@/api/analytics';
 import { AlertModal } from '@/components/shared/AlertModal';
+import { GuestDisclaimer } from '@/components/shared/GuestDisclaimer';
 import { QuestionsModal } from '@/components/pages/home/QuestionsModal';
 
 export default function HomeScreen() {
@@ -166,7 +167,7 @@ export default function HomeScreen() {
       const { questions: generatedQuestions } = await generateQuestions(appointmentId);
 
       if (!generatedQuestions || generatedQuestions.length === 0) {
-        setError('No questions generated — the conversation may be too short.');
+        setError('No questions available.');
         setQuestions(null);
       } else {
         setQuestions(generatedQuestions);
@@ -176,11 +177,11 @@ export default function HomeScreen() {
       console.error('Failed to generate questions:', message);
 
       if (message.toLowerCase().includes('no transcript')) {
-        setError('Still transcribing audio — please wait a moment and try again.');
+        setError('No questions available.');
       } else if (message.toLowerCase().includes('unavailable')) {
         setError('Service is currently unavailable. Please try again later.');
       } else {
-        setError(`Failed to generate questions: ${message}`);
+        setError(`No questions available`);
       }
       setQuestions(null);
     } finally {
@@ -301,6 +302,9 @@ export default function HomeScreen() {
           </Text>
         </TouchableOpacity>
       </View>
+
+      {/* Guest disclaimer banner */}
+      <GuestDisclaimer />
 
       {/* Main Content */}
       <View style={styles.main}>
@@ -480,11 +484,11 @@ const styles = StyleSheet.create({
 
   // Error
   errorBanner: {
+    width: 'auto',
+    alignSelf: 'center',
     position: 'absolute',
     top: 24,
-    left: 24,
-    right: 24,
-    padding: 16,
+    padding: 18,
     backgroundColor: '#FEF2F2',
     borderWidth: 1,
     borderColor: '#FECACA',

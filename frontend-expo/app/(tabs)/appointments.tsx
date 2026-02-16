@@ -20,6 +20,7 @@ import {
   type AppointmentWithId,
 } from '@/api/appointments';
 import { formatAppointmentDate } from '@/utils/formatDate';
+import { GuestDisclaimer } from '@/components/shared/GuestDisclaimer';
 
 export default function AppointmentsScreen() {
   const router = useRouter();
@@ -240,6 +241,9 @@ export default function AppointmentsScreen() {
           )}
         </View>
       </View>
+
+      {/* Guest disclaimer banner */}
+      <GuestDisclaimer />
 
       {/* List */}
       {isLoading ? (

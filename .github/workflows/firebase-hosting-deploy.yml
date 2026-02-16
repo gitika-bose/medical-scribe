@@ -20,7 +20,6 @@ jobs:
         working-directory: frontend/app
         run: |
           npm install
-          npm rebuild lightningcss --build-from-source
           npm run build
 
       - name: Install Firebase CLI

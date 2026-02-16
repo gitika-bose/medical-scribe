@@ -4,6 +4,8 @@ import {
   Text,
   StyleSheet,
   ActivityIndicator,
+  type ViewStyle,
+  type StyleProp,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,6 +17,7 @@ interface DeleteAppointmentButtonProps {
   onDeleteStart?: () => void;
   onDeleteSuccess?: () => void;
   onDeleteError?: (error: string) => void;
+  style?: StyleProp<ViewStyle>;
 }
 
 /**
@@ -26,6 +29,7 @@ export function DeleteAppointmentButton({
   onDeleteStart,
   onDeleteSuccess,
   onDeleteError,
+  style,
 }: DeleteAppointmentButtonProps) {
   const router = useRouter();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -62,7 +66,7 @@ export function DeleteAppointmentButton({
   return (
     <>
       <TouchableOpacity
-        style={styles.deleteButton}
+        style={[styles.deleteButton, style]}
         onPress={handleDeleteClick}
         activeOpacity={0.7}
       >

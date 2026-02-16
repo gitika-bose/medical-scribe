@@ -123,11 +123,7 @@ export default function AppointmentsScreen() {
   };
 
   const handleAppointmentClick = (appointment: AppointmentWithId) => {
-    if (appointment.status === 'Error') {
-      router.push(`/appointment-error/${appointment.appointmentId}` as any);
-    } else {
-      router.push(`/appointment/${appointment.appointmentId}` as any);
-    }
+    router.push(`/appointment/${appointment.appointmentId}` as any);
   };
 
   const getAppointmentTitle = (appointment: AppointmentWithId): string => {

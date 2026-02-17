@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { store } from '@/store';
 import { updateAppointmentMetadata } from '@/api/appointments';
 import { GuestDisclaimer } from '@/components/shared/GuestDisclaimer';
+import { Colors } from '@/constants/Colors';
 
 export default function AppointmentMetadataScreen() {
   const router = useRouter();
@@ -155,7 +156,7 @@ export default function AppointmentMetadataScreen() {
         <View style={styles.fieldGroup}>
           <Text style={styles.label}>Date &amp; Time</Text>
           <View style={styles.dateDisplay}>
-            <Ionicons name="calendar-outline" size={18} color="#6B7280" />
+            <Ionicons name="calendar-outline" size={18} color={Colors.gray[500]} />
             <Text style={styles.dateText}>{formatDisplayDate(selectedDate)}</Text>
           </View>
         </View>
@@ -168,7 +169,7 @@ export default function AppointmentMetadataScreen() {
           activeOpacity={0.7}
         >
           {isSaving ? (
-            <ActivityIndicator size="small" color="#fff" />
+            <ActivityIndicator size="small" color={Colors.primaryForeground} />
           ) : (
             <Text style={styles.saveButtonText}>Save</Text>
           )}
@@ -195,7 +196,7 @@ export default function AppointmentMetadataScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.background,
   },
   scrollView: {
     flex: 1,
@@ -208,27 +209,27 @@ const styles = StyleSheet.create({
   heading: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#111',
+    color: Colors.primary,
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 15,
-    color: '#6B7280',
+    color: Colors.gray[500],
     marginBottom: 28,
   },
 
   // Error
   errorBanner: {
     padding: 14,
-    backgroundColor: '#FEF2F2',
+    backgroundColor: Colors.red[50],
     borderWidth: 1,
-    borderColor: '#FECACA',
+    borderColor: Colors.red[300],
     borderRadius: 12,
     marginBottom: 20,
   },
   errorText: {
     fontSize: 14,
-    color: '#B91C1C',
+    color: Colors.red[700],
   },
 
   // Fields
@@ -238,18 +239,18 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#374151',
+    color: Colors.gray[700],
     marginBottom: 8,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#D1D5DB',
+    borderColor: Colors.gray[300],
     borderRadius: 10,
     paddingVertical: 12,
     paddingHorizontal: 14,
     fontSize: 15,
-    color: '#111',
-    backgroundColor: '#fff',
+    color: Colors.primary,
+    backgroundColor: Colors.background,
   },
 
   // Date
@@ -258,20 +259,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     borderWidth: 1,
-    borderColor: '#D1D5DB',
+    borderColor: Colors.gray[300],
     borderRadius: 10,
     paddingVertical: 12,
     paddingHorizontal: 14,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: Colors.gray[50],
   },
   dateText: {
     fontSize: 15,
-    color: '#374151',
+    color: Colors.gray[700],
   },
 
   // Save button
   saveButton: {
-    backgroundColor: '#111',
+    backgroundColor: Colors.primary,
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
@@ -281,7 +282,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   saveButtonText: {
-    color: '#fff',
+    color: Colors.primaryForeground,
     fontSize: 16,
     fontWeight: '600',
   },
@@ -293,7 +294,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   skipButtonText: {
-    color: '#6B7280',
+    color: Colors.gray[500],
     fontSize: 15,
   },
 });

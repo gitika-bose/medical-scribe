@@ -16,6 +16,7 @@ import { analyticsEvents } from '@/api/analytics';
 import { formatAppointmentDate, formatAppointmentDateLong } from '@/utils/formatDate';
 import { DeleteAppointmentButton } from '@/components/shared/DeleteAppointmentButton';
 import { GuestDisclaimer } from '@/components/shared/GuestDisclaimer';
+import { Colors } from '@/constants/Colors';
 import {
   SummarySection,
   ReasonForVisitSection,
@@ -92,7 +93,7 @@ export default function AppointmentDetailScreen() {
   if (isLoading) {
     return (
       <View style={[styles.centered, { paddingTop: insets.top }]}>
-        <ActivityIndicator size="large" color="#2563EB" />
+        <ActivityIndicator size="large" color={Colors.blue[600]} />
         <Text style={styles.loadingText}>Loading appointment...</Text>
       </View>
     );
@@ -107,7 +108,7 @@ export default function AppointmentDetailScreen() {
         {/* Header */}
         <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
           <TouchableOpacity style={styles.backButton} onPress={navigateBack}>
-            <Ionicons name="arrow-back" size={22} color="#111" />
+            <Ionicons name="arrow-back" size={22} color={Colors.primary} />
           </TouchableOpacity>
           <View style={styles.headerInfo}>
             <Text style={styles.headerTitle} numberOfLines={1}>
@@ -130,7 +131,7 @@ export default function AppointmentDetailScreen() {
         >
           {/* Not found message with reason */}
           <View style={styles.notFoundInline}>
-            <Ionicons name="alert-circle" size={32} color="#DC2626" />
+            <Ionicons name="alert-circle" size={32} color={Colors.red[600]} />
             <Text style={styles.notFoundTitle}>No appointment details found</Text>
           </View>
 
@@ -182,7 +183,7 @@ export default function AppointmentDetailScreen() {
               }}
               activeOpacity={0.7}
             >
-              <Ionicons name="chatbox-outline" size={18} color="#fff" />
+              <Ionicons name="chatbox-outline" size={18} color={Colors.primaryForeground} />
               <Text style={styles.feedbackButtonText}>Submit Feedback</Text>
             </TouchableOpacity>
             <DeleteAppointmentButton appointmentId={id!} onDeleteError={setError} style={{ flex: 1 }} />
@@ -201,7 +202,7 @@ export default function AppointmentDetailScreen() {
         {/* Header */}
         <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
           <TouchableOpacity style={styles.backButton} onPress={navigateBack}>
-            <Ionicons name="arrow-back" size={22} color="#111" />
+            <Ionicons name="arrow-back" size={22} color={Colors.primary} />
           </TouchableOpacity>
           <View style={styles.headerInfo}>
             <Text style={styles.headerTitle} numberOfLines={1}>
@@ -214,7 +215,7 @@ export default function AppointmentDetailScreen() {
         </View>
 
         <View style={styles.processingContainer}>
-          <ActivityIndicator size="large" color="#2563EB" />
+          <ActivityIndicator size="large" color={Colors.blue[600]} />
           <Text style={styles.processingTitle}>Processing Appointment</Text>
           <Text style={styles.processingSubtitle}>
             Please wait while we process your appointment...
@@ -240,9 +241,9 @@ export default function AppointmentDetailScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <TouchableOpacity style={styles.backButton} onPress={navigateBack}>
-          <Ionicons name="arrow-back" size={22} color="#111" />
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.backButton} onPress={navigateBack}>
+            <Ionicons name="arrow-back" size={22} color={Colors.primary} />
+          </TouchableOpacity>
         <View style={styles.headerInfo}>
           <Text style={styles.headerTitle} numberOfLines={1}>
             {getAppointmentTitle()}
@@ -293,7 +294,7 @@ export default function AppointmentDetailScreen() {
         ) : (
           <>
             <View style={styles.notFoundInline}>
-              <Ionicons name="document-text-outline" size={32} color="#9CA3AF" />
+              <Ionicons name="document-text-outline" size={32} color={Colors.gray[400]} />
               <Text style={styles.notFoundTitle}>No appointment details found</Text>
             </View>
             <View style={styles.reasonCard}>
@@ -318,7 +319,7 @@ export default function AppointmentDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: Colors.gray[50],
   },
 
   // Centered states
@@ -326,12 +327,12 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: Colors.gray[50],
     gap: 12,
   },
   loadingText: {
     fontSize: 15,
-    color: '#6B7280',
+    color: Colors.gray[500],
     marginTop: 8,
   },
 
@@ -351,28 +352,28 @@ const styles = StyleSheet.create({
   notFoundTitle: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#374151',
+    color: Colors.gray[700],
     textAlign: 'center',
   },
   reasonCard: {
-    backgroundColor: '#fff',
+    backgroundColor: Colors.background,
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: Colors.border,
     width: '100%',
   },
   reasonLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#6B7280',
+    color: Colors.gray[500],
     marginBottom: 4,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   reasonText: {
     fontSize: 15,
-    color: '#374151',
+    color: Colors.gray[700],
     lineHeight: 22,
   },
   backLink: {
@@ -380,7 +381,7 @@ const styles = StyleSheet.create({
   },
   backLinkText: {
     fontSize: 15,
-    color: '#2563EB',
+    color: Colors.blue[600],
     fontWeight: '500',
   },
 
@@ -392,8 +393,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-    backgroundColor: '#fff',
+    borderBottomColor: Colors.border,
+    backgroundColor: Colors.background,
   },
   backButton: {
     padding: 8,
@@ -405,11 +406,11 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#111',
+    color: Colors.primary,
   },
   headerDate: {
     fontSize: 13,
-    color: '#6B7280',
+    color: Colors.gray[500],
     marginTop: 2,
   },
 
@@ -433,26 +434,26 @@ const styles = StyleSheet.create({
   processingTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#111',
+    color: Colors.primary,
   },
   processingSubtitle: {
     fontSize: 15,
-    color: '#6B7280',
+    color: Colors.gray[500],
     textAlign: 'center',
   },
 
   // Details card (for error status)
   detailsCard: {
-    backgroundColor: '#fff',
+    backgroundColor: Colors.background,
     borderRadius: 12,
     padding: 20,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: Colors.border,
   },
   detailsHeading: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#111',
+    color: Colors.primary,
     marginBottom: 16,
   },
   detailsList: {
@@ -461,12 +462,12 @@ const styles = StyleSheet.create({
   detailRow: {},
   detailLabel: {
     fontSize: 13,
-    color: '#6B7280',
+    color: Colors.gray[500],
     marginBottom: 2,
   },
   detailValue: {
     fontSize: 15,
-    color: '#111',
+    color: Colors.primary,
   },
 
   // Action row – side by side buttons
@@ -481,14 +482,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#2563EB',
+    backgroundColor: Colors.blue[600],
     paddingVertical: 14,
     paddingHorizontal: 20,
     borderRadius: 12,
     flex: 1,
   },
   feedbackButtonText: {
-    color: '#fff',
+    color: Colors.primaryForeground,
     fontSize: 15,
     fontWeight: '600',
   },

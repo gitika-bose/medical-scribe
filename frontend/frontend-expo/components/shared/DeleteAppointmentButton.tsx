@@ -11,6 +11,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { deleteAppointment } from '@/api/appointments';
 import { AlertModal } from './AlertModal';
+import { Colors } from '@/constants/Colors';
 
 interface DeleteAppointmentButtonProps {
   appointmentId: string;
@@ -93,7 +94,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#DC2626',
+    backgroundColor: Colors.red[700],
     paddingVertical: 14,
     paddingHorizontal: 24,
     borderRadius: 12,

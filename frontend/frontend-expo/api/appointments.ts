@@ -445,39 +445,80 @@ export async function updateAppointmentMetadata(
 /** Upload a pre-recorded audio file for processing. */
 export async function uploadRecording(
   appointmentId: string,
-  fileUri: string,
-  fileName: string = 'recording.m4a',
+  file: { uri: string; name: string; mimeType?: string; size?: number },
 ): Promise<{ status: string; soapNotes: any; recordingLink: string }> {
   const user = auth.currentUser;
-  if (!user) throw new Error('User not authenticated');
-  if (!appointmentId) throw new Error('Invalid appointment ID');
+  if (!user) {
+    const error = new Error('User not authenticated');
+    console.error('❌ Failed to upload recording:', error);
+    throw error;
+  }
+
+  if (!appointmentId) {
+    const error = new Error('Invalid appointment ID');
+    console.error('❌ Failed to upload recording:', error);
+    throw error;
+  }
+
+  if (!file || !file.uri) {
+    const error = new Error('Invalid recording file');
+    console.error('❌ Failed to upload recording:', error);
+    throw error;
+  }
 
   try {
+    // Check service health before uploading recording
     const isHealthy = await checkProcessingServiceHealth();
     if (!isHealthy) {
+      const error = new Error('Service is currently unavailable. Please try again later.');
+      console.error('❌ Failed to upload recording:', error);
+      
+      // Set appointment status to error in Firestore
       try {
-        const ref = doc(db, 'users', user.uid, 'appointments', appointmentId);
-        await updateDoc(ref, { status: 'Error', error: 'Service unavailable' });
-      } catch (_) {}
-      throw new Error('Service is currently unavailable. Please try again later.');
+        const appointmentRef = doc(db, 'users', user.uid, 'appointments', appointmentId);
+        await updateDoc(appointmentRef, {
+          status: 'Error',
+          error: 'Service unavailable'
+        });
+      } catch (updateErr) {
+        console.error('❌ Failed to update appointment status to Error:', updateErr);
+      }
+      
+      throw error;
     }
 
     const token = await user.getIdToken();
     const formData = new FormData();
 
-    formData.append('recording', {
-      uri: fileUri,
-      type: 'audio/m4a',
-      name: fileName,
-    } as any);
+    // Check if running on web (blob: URL) or native (file:// URI)
+    const isWebBlob = file.uri.startsWith('blob:');
+    
+    if (isWebBlob) {
+      // Web platform: fetch the blob and append as File
+      const response = await fetch(file.uri);
+      const blob = await response.blob();
+      formData.append('recording', blob, file.name);
+    } else {
+      // React Native: use { uri, name, type } format
+      const mimeType = file.mimeType || 'audio/m4a';
+      formData.append('recording', {
+        uri: file.uri,
+        name: file.name,
+        type: mimeType,
+      } as any);
+    }
 
-    analyticsEvents.uploadRecording(appointmentId);
+    // Log analytics event for uploading recording
+    analyticsEvents.uploadRecording(appointmentId, file.size);
 
     const response = await fetch(
       `${API_URL_PROCESSING}/appointments/${appointmentId}/upload-recording`,
       {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          // Don't set Content-Type - let browser set it with boundary for FormData
+        },
         body: formData,
       },
     );
@@ -493,13 +534,21 @@ export async function uploadRecording(
     console.error('❌ Failed to upload recording:', err);
     const errorMsg = err instanceof Error ? err.message : 'Failed to upload recording';
 
+    // Set appointment status to error in Firestore if not already done
     try {
-      const ref = doc(db, 'users', user.uid, 'appointments', appointmentId);
-      const snap = await getDoc(ref);
-      if (snap.exists() && snap.data()?.status !== 'Error') {
-        await updateDoc(ref, { status: 'Error', error: errorMsg });
+      const appointmentRef = doc(db, 'users', user.uid, 'appointments', appointmentId);
+      const docSnap = await getDoc(appointmentRef);
+      
+      // Only update if status is not already Error
+      if (docSnap.exists() && docSnap.data()?.status !== 'Error') {
+        await updateDoc(appointmentRef, {
+          status: 'Error',
+          error: errorMsg
+        });
       }
-    } catch (_) {}
+    } catch (updateErr) {
+      console.error('❌ Failed to update appointment status to Error:', updateErr);
+    }
 
     throw new Error(errorMsg);
   }

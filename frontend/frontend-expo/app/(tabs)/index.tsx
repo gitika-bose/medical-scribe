@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   AppState,
+  Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -22,6 +23,7 @@ import { analyticsEvents } from '@/api/analytics';
 import { AlertModal } from '@/components/shared/AlertModal';
 import { GuestDisclaimer } from '@/components/shared/GuestDisclaimer';
 import { QuestionsModal } from '@/components/pages/home/QuestionsModal';
+import { Colors } from '@/constants/Colors';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -283,7 +285,14 @@ export default function HomeScreen() {
     <View style={styles.container}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-        <Text style={styles.headerTitle}>Juno</Text>
+        <View style={styles.logoContainer}>
+          <Image 
+            source={require('@/assets/images/icon.png')} 
+            style={styles.logo}
+            resizeMode="contain"
+          />
+          <Text style={styles.headerTitle}>Juno</Text>
+        </View>
         <TouchableOpacity
           onPress={handleSignOut}
           disabled={isRecordingActive}
@@ -331,11 +340,11 @@ export default function HomeScreen() {
               (isRecordingActive || isProcessing) && { opacity: isRecordingActive ? 1 : 0.5 },
             ]}
           >
-            <Ionicons
-              name="mic"
-              size={isRecordingActive ? 48 : 56}
-              color={isRecordingActive ? (isRecording ? '#DC2626' : '#9CA3AF') : '#fff'}
-            />
+          <Ionicons
+            name="mic"
+            size={isRecordingActive ? 48 : 56}
+            color={isRecordingActive ? (isRecording ? Colors.red[600] : Colors.gray[400]) : Colors.primaryForeground}
+          />
           </TouchableOpacity>
 
           {/* Recording badge */}
@@ -439,7 +448,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.background,
   },
 
   // Header
@@ -450,13 +459,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-    backgroundColor: '#fff',
+    borderBottomColor: Colors.border,
+    backgroundColor: Colors.background,
+  },
+  logoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  logo: {
+    width: 28,
+    height: 28,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#111',
+    fontSize: 24,
+    fontWeight: '700',
+    color: Colors.blue[700],
   },
   signOutButton: {
     paddingVertical: 8,
@@ -467,11 +485,12 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   signOutText: {
-    fontSize: 14,
-    color: '#374151',
+    fontSize: 15,
+    fontWeight: '500',
+    color: Colors.foreground,
   },
   signOutTextDisabled: {
-    color: '#9CA3AF',
+    color: Colors.gray[400],
   },
 
   // Main
@@ -489,14 +508,14 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 24,
     padding: 18,
-    backgroundColor: '#FEF2F2',
+    backgroundColor: Colors.red[50],
     borderWidth: 1,
-    borderColor: '#FECACA',
+    borderColor: Colors.red[300],
     borderRadius: 12,
   },
   errorText: {
     fontSize: 14,
-    color: '#B91C1C',
+    color: Colors.red[700],
   },
 
   // Record button area
@@ -514,28 +533,28 @@ const styles = StyleSheet.create({
   recordButtonIdle: {
     width: 144,
     height: 144,
-    backgroundColor: '#B91C1C',
+    backgroundColor: Colors.red[700],
   },
   recordButtonActive: {
     width: 96,
     height: 96,
-    backgroundColor: '#FEE2E2',
+    backgroundColor: Colors.red[50],
   },
   recordButtonPaused: {
     width: 96,
     height: 96,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: Colors.gray[100],
   },
 
   recordingBadge: {
     marginTop: 12,
-    backgroundColor: '#DC2626',
+    backgroundColor: Colors.red[600],
     paddingVertical: 4,
     paddingHorizontal: 14,
     borderRadius: 999,
   },
   recordingBadgeText: {
-    color: '#fff',
+    color: Colors.primaryForeground,
     fontSize: 12,
     fontWeight: '600',
   },
@@ -546,7 +565,7 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 15,
-    color: '#6B7280',
+    color: Colors.gray[500],
   },
 
   // Controls
@@ -562,20 +581,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   controlButtonPrimary: {
-    backgroundColor: '#2563EB',
+    backgroundColor: Colors.blue[600],
   },
   controlButtonDone: {
-    backgroundColor: '#DCFCE7',
+    backgroundColor: Colors.green[500],
   },
   controlButtonEnd: {
-    backgroundColor: '#111827',
+    backgroundColor: Colors.primary,
   },
   controlButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#fff',
+    color: Colors.primaryForeground,
   },
   controlButtonDoneText: {
-    color: '#15803D',
+    color: Colors.primaryForeground,
   },
 });

@@ -151,7 +151,7 @@ body {
 }
 
 .hero-text h1 {
-  font-size: clamp(2.5rem, 5vw, 3.75rem);
+  font-size: clamp(2.25rem, 4.5vw, 3.25rem);
   font-weight: 700;
   margin-bottom: 1.5rem;
   color: var(--primary);
@@ -160,7 +160,7 @@ body {
 }
 
 .hero-text p {
-  font-size: 1.125rem;
+  font-size: 1.25rem;
   color: var(--muted-foreground);
   margin-bottom: 2rem;
   line-height: 1.7;
@@ -317,7 +317,7 @@ body {
 .feature-card p {
   color: var(--muted-foreground);
   line-height: 1.7;
-  font-size: 0.9375rem;
+  font-size: 1.0375rem;
 }
 
 /* How It Works Section */
@@ -384,7 +384,7 @@ body {
 .step-card p {
   color: rgba(255, 255, 255, 0.9);
   line-height: 1.7;
-  font-size: 0.9375rem;
+  font-size: 1.0375rem;
 }
 
 /* About Us Section */

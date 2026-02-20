@@ -284,7 +284,7 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+      <View style={[styles.header]}>
         <View style={styles.logoContainer}>
           <Image 
             source={require('@/assets/images/icon.png')} 
@@ -293,23 +293,6 @@ export default function HomeScreen() {
           />
           <Text style={styles.headerTitle}>Juno</Text>
         </View>
-        <TouchableOpacity
-          onPress={handleSignOut}
-          disabled={isRecordingActive}
-          style={[
-            styles.signOutButton,
-            isRecordingActive && styles.signOutDisabled,
-          ]}
-        >
-          <Text
-            style={[
-              styles.signOutText,
-              isRecordingActive && styles.signOutTextDisabled,
-            ]}
-          >
-            Sign out
-          </Text>
-        </TouchableOpacity>
       </View>
 
       {/* Guest disclaimer banner */}
@@ -475,22 +458,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '700',
     color: Colors.blue[700],
-  },
-  signOutButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-  },
-  signOutDisabled: {
-    opacity: 0.4,
-  },
-  signOutText: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: Colors.foreground,
-  },
-  signOutTextDisabled: {
-    color: Colors.gray[400],
   },
 
   // Main

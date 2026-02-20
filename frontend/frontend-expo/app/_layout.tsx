@@ -75,7 +75,7 @@ function RootLayoutNav() {
       const value = await AsyncStorage.getItem('hasSeenOnboarding');
       const seenOnboarding = value === 'true';
 
-      const inAuthScreen = segments[0] === 'login';
+      const inAuthScreen = segments[0] === 'login' || segments[0] === 'register' || segments[0] === 'forgotPassword';
       const inOnboarding = segments[0] === ('onboarding' as typeof segments[0]);
 
       if (!user && !inAuthScreen && !inOnboarding) {
@@ -103,6 +103,8 @@ function RootLayoutNav() {
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="onboarding" />
           <Stack.Screen name="login" />
+          <Stack.Screen name="register" />
+          <Stack.Screen name="forgotPassword" />
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="appointment/[id]" />
           <Stack.Screen name="appointment-metadata" />

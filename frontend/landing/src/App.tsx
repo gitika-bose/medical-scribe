@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'
+import Footer from './components/shared/Footer'
 import './App.css'
 
 function App() {
@@ -33,6 +35,7 @@ function App() {
             </p>
             <div className="hero-cta">
               <a href={APP_URL} className="cta-button">Get Started →</a>
+              <Link to="/beta" className="cta-button-outline">Join the Beta List</Link>
             </div>
             <div className="trust-badges">
               <span className="badge">End-to-End Encrypted</span>
@@ -195,59 +198,13 @@ function App() {
           <h2>Ready to take control of your healthcare?</h2>
           <p>Join thousands of users who never miss important medical information.</p>
           <div className="cta-buttons">
-            <a href={APP_URL} className="cta-button-large">Get Started Free</a>
+            <a href={APP_URL} className="cta-button-large">Get Started</a>
+            <Link to="/beta" className="cta-button-secondary">Join the Beta List</Link>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="footer">
-        <div className="footer-content">
-          <div className="footer-section">
-            <div className="logo-container">
-              <img src="/logo/android-chrome-192x192.png" alt="Juno Logo" className="logo" />
-              <span className="logo-text">Juno</span>
-            </div>
-            <p className="footer-description">
-              Your privacy-first companion for medical visits.
-            </p>
-            <div className="footer-links-mobile">
-              <a href="#features">Features</a>
-              <span className="separator">|</span>
-              <a href="#how-it-works">How It Works</a>
-              <span className="separator">|</span>
-              <a href="#about">About</a>
-              <span className="separator">|</span>
-              <a href="#privacy">Privacy</a>
-              <span className="separator">|</span>
-              <a href="#terms">Terms</a>
-              <span className="separator">|</span>
-              <a href="#help">Help Center</a>
-              <span className="separator">|</span>
-              <a href="#contact">Contact</a>
-            </div>
-          </div>
-          <div className="footer-section">
-            <h4>Product</h4>
-            <a href="#features">Features</a>
-            <a href="#how-it-works">How It Works</a>
-          </div>
-          <div className="footer-section">
-            <h4>Company</h4>
-            <a href="#about">About</a>
-            <a href="#privacy">Privacy</a>
-            <a href="#terms">Terms</a>
-          </div>
-          <div className="footer-section">
-            <h4>Support</h4>
-            <a href="#help">Help Center</a>
-            <a href="#contact">Contact</a>
-          </div>
-        </div>
-        <div className="footer-bottom">
-          <p>&copy; 2026 Juno. All rights reserved.</p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   )
 }

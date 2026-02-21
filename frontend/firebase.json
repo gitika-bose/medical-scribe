@@ -25,9 +25,9 @@
         }
       ],
       "rewrites": [
-        { 
-          "source": "**", 
-          "destination": "/index.html" 
+        {
+          "source": "**",
+          "destination": "/index.html"
         }
       ]
     },
@@ -42,9 +42,9 @@
         ".env.*.local"
       ],
       "rewrites": [
-        { 
-          "source": "**", 
-          "destination": "/index.html" 
+        {
+          "source": "**",
+          "destination": "/index.html"
         }
       ]
     }

@@ -14,14 +14,13 @@ function LandingPage() {
           <span className="logo-text">Juno</span>
         </div>
         <div className="header-nav">
-          <a href="#audience" className="nav-link">Who It's For</a>
+          <a href="#features" className="nav-link">Features</a>
           <a href="#how-it-works" className="nav-link">How It Works</a>
-          <a href="#features" className="nav-link">The Problem</a>
           <a href="#about-us" className="nav-link">About Us</a>
         </div>
         <div className="header-actions">
           <a href={APP_URL} className="login-button">Login</a>
-          <Link to="/try" className="cta-button-small">Try it now</Link>
+          <a href={APP_URL} className="cta-button-small">Get Started</a>
         </div>
       </header>
 
@@ -29,18 +28,18 @@ function LandingPage() {
       <section className="hero">
         <div className="hero-content">
           <div className="hero-text">
-            <h1>Doctor appointments are confusing.</h1>
-            <h2 color='blue'>Juno turns them into clear next steps.</h2>
+            <h1>Your trusted companion for medical visits</h1>
             <p>
-             Upload notes or record a medical visit.
-             Juno listens and explains what matters in plain language so you don’t miss anything.
+              Never miss important details from your healthcare appointments. 
+              Juno helps you remember, understand, and share what matters most.
             </p>
             <div className="hero-cta">
-              <Link to="/try" className="cta-button">Try it now</Link>
+              <a href={APP_URL} className="cta-button">Get Started →</a>
+              <Link to="/beta" className="cta-button-outline">Join the Beta List</Link>
             </div>
             <div className="trust-badges">
-              <span className="badge">No login required</span>
-              <span className="badge">Instant results</span>
+              <span className="badge">End-to-End Encrypted</span>
+              <span className="badge">Privacy First</span>
             </div>
           </div>
           <div className="hero-visual">
@@ -51,66 +50,34 @@ function LandingPage() {
         </div>
       </section>
 
-      {/* Who for? Section */}
-      <section className="audience" id="audience">
-        <div className="section-header">
-          <span className="section-label">WHO IS THIS FOR?</span>
-          <h2>Juno is especially helpful for</h2>
-        </div>
-        <div className="audience-grid">
-          <div className="audience-card">
-            <h3>Family & Caregivers</h3>
-            <p>
-              You’re managing care for a parent, partner, or anyone else.
-            </p>
-          </div>
-          <div className="audience-card">
-            <h3>ESL Students</h3>
-            <p>
-              English isn't your first language.
-            </p>
-          </div>
-          <div className="audience-card">
-            <h3>New patients</h3>
-            <p>
-              Appointments feel rushed and overwhelming.
-            </p>
-          </div>
-          <div className="audience-card">
-            <h3>Everyone!</h3>
-            <p>
-              You leave visits unsure what to do next.
-            </p>
-          </div>
-        </div>
-      </section>
-
       {/* How It Works Section */}
       <section className="how-it-works" id="how-it-works">
         <div className="section-header-dark">
           <h2>How Juno works</h2>
-          <p>In three simple steps</p>
+          <p>Get started in three simple steps</p>
         </div>
         <div className="steps-container">
           <div className="step-card">
             <div className="step-number">1</div>
-            <h3>Let Juno listen</h3>
+            <h3>Start Juno</h3>
             <p>
-              Paste notes, upload recordings, or live record an appointment.
+              Open Juno before your appointment and tap start. 
+              Ask your healthcare provider for permission to take notes.
             </p>
           </div>
           <div className="step-card">
             <div className="step-number">2</div>
-            <h3>Hit Explain</h3>
+            <h3>Let Juno listen</h3>
             <p>
-              Juno summarizes what matters with clear next steps and follow-up questions to ask
+              Focus on your conversation while Juno captures everything and generates questions for you on the fly.
             </p>
           </div>
           <div className="step-card">
             <div className="step-number">3</div>
             <h3>Review & share</h3>
             <p>
-              Share with family, caregivers, or keep it for your records.
+              Get an organized summary instantly. Share with family, 
+              caregivers, or keep it for your records.
             </p>
           </div>
         </div>
@@ -119,35 +86,32 @@ function LandingPage() {
       {/* Features Section */}
       <section className="features" id="features">
         <div className="section-header">
-          <span className="section-label">THE MOMENT WE’RE FIXING</span>
-          <h2>After appointments, people often</h2>
+          <span className="section-label">FEATURES</span>
+          <h2>Everything you need for better healthcare visits</h2>
         </div>
         <div className="features-grid">
           <div className="feature-card">
-            <h3>Forget key instructions</h3>
+            <div className="feature-icon">🎙️</div>
+            <h3>Smart summaries</h3>
             <p>
               Get organized summaries with diagnoses, treatment plans, medications, 
               and follow-up instructions automatically extracted.
             </p>
           </div>
           <div className="feature-card">
-            <h3>Misunderstand medications</h3>
+            <div className="feature-icon">📝</div>
+            <h3>Generate questions</h3>
             <p>
               During the appointment, Juno helps you ask relevant questions 
               so you never leave the appointment room confused.
             </p>
           </div>
           <div className="feature-card">
-            <h3>Can’t explain things to family</h3>
+            <div className="feature-icon">🔒</div>
+            <h3>Privacy first</h3>
             <p>
               Your data is encrypted and automatically deleted after processing. 
               We only keep what you see and nothing more.
-            </p>
-          </div>
-          <div className="feature-card">
-            <h3>Feel embarrassed repeteadly calling the doctor with questions</h3>
-            <p>
-              Get all the relevant questions you need to ask at once, at the appointment or afterwards.
             </p>
           </div>
         </div>

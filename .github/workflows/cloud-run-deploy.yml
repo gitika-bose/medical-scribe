@@ -19,7 +19,7 @@ jobs:
       - name: Deploy to Cloud Run
         working-directory: backend/backend-processing
         run: |
-          gcloud run deploy backend-processing \
+          gcloud run deploy patient-scribe-backend \
             --source . \
             --region us-central1 \
             --allow-unauthenticated \

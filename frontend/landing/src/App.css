@@ -307,8 +307,17 @@ body {
 /* Features / The Moment We're Fixing Section */
 .features {
   padding: 6rem 5%;
-  background-color: #fafafa;
+  background: linear-gradient(135deg, var(--color-blue-700) 0%, var(--color-blue-600) 100%);
   width: 100%;
+  color: white;
+}
+
+.features .section-header h2 {
+  color: white;
+}
+
+.features .section-label {
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .features-grid {
@@ -321,18 +330,16 @@ body {
 
 .feature-card {
   padding: 2rem;
-  background-color: white;
-  border: 1px solid var(--border);
-  border-top: 3px solid var(--color-blue-500);
+  background-color: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: var(--radius);
   transition: all 0.3s;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .feature-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
-  border-top-color: var(--color-blue-700);
+  background-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
 }
 
 .feature-icon {
@@ -344,11 +351,11 @@ body {
   font-size: 1.25rem;
   font-weight: 700;
   margin-bottom: 0.75rem;
-  color: var(--primary);
+  color: white;
 }
 
 .feature-card p {
-  color: var(--muted-foreground);
+  color: rgba(255, 255, 255, 0.9);
   line-height: 1.7;
   font-size: 1.0375rem;
 }

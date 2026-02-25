@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import '../App.css'
 import './TryPage.css'
@@ -9,15 +9,22 @@ import {
   tryGenerateQuestions,
 } from '../api/appointments'
 import type { SoapNotes } from '../api/appointments'
+import { analyticsEvents } from '../api/analytics'
 
 const MAX_CHARS = 2000;
-const ACCEPTED_AUDIO_TYPES = '.mp3,.wav,.m4a,.ogg,.webm,.mp4,.flac,.aac';
+const ACCEPTED_AUDIO_TYPES = '.webm,.m4a';
 
 function TryPage() {
+  useEffect(() => {
+    analyticsEvents.tryPageOpen();
+  }, []);
+
   const [notesText, setNotesText] = useState('');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const [helpfulness, setHelpfulness] = useState<string | null>(null);
+  const [helpfulness, setHelpfulness] = useState<number>(0);
+  const [hoverRating, setHoverRating] = useState<number>(0);
   const [feedbackText, setFeedbackText] = useState('');
+  const [feedbackEmail, setFeedbackEmail] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Result state
@@ -42,10 +49,14 @@ function TryPage() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
+    if (file) {
+      analyticsEvents.tryUploadFile(file.size, file.type);
+    }
     setUploadedFile(file);
   };
 
   const handleRemoveFile = () => {
+    analyticsEvents.tryRemoveFile();
     setUploadedFile(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -65,6 +76,8 @@ function TryPage() {
       const hasNotes = notesText.trim().length > 0;
 
       if (!hasRecording && !hasNotes) return;
+
+      analyticsEvents.trySubmit(hasRecording, hasNotes);
 
       // Set loading text
       if (hasRecording) {
@@ -106,18 +119,61 @@ function TryPage() {
       setQuestions(
         questionsResult.questions.length > 0 ? questionsResult.questions : null,
       );
+      analyticsEvents.trySubmitSuccess(hasRecording, hasNotes);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Something went wrong. Please try again.';
       setError(message);
+      analyticsEvents.trySubmitError(message);
     } finally {
       setIsLoading(false);
       setLoadingText('');
     }
   };
 
-  const handleFeedbackSubmit = () => {
-    console.log('Feedback:', { helpfulness, feedbackText });
+  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
+  const [feedbackSent, setFeedbackSent] = useState(false);
+
+  const handleFeedbackSubmit = async () => {
+    if (helpfulness === 0) return;
+    setFeedbackSubmitting(true);
+    try {
+      // Build a plain-text message with all form fields
+      const messageLines = [
+        `Source: try-page-feedback`,
+        `Helpfulness: ${helpfulness}/5 stars`,
+        `Feedback: ${feedbackText || '(none)'}`,
+        `User Email: ${feedbackEmail.trim() || '(not provided)'}`,
+      ];
+
+      // Include input length metadata (not the content itself)
+      if (uploadedFile) {
+        messageLines.push(`Recording Size: ${uploadedFile.size} bytes`);
+      }
+      if (notesText.trim().length > 0) {
+        messageLines.push(`Notes Length: ${notesText.length} characters`);
+      }
+      const message = messageLines.join('\n');
+
+      // Send email via Formspree
+      await fetch('https://formspree.io/f/mjgeorjw', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          email: 'gitika.bose@gmail.com',
+          message,
+        }),
+      });
+      analyticsEvents.tryFeedbackSubmit(helpfulness);
+      setFeedbackSent(true);
+    } catch (err) {
+      console.error('Failed to submit feedback:', err);
+    } finally {
+      setFeedbackSubmitting(false);
+    }
   };
 
   const charCountClass =
@@ -289,7 +345,11 @@ function TryPage() {
           <div className="result-card">
             <button
               className="result-heading-toggle"
-              onClick={() => setLearningsExpanded(!learningsExpanded)}
+              onClick={() => {
+                const newExpanded = !learningsExpanded;
+                analyticsEvents.tryToggleLearnings(newExpanded);
+                setLearningsExpanded(newExpanded);
+              }}
             >
               <h3 className="result-heading" style={{ marginBottom: 0 }}>Key Learnings</h3>
               <span className={`result-toggle-arrow ${learningsExpanded ? 'expanded' : ''}`}>
@@ -323,13 +383,8 @@ function TryPage() {
           <img src="/logo/android-chrome-192x192.png" alt="Juno Logo" className="logo" />
           <span className="logo-text">Juno</span>
         </Link>
-        <div className="header-nav">
-          <Link to="/#features" className="nav-link">Features</Link>
-          <Link to="/#how-it-works" className="nav-link">How It Works</Link>
-          <Link to="/#about-us" className="nav-link">About Us</Link>
-        </div>
         <div className="header-actions">
-          <Link to="/" className="nav-link">← Back to Home</Link>
+          <Link to="/" className="nav-link" onClick={() => analyticsEvents.tryClickBackHome()}>← Back to Home</Link>
         </div>
       </header>
 
@@ -360,7 +415,7 @@ function TryPage() {
               {uploadedFile ? 'File selected' : 'Upload a recording'}
             </div>
             <div className="try-file-upload-hint">
-              MP3, WAV, M4A, OGG, FLAC, AAC — up to 25 MB
+              WebM or M4A — up to 25 MB
             </div>
             {uploadedFile && (
               <div className="try-file-name">
@@ -425,16 +480,22 @@ function TryPage() {
         <div className="try-feedback-inner">
           <div className="try-feedback-question">
             <label>Was this helpful?</label>
-            <div className="try-feedback-options">
-              {['Yes, very', 'Somewhat', 'Not really'].map((option) => (
+            <div className="try-star-rating">
+              {[1, 2, 3, 4, 5].map((star) => (
                 <button
-                  key={option}
-                  className={`try-feedback-option${helpfulness === option ? ' selected' : ''}`}
-                  onClick={() => setHelpfulness(option)}
+                  key={star}
+                  className={`try-star${star <= (hoverRating || helpfulness) ? ' filled' : ''}`}
+                  onClick={() => setHelpfulness(star)}
+                  onMouseEnter={() => setHoverRating(star)}
+                  onMouseLeave={() => setHoverRating(0)}
+                  aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
                 >
-                  {option}
+                  ★
                 </button>
               ))}
+              {helpfulness > 0 && (
+                <span className="try-star-label">{helpfulness}/5</span>
+              )}
             </div>
           </div>
 
@@ -453,13 +514,30 @@ function TryPage() {
             />
           </div>
 
+          <div className="try-feedback-question">
+            <label>
+              Enter email{' '}
+              <span style={{ fontWeight: 400, color: 'var(--muted-foreground)' }}>
+                (optional)
+              </span>
+            </label>
+            <input
+              type="email"
+              className="try-feedback-textarea"
+              style={{ minHeight: 'unset', height: 'auto', padding: '0.625rem 0.75rem' }}
+              placeholder="you@example.com"
+              value={feedbackEmail}
+              onChange={(e) => setFeedbackEmail(e.target.value)}
+            />
+          </div>
+
           <div className="try-feedback-submit">
             <button
               className="try-feedback-submit-button"
-              disabled={!helpfulness}
+              disabled={helpfulness === 0 || feedbackSubmitting || feedbackSent}
               onClick={handleFeedbackSubmit}
             >
-              Send feedback
+              {feedbackSent ? 'Thanks for your feedback!' : feedbackSubmitting ? 'Sending…' : 'Send feedback'}
             </button>
           </div>
         </div>

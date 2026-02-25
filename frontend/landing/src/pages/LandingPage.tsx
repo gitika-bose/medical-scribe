@@ -1,8 +1,14 @@
+import { useEffect } from 'react'
 import '../App.css'
 import { Link } from 'react-router-dom'
 import Footer from '../components/shared/Footer'
+import { analyticsEvents } from '../api/analytics'
 
 function LandingPage() {
+  useEffect(() => {
+    analyticsEvents.landingPageOpen();
+  }, []);
+
   const APP_URL = import.meta.env.VITE_APP_URL || 'https://app.meetjuno.health/';
 
   return (
@@ -14,14 +20,12 @@ function LandingPage() {
           <span className="logo-text">Juno</span>
         </div>
         <div className="header-nav">
-          <a href="#audience" className="nav-link">Who It's For</a>
-          <a href="#how-it-works" className="nav-link">How It Works</a>
-          <a href="#features" className="nav-link">The Problem</a>
-          <a href="#about-us" className="nav-link">About Us</a>
+          <a href="#features" className="nav-link" onClick={() => analyticsEvents.landingClickNavLink('features')}>The Problem</a>
+          <a href="#about-us" className="nav-link" onClick={() => analyticsEvents.landingClickNavLink('about-us')}>About Us</a>
         </div>
         <div className="header-actions">
-          <a href={APP_URL} className="login-button">Login</a>
-          <Link to="/try" className="cta-button-small">Try it now</Link>
+          <a href="/beta" className="login-button" onClick={() => analyticsEvents.landingClickJoinBeta('header')}>Join the beta</a>
+          <Link to="/try" className="cta-button-small" onClick={() => analyticsEvents.landingClickTryNow('header')}>Try it now</Link>
         </div>
       </header>
 
@@ -33,10 +37,11 @@ function LandingPage() {
             <h2 color='blue'>Juno turns them into clear next steps.</h2>
             <p>
              Upload notes or record a medical visit.
-             Juno listens and explains what matters in plain language so you don’t miss anything.
+             Juno explains what matters in plain language so you don’t miss anything.
             </p>
             <div className="hero-cta">
-              <Link to="/try" className="cta-button">Try it now</Link>
+              <Link to="/try" className="cta-button" onClick={() => analyticsEvents.landingClickTryNow('hero')}>Try it now</Link>
+              <Link to="/beta" className="cta-button-outline" onClick={() => analyticsEvents.landingClickJoinBeta('hero')}>Join the Beta</Link>
             </div>
             <div className="trust-badges">
               <span className="badge">No login required</span>
@@ -52,7 +57,7 @@ function LandingPage() {
       </section>
 
       {/* Who for? Section */}
-      <section className="audience" id="audience">
+      {/* <section className="audience" id="audience">
         <div className="section-header">
           <span className="section-label">WHO IS THIS FOR?</span>
           <h2>Juno is especially helpful for</h2>
@@ -83,10 +88,10 @@ function LandingPage() {
             </p>
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* How It Works Section */}
-      <section className="how-it-works" id="how-it-works">
+      {/* <section className="how-it-works" id="how-it-works">
         <div className="section-header-dark">
           <h2>How Juno works</h2>
           <p>In three simple steps</p>
@@ -114,7 +119,7 @@ function LandingPage() {
             </p>
           </div>
         </div>
-      </section>
+      </section> */}
 
       {/* Features Section */}
       <section className="features" id="features">
@@ -234,8 +239,8 @@ function LandingPage() {
           <h2>Ready to take control of your healthcare?</h2>
           <p>Join thousands of users who never miss important medical information.</p>
           <div className="cta-buttons">
-            <a href={APP_URL} className="cta-button-large">Get Started</a>
-            <Link to="/beta" className="cta-button-secondary">Join the Beta List</Link>
+            <a href={APP_URL} className="cta-button-large" onClick={() => analyticsEvents.landingClickGetStarted()}>Get Started</a>
+            <Link to="/beta" className="cta-button-secondary" onClick={() => analyticsEvents.landingClickJoinBeta('cta')}>Join the Beta List</Link>
           </div>
         </div>
       </section>

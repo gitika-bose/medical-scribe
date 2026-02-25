@@ -81,9 +81,9 @@ function TryPage() {
 
       // Set loading text
       if (hasRecording) {
-        setLoadingText('Juno is listening to your recording…');
+        setLoadingText('Juno is processing to your recording…');
       } else {
-        setLoadingText('Juno is reading your notes…');
+        setLoadingText('Juno is processing your notes…');
       }
 
       let processedSoapNotes: SoapNotes;

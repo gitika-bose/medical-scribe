@@ -4,6 +4,7 @@ from utils.auth import verify_firebase_token
 from utils.speech_to_text import SpeechToTextService
 from utils.storage import StorageService
 from utils.vertex_ai import VertexAIService
+from utils.processing import transcribe_full_recording, generate_soap_from_text, extract_text_from_pdf_gcs
 from config import initialize_firebase, GCP_PROJECT_ID, GCP_BUCKET_NAME, GCP_LOCATION, VERTEX_AI_MODEL
 import uuid
 import json
@@ -733,3 +734,391 @@ def search_appointments(user_id):
     
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+# =============================================================================
+# New Decomposed APIs
+# =============================================================================
+
+
+@appointments_bp.route('/appointments', methods=['POST'])
+@verify_firebase_token
+def create_appointment(user_id):
+    """
+    POST /appointments
+    Creates an empty appointment document in Firestore.
+    Returns the new appointmentId.
+    """
+    try:
+        # Create a new appointment document under the user's collection
+        appointments_ref = db.collection('users').document(user_id).collection('appointments')
+        new_appointment_ref = appointments_ref.document()  # auto-generated ID
+        appointment_id = new_appointment_ref.id
+
+        new_appointment_ref.set({
+            'status': 'InProgress',
+            'appointmentDate': datetime.utcnow().isoformat(),
+            'createdDate': datetime.utcnow().isoformat(),
+            'lastUpdated': datetime.utcnow().isoformat(),
+        })
+
+        print(f"[Create Appointment] Created empty appointment {appointment_id} for user {user_id}")
+
+        return jsonify({
+            'message': 'Appointment created successfully',
+            'appointmentId': appointment_id,
+            'status': 'InProgress'
+        }), 201
+
+    except Exception as e:
+        print(f"[Create Appointment] Error: {str(e)}")
+        return jsonify({'error': str(e), 'status': 'failed'}), 500
+
+
+@appointments_bp.route('/appointments/<appointment_id>/upload-recording-new', methods=['POST'])
+@verify_firebase_token
+def upload_recording_new(user_id, appointment_id):
+    """
+    POST /appointments/{appointmentId}/upload-recording-new
+    Uploads a recording file to Google Cloud Storage and returns the GCS URI.
+    Does NOT transcribe or process — that is handled by the /process endpoint.
+    """
+    try:
+        if 'recording' not in request.files:
+            return jsonify({'error': 'No recording file provided', 'status': 'failed'}), 400
+
+        audio_file = request.files['recording']
+
+        # Verify appointment exists and belongs to user
+        appointment_ref = db.collection('users').document(user_id).collection('appointments').document(appointment_id)
+        appointment_doc = appointment_ref.get()
+
+        if not appointment_doc.exists:
+            return jsonify({'error': 'Appointment not found', 'status': 'failed'}), 404
+
+        # Read audio content
+        audio_content = audio_file.read()
+        file_extension = audio_file.filename.split('.')[-1].lower() if audio_file.filename else 'webm'
+        audio_size_mb = len(audio_content) / (1024 * 1024)
+        print(f"[Upload Recording New] Received {audio_size_mb:.2f} MB, format: {file_extension}")
+
+        # Upload full audio to GCS
+        _, store_service, _ = get_services()
+        timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+        full_audio_filename = f"recordings/{appointment_id}/{timestamp}_full.{file_extension}"
+        recording_gcs_uri = store_service.upload_file(
+            audio_content, full_audio_filename, content_type=f'audio/{file_extension}'
+        )
+        print(f"[Upload Recording New] Uploaded to GCS: {recording_gcs_uri}")
+
+        # Update appointment with the recording link
+        appointment_ref.update({
+            'recordingLink': recording_gcs_uri,
+            'lastUpdated': datetime.utcnow().isoformat(),
+        })
+
+        return jsonify({
+            'message': 'Recording uploaded successfully',
+            'appointmentId': appointment_id,
+            'recordingGcsUri': recording_gcs_uri,
+            'status': 'uploaded'
+        }), 200
+
+    except Exception as e:
+        print(f"[Upload Recording New] Error: {str(e)}")
+        return jsonify({'error': str(e), 'status': 'failed'}), 500
+
+
+@appointments_bp.route('/appointments/<appointment_id>/upload-notes', methods=['POST'])
+@verify_firebase_token
+def upload_notes(user_id, appointment_id):
+    """
+    POST /appointments/{appointmentId}/upload-notes
+    Stores plain text notes on the appointment document in Firestore.
+    Accepts 'notes' from form data or JSON body.
+    """
+    try:
+        # Verify appointment exists and belongs to user
+        appointment_ref = db.collection('users').document(user_id).collection('appointments').document(appointment_id)
+        appointment_doc = appointment_ref.get()
+
+        if not appointment_doc.exists:
+            return jsonify({'error': 'Appointment not found', 'status': 'failed'}), 404
+
+        # Accept notes from form data or JSON body
+        notes_text = request.form.get('notes', '')
+        if not notes_text:
+            json_data = request.get_json(silent=True)
+            if json_data:
+                notes_text = json_data.get('notes', '')
+
+        if not notes_text:
+            return jsonify({'error': 'No notes provided', 'status': 'failed'}), 400
+
+        print(f"[Upload Notes] Storing {len(notes_text)} characters of notes for appointment {appointment_id}")
+
+        # Store notes in Firestore
+        appointment_ref.update({
+            'notes': notes_text,
+            'lastUpdated': datetime.utcnow().isoformat(),
+        })
+
+        return jsonify({
+            'message': 'Notes uploaded successfully',
+            'appointmentId': appointment_id,
+            'notesLength': len(notes_text),
+            'status': 'uploaded'
+        }), 200
+
+    except Exception as e:
+        print(f"[Upload Notes] Error: {str(e)}")
+        return jsonify({'error': str(e), 'status': 'failed'}), 500
+
+
+@appointments_bp.route('/appointments/<appointment_id>/upload-document', methods=['POST'])
+@verify_firebase_token
+def upload_document(user_id, appointment_id):
+    """
+    POST /appointments/{appointmentId}/upload-document
+    Uploads a PDF document to Google Cloud Storage and returns the GCS URI.
+    Does NOT extract text — that is handled by the /process endpoint.
+    """
+    try:
+        if 'document' not in request.files:
+            return jsonify({'error': 'No document file provided', 'status': 'failed'}), 400
+
+        doc_file = request.files['document']
+
+        # Verify appointment exists and belongs to user
+        appointment_ref = db.collection('users').document(user_id).collection('appointments').document(appointment_id)
+        appointment_doc = appointment_ref.get()
+
+        if not appointment_doc.exists:
+            return jsonify({'error': 'Appointment not found', 'status': 'failed'}), 404
+
+        # Read document content
+        doc_content = doc_file.read()
+        original_filename = doc_file.filename or 'document.pdf'
+        doc_size_mb = len(doc_content) / (1024 * 1024)
+        print(f"[Upload Document] Received {original_filename}: {doc_size_mb:.2f} MB")
+
+        # Upload to GCS
+        _, store_service, _ = get_services()
+        timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
+        # Preserve original extension, default to pdf
+        file_extension = original_filename.split('.')[-1].lower() if '.' in original_filename else 'pdf'
+        gcs_filename = f"documents/{appointment_id}/{timestamp}_{original_filename}"
+        document_gcs_uri = store_service.upload_file(
+            doc_content, gcs_filename, content_type='application/pdf'
+        )
+        print(f"[Upload Document] Uploaded to GCS: {document_gcs_uri}")
+
+        # Update appointment with the document link
+        appointment_ref.update({
+            'documentLink': document_gcs_uri,
+            'lastUpdated': datetime.utcnow().isoformat(),
+        })
+
+        return jsonify({
+            'message': 'Document uploaded successfully',
+            'appointmentId': appointment_id,
+            'documentGcsUri': document_gcs_uri,
+            'status': 'uploaded'
+        }), 200
+
+    except Exception as e:
+        print(f"[Upload Document] Error: {str(e)}")
+        return jsonify({'error': str(e), 'status': 'failed'}), 500
+
+
+@appointments_bp.route('/appointments/<appointment_id>/process', methods=['POST'])
+@verify_firebase_token
+def process_appointment(user_id, appointment_id):
+    """
+    POST /appointments/{appointmentId}/process
+    Accepts recording GCS URI, notes text, and/or document GCS URI.
+    Stores all references in Firebase, processes all inputs together
+    (transcribe recording, extract PDF text, combine with notes),
+    generates a SOAP summary, and updates the appointment.
+
+    Request body (JSON):
+    {
+        "recordingGcsUri": "gs://...",   // optional
+        "notes": "plain text notes",      // optional
+        "documentGcsUri": "gs://..."      // optional
+    }
+    At least one of the above must be provided.
+    """
+    try:
+        # Verify appointment exists and belongs to user
+        appointment_ref = db.collection('users').document(user_id).collection('appointments').document(appointment_id)
+        appointment_doc_snap = appointment_ref.get()
+
+        if not appointment_doc_snap.exists:
+            return jsonify({'error': 'Appointment not found', 'status': 'failed'}), 404
+
+        appointment_data = appointment_doc_snap.to_dict()
+
+        # Parse inputs from JSON body or form data
+        json_data = request.get_json(silent=True) or {}
+        recording_gcs_uri = json_data.get('recordingGcsUri', '') or request.form.get('recordingGcsUri', '')
+        notes_text = json_data.get('notes', '') or request.form.get('notes', '')
+        document_gcs_uri = json_data.get('documentGcsUri', '') or request.form.get('documentGcsUri', '')
+
+        # Fall back to values already stored on the appointment
+        if not recording_gcs_uri:
+            recording_gcs_uri = appointment_data.get('recordingLink', '')
+        if not notes_text:
+            notes_text = appointment_data.get('notes', '')
+        if not document_gcs_uri:
+            document_gcs_uri = appointment_data.get('documentLink', '')
+
+        if not recording_gcs_uri and not notes_text and not document_gcs_uri:
+            return jsonify({
+                'error': 'At least one of recordingGcsUri, notes, or documentGcsUri must be provided',
+                'status': 'failed'
+            }), 400
+
+        print(f"[Process] Starting processing for appointment {appointment_id}")
+        print(f"[Process] Inputs - recording: {'yes' if recording_gcs_uri else 'no'}, "
+              f"notes: {'yes' if notes_text else 'no'}, document: {'yes' if document_gcs_uri else 'no'}")
+
+        # Store all references in Firebase
+        update_fields: dict = {
+            'lastUpdated': datetime.utcnow().isoformat(),
+            'status': 'Processing',
+        }
+        if recording_gcs_uri:
+            update_fields['recordingLink'] = recording_gcs_uri
+        if notes_text:
+            update_fields['notes'] = notes_text
+        if document_gcs_uri:
+            update_fields['documentLink'] = document_gcs_uri
+        appointment_ref.update(update_fields)
+
+        stt_service, store_service, ai_service = get_services()
+
+        # Collect all text sources
+        text_parts: list[str] = []
+
+        # 1. Transcribe recording if provided
+        if recording_gcs_uri:
+            try:
+                print(f"[Process] Downloading recording from GCS...")
+                audio_content = store_service.download_file(recording_gcs_uri)
+                # Detect file extension from the GCS URI
+                file_extension = recording_gcs_uri.split('.')[-1].lower() if '.' in recording_gcs_uri else 'webm'
+                print(f"[Process] Transcribing recording ({len(audio_content)} bytes, format: {file_extension})...")
+
+                transcript = transcribe_full_recording(
+                    audio_content=audio_content,
+                    file_extension=file_extension,
+                    stt_service=stt_service,
+                    storage_service=store_service,
+                    appointment_id=appointment_id,
+                )
+
+                if transcript:
+                    text_parts.append(f"=== Audio Transcript ===\n{transcript}")
+                    # Also store the raw transcript in Firestore
+                    appointment_ref.update({
+                        'rawTranscript': transcript,
+                        'lastUpdated': datetime.utcnow().isoformat(),
+                    })
+                    print(f"[Process] Transcription complete: {len(transcript)} characters")
+                else:
+                    print(f"[Process] Warning: Transcription returned empty result")
+            except Exception as e:
+                print(f"[Process] Error transcribing recording: {str(e)}")
+                appointment_ref.update({
+                    'status': 'Error',
+                    'lastUpdated': datetime.utcnow().isoformat(),
+                })
+                return jsonify({'error': f'Recording transcription failed: {str(e)}', 'status': 'failed'}), 500
+
+        # 2. Add notes if provided
+        if notes_text:
+            text_parts.append(f"=== Patient/Provider Notes ===\n{notes_text}")
+            print(f"[Process] Notes included: {len(notes_text)} characters")
+
+        # 3. Extract text from PDF if provided
+        if document_gcs_uri:
+            try:
+                print(f"[Process] Extracting text from PDF document...")
+                pdf_text = extract_text_from_pdf_gcs(document_gcs_uri, store_service)
+                if pdf_text:
+                    text_parts.append(f"=== Document Content ===\n{pdf_text}")
+                    print(f"[Process] PDF text extracted: {len(pdf_text)} characters")
+                else:
+                    print(f"[Process] Warning: PDF text extraction returned empty result")
+            except Exception as e:
+                print(f"[Process] Error extracting PDF text: {str(e)}")
+                appointment_ref.update({
+                    'status': 'Error',
+                    'lastUpdated': datetime.utcnow().isoformat(),
+                })
+                return jsonify({'error': f'PDF text extraction failed: {str(e)}', 'status': 'failed'}), 500
+
+        # Combine all text
+        combined_text = "\n\n".join(text_parts)
+        print(f"[Process] Combined text length: {len(combined_text)} characters")
+
+        if not combined_text.strip():
+            appointment_ref.update({
+                'status': 'Error',
+                'lastUpdated': datetime.utcnow().isoformat(),
+            })
+            return jsonify({'error': 'No text content available to process', 'status': 'failed'}), 400
+
+        # Generate SOAP summary from combined text
+        try:
+            print(f"[Process] Generating SOAP summary...")
+            soap_notes = generate_soap_from_text(combined_text, ai_service)
+            print(f"[Process] SOAP summary generated successfully")
+        except Exception as e:
+            print(f"[Process] Error generating SOAP summary: {str(e)}")
+            appointment_ref.update({
+                'status': 'Error',
+                'lastUpdated': datetime.utcnow().isoformat(),
+            })
+            return jsonify({'error': f'SOAP processing failed: {str(e)}', 'status': 'failed'}), 500
+
+        # Update appointment with results
+        appointment_ref.update({
+            'processedSummary': soap_notes,
+            'status': 'Completed',
+            'lastUpdated': datetime.utcnow().isoformat(),
+        })
+
+        # Set title if not already set
+        appointment_doc_snap = appointment_ref.get()
+        appointment_data = appointment_doc_snap.to_dict()
+        curr_title = appointment_data.get('title')
+        new_title = soap_notes.get('title')
+        if new_title and not curr_title:
+            appointment_ref.update({'title': new_title})
+        print(f"[Process] Current title: {str(curr_title)}, new title: {str(new_title)}")
+        print(f"[Process] Appointment {appointment_id} processed successfully")
+
+        return jsonify({
+            'message': 'Appointment processed successfully',
+            'appointmentId': appointment_id,
+            'soapNotes': soap_notes,
+            'status': 'Completed',
+            'inputsProcessed': {
+                'recording': bool(recording_gcs_uri),
+                'notes': bool(notes_text),
+                'document': bool(document_gcs_uri),
+            }
+        }), 200
+
+    except Exception as e:
+        print(f"[Process] Unexpected error: {str(e)}")
+        try:
+            appointment_ref.update({
+                'status': 'Error',
+                'lastUpdated': datetime.utcnow().isoformat(),
+            })
+        except Exception:
+            pass
+        return jsonify({'error': str(e), 'status': 'failed'}), 500

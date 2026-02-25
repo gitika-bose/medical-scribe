@@ -13,9 +13,7 @@ function Footer() {
             Your privacy-first companion for medical visits.
           </p>
           <div className="footer-links-mobile">
-            <Link to="/#features">Features</Link>
-            <span className="separator">|</span>
-            <Link to="/#how-it-works">How It Works</Link>
+            <Link to="/#features">The Problem</Link>
             <span className="separator">|</span>
             <Link to="/beta#earlyAccess">Join the Beta</Link>
             <span className="separator">|</span>
@@ -30,8 +28,7 @@ function Footer() {
         </div>
         <div className="footer-section">
           <h4>Product</h4>
-          <Link to="/#features">Features</Link>
-          <Link to="/#how-it-works">How It Works</Link>
+          <Link to="/#features">The Problem</Link>
           <Link to="/beta#earlyAccess">Join the Beta</Link>
         </div>
         <div className="footer-section">

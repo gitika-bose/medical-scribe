@@ -174,6 +174,41 @@ def generate_questions(user_id, appointment_id):
     
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+    
+
+@appointments_bp.route('/appointments/generate-questions-try', methods=['POST'])
+def generate_questions_try():
+    """
+    POST /appointments/generate-questions-try
+    Generates 2-3 potential questions based on provided notes/transcript.
+    No auth required.
+    """
+    try:
+        # Accept transcript from form data or JSON body
+        appointment_transcript = request.form.get('transcript', '') or request.form.get('notes', '')
+
+        if not appointment_transcript:
+            json_data = request.get_json(silent=True)
+            if json_data:
+                appointment_transcript = json_data.get('transcript', '') or json_data.get('notes', '')
+
+        if not appointment_transcript:
+            return jsonify({'questions': [], 'message': 'No transcript provided'}), 200
+
+        # Generate questions using Vertex AI
+        try:
+            _, _, ai_service = get_services()
+            questions = ai_service.generate_questions(appointment_transcript)
+        except Exception as e:
+            return jsonify({'error': f'Question generation failed: {str(e)}'}), 500
+
+        return jsonify({
+            'questions': questions,
+            'message': 'Questions generated successfully'
+        }), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 
@@ -371,6 +406,152 @@ def upload_recording(user_id, appointment_id):
         print(f"[Upload Recording] Unexpected error: {str(e)}")
         return jsonify({'error': str(e), 'status': 'failed'}), 500
 
+
+@appointments_bp.route('/appointments/upload-recording-try', methods=['POST'])
+def upload_recording_try():
+    """
+    POST /appointments/upload-recording-try
+    Uploads a pre-recorded audio file, splits it into 30s chunks,
+    transcribes each chunk, and generates SOAP notes.
+    Mirrors upload-recording logic but without auth, Firestore, or GCS.
+    No auth required.
+    """
+    try:
+        # Check if file is in request
+        if 'recording' not in request.files:
+            return jsonify({'error': 'No recording file provided', 'status': 'failed'}), 400
+        
+        audio_file = request.files['recording']
+        print(f"[Upload Recording Try] Starting processing")
+        
+        # Read the full audio file
+        audio_content = audio_file.read()
+        audio_size_mb = len(audio_content) / (1024 * 1024)
+        print(f"[Upload Recording Try] Received audio file: {audio_size_mb:.2f} MB")
+        
+        # Load audio using pydub
+        try:
+            file_extension = audio_file.filename.split('.')[-1].lower() if audio_file.filename else 'webm'
+            print(f"[Upload Recording Try] Detected format: {file_extension}")
+            
+            audio = AudioSegment.from_file(io.BytesIO(audio_content), format=file_extension)
+            print(f"[Upload Recording Try] Audio loaded: duration={len(audio)}ms, channels={audio.channels}, frame_rate={audio.frame_rate}")
+        except Exception as e:
+            print(f"[Upload Recording Try] Error loading audio: {str(e)}")
+            return jsonify({'error': f'Failed to load audio file: {str(e)}', 'status': 'failed'}), 400
+        
+        # Split audio into 30-second chunks
+        chunk_length_ms = 30 * 1000  # 30 seconds in milliseconds
+        chunks = []
+        
+        for i in range(0, len(audio), chunk_length_ms):
+            chunk = audio[i:i + chunk_length_ms]
+            chunks.append(chunk)
+        
+        print(f"[Upload Recording Try] Split audio into {len(chunks)} chunks of ~30s each")
+        
+        # Process each chunk through the audio-chunks logic (same as upload-recording)
+        stt_service, _, _ = get_services()
+        
+        current_transcript = ""
+        for idx, chunk in enumerate(chunks):
+            print(f"[Upload Recording Try] Processing chunk {idx + 1}/{len(chunks)}")
+            
+            try:
+                # Export chunk to webm format (same as upload-recording)
+                chunk_buffer = io.BytesIO()
+                chunk.export(chunk_buffer, format='webm')
+                chunk_content = chunk_buffer.getvalue()
+                
+                # Transcribe using inline audio (same as upload-recording)
+                print(f"[Upload Recording Try] Transcribing chunk {idx + 1}...")
+                new_transcript_text = stt_service.transcribe_audio_chunk(chunk_content, use_gcs=False, gcs_uri=None)
+                print(f"[Upload Recording Try] Chunk {idx + 1} transcription completed")
+                
+                if current_transcript:
+                    current_transcript = current_transcript + '\n' + new_transcript_text
+                else:
+                    current_transcript = new_transcript_text
+                
+                print(f"[Upload Recording Try] Chunk {idx + 1} processed successfully")
+                
+            except Exception as e:
+                print(f"[Upload Recording Try] Error processing chunk {idx + 1}: {str(e)}")
+                return jsonify({
+                    'error': f'Failed to process chunk {idx + 1}: {str(e)}',
+                    'status': 'failed',
+                    'chunksProcessed': idx
+                }), 500
+        
+        print(f"[Upload Recording Try] All chunks processed successfully")
+        
+        if not current_transcript:
+            return jsonify({'error': 'No transcript available to process', 'status': 'failed'}), 400
+        
+        # Process transcript to SOAP format
+        print(f"[Upload Recording Try] Generating SOAP notes...")
+        try:
+            _, _, ai_service = get_services()
+            soap_notes = ai_service.process_transcript_to_soap(current_transcript)
+            print(f"[Upload Recording Try] SOAP notes generated successfully")
+        except Exception as e:
+            print(f"[Upload Recording Try] Error generating SOAP notes: {str(e)}")
+            return jsonify({'error': f'SOAP processing failed: {str(e)}', 'status': 'failed'}), 500
+        
+        soap_notes["version"] = "1"
+        new_title = soap_notes.get("title")
+        
+        return jsonify({
+            'message': 'Recording uploaded and processed successfully',
+            'soapNotes': soap_notes,
+            'title': new_title,
+            'transcript': current_transcript,
+            'status': 'Completed',
+            'chunksProcessed': len(chunks)
+        }), 200
+    
+    except Exception as e:
+        print(f"[Upload Recording Try] Unexpected error: {str(e)}")
+        return jsonify({'error': str(e), 'status': 'failed'}), 500
+
+
+@appointments_bp.route('/appointments/upload-notes-try', methods=['POST'])
+def upload_notes_try():
+    """
+    POST /appointments/upload-notes-try
+    Processes pasted appointment notes through SOAP format using LLM.
+    No auth required.
+    """
+    try:
+        # Check if file is in request
+        if 'notes' not in request.form:
+            return jsonify({'error': 'No appointment notes provided', 'status': 'failed'}), 400
+
+        appointment_notes = request.form['notes']    
+        print(f"[Appointment Notes] Starting processing for appointment")
+        
+        # Process transcript to SOAP format
+        try:
+            _, _, ai_service = get_services()
+            soap_notes = ai_service.process_transcript_to_soap(appointment_notes)
+            print(f"[Appointment Notes] SOAP notes generated successfully")
+        except Exception as e:
+            print(f"[Appointment Notes] Error generating SOAP notes: {str(e)}")
+            return jsonify({'error': f'SOAP processing failed: {str(e)}', 'status': 'failed'}), 500
+        
+        soap_notes["version"] = "1"
+        new_title = soap_notes.get("title")
+        
+        return jsonify({
+            'message': 'Recording uploaded and processed successfully',
+            'soapNotes': soap_notes,
+            'title':new_title,
+            'status': 'Completed'
+        }), 200
+    
+    except Exception as e:
+        print(f"[Upload Recording] Unexpected error: {str(e)}")
+        return jsonify({'error': str(e), 'status': 'failed'}), 500
 
 @appointments_bp.route('/appointments/<appointment_id>/finalize', methods=['POST'])
 @verify_firebase_token

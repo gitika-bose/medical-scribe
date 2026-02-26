@@ -24,7 +24,7 @@ function LandingPage() {
           <a href="#about-us" className="nav-link" onClick={() => analyticsEvents.landingClickNavLink('about-us')}>About Us</a>
         </div>
         <div className="header-actions">
-          <a href="/beta" className="login-button" onClick={() => analyticsEvents.landingClickJoinBeta('header')}>Join the beta</a>
+          <a href={APP_URL} className="login-button" onClick={() => analyticsEvents.landingClickJoinBeta('header')}>Login</a>
           <Link to="/try" className="cta-button-small" onClick={() => analyticsEvents.landingClickTryNow('header')}>Try it now</Link>
         </div>
       </header>
@@ -41,7 +41,7 @@ function LandingPage() {
             </p>
             <div className="hero-cta">
               <Link to="/try" className="cta-button" onClick={() => analyticsEvents.landingClickTryNow('hero')}>Try it now</Link>
-              <Link to="/beta" className="cta-button-outline" onClick={() => analyticsEvents.landingClickJoinBeta('hero')}>Join the Beta</Link>
+              {/* <Link to="/beta" className="cta-button-outline" onClick={() => analyticsEvents.landingClickJoinBeta('hero')}>Join the Beta</Link> */}
             </div>
             <div className="trust-badges">
               <span className="badge">No login required</span>
@@ -131,28 +131,26 @@ function LandingPage() {
           <div className="feature-card">
             <h3>Forget key instructions</h3>
             <p>
-              Get organized summaries with diagnoses, treatment plans, medications, 
-              and follow-up instructions automatically extracted.
+              Juno doesn't choose what to show you. Even the smallest detail is captured
+              and instantly available to you.
             </p>
           </div>
           <div className="feature-card">
             <h3>Misunderstand medications</h3>
             <p>
-              During the appointment, Juno helps you ask relevant questions 
-              so you never leave the appointment room confused.
+              Juno lists all follow-up actions, including medications with details like dosages and timings.
             </p>
           </div>
           <div className="feature-card">
             <h3>Can’t explain things to family</h3>
             <p>
-              Your data is encrypted and automatically deleted after processing. 
-              We only keep what you see and nothing more.
+              Juno allows you to easily share this information with loved ones and caregivers, giving them full access if you prefer.
             </p>
           </div>
           <div className="feature-card">
             <h3>Feel embarrassed repeteadly calling the doctor with questions</h3>
             <p>
-              Get all the relevant questions you need to ask at once, at the appointment or afterwards.
+              Juno generates all the relevant questions you need to ask at once, at the appointment or afterwards.
             </p>
           </div>
         </div>

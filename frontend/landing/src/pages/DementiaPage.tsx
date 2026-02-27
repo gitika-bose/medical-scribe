@@ -14,7 +14,7 @@ function DementiaPage() {
         <div className="header-nav">
           <a href="#features" className="nav-link">Features</a>
           <a href="#how-it-works" className="nav-link">How It Works</a>
-          <a href="#about-us" className="nav-link">About Us</a>
+          <a href="/aboutus" className="nav-link">About Us</a>
         </div>
         <div className="header-actions">
           <a href={APP_URL} className="login-button">Login</a>
@@ -129,38 +129,6 @@ function DementiaPage() {
         </div>
       </section>
 
-      {/* About Us Section */}
-      <section className="about-us" id="about-us">
-        <div className="about-content-wrapper">
-          <div className="section-header">
-            <span className="section-label">ABOUT US</span>
-            <h2>Empowering patients through better communication</h2>
-          </div>
-          <div className="about-layout">
-            <div className="about-image-side">
-              <img src="/aboutuspic.jpg" alt="Tejit Pabari and Gitika Bose" className="about-founders-photo" />
-              <p className="about-caption">Tejit Pabari (Co-Founder & CEO) and Gitika Bose (Co-Founder & CTO)</p>
-            </div>
-            <div className="about-text-side">
-              <p>
-                Juno was born from a simple observation: healthcare conversations are complex, 
-                and it's nearly impossible to remember everything discussed during an appointment. 
-                The founders have been through this countless times during medical visits for themselves and loved ones.
-              </p>
-              <p>
-                After consulting with numerous doctors in the US, we developed this AI powered note taking solution.
-                With privacy and security at its core, we built a tool that empowers patients 
-                to take control of their health information.
-              </p>
-              <p>
-                Whether you're managing a chronic condition, caring for a loved one, or simply want to 
-                be more informed about your health, Juno is here to help you every step of the way.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Testimonials Section */}
       <section className="testimonials-section">
         <div className="section-header">
@@ -231,7 +199,7 @@ function DementiaPage() {
               <span className="separator">|</span>
               <a href="#how-it-works">How It Works</a>
               <span className="separator">|</span>
-              <a href="#about">About</a>
+              <a href="/aboutus">About</a>
               <span className="separator">|</span>
               <a href="#privacy">Privacy</a>
               <span className="separator">|</span>
@@ -249,7 +217,7 @@ function DementiaPage() {
           </div>
           <div className="footer-section">
             <h4>Company</h4>
-            <a href="#about">About</a>
+            <a href="/aboutus">About</a>
             <a href="#privacy">Privacy</a>
             <a href="#terms">Terms</a>
           </div>

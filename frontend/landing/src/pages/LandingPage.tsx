@@ -21,7 +21,7 @@ function LandingPage() {
         </div>
         <div className="header-nav">
           <a href="#features" className="nav-link" onClick={() => analyticsEvents.landingClickNavLink('features')}>The Problem</a>
-          <a href="#about-us" className="nav-link" onClick={() => analyticsEvents.landingClickNavLink('about-us')}>About Us</a>
+          <Link to="/aboutus" className="nav-link" onClick={() => analyticsEvents.landingClickNavLink('about-us')}>About Us</Link>
         </div>
         <div className="header-actions">
           <a href="/beta" className="login-button" onClick={() => analyticsEvents.landingClickJoinBeta('header')}>Join the beta</a>
@@ -154,38 +154,6 @@ function LandingPage() {
             <p>
               Get all the relevant questions you need to ask at once, at the appointment or afterwards.
             </p>
-          </div>
-        </div>
-      </section>
-
-      {/* About Us Section */}
-      <section className="about-us" id="about-us">
-        <div className="about-content-wrapper">
-          <div className="section-header">
-            <span className="section-label">ABOUT US</span>
-            <h2>Empowering patients through better communication</h2>
-          </div>
-          <div className="about-layout">
-            <div className="about-image-side">
-              <img src="/aboutuspic.jpg" alt="Tejit Pabari and Gitika Bose" className="about-founders-photo" />
-              <p className="about-caption">Tejit Pabari (Co-Founder & CEO) and Gitika Bose (Co-Founder & CTO)</p>
-            </div>
-            <div className="about-text-side">
-              <p>
-                Juno was born from a simple observation: healthcare conversations are complex, 
-                and it's nearly impossible to remember everything discussed during an appointment. 
-                The founders have been through this countless times during medical visits for themselves and loved ones.
-              </p>
-              <p>
-                After consulting with numerous doctors in the US, we developed this AI powered note taking solution.
-                With privacy and security at its core, we built a tool that empowers patients 
-                to take control of their health information.
-              </p>
-              <p>
-                Whether you're managing a chronic condition, caring for a loved one, or simply want to 
-                be more informed about your health, Juno is here to help you every step of the way.
-              </p>
-            </div>
           </div>
         </div>
       </section>

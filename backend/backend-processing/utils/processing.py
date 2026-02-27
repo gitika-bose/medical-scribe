@@ -8,6 +8,7 @@ from utils.speech_to_text import SpeechToTextService
 from utils.storage import StorageService
 from utils.vertex_ai import VertexAIService
 from utils.pdf_extract import extract_text_from_pdf
+from utils.constants import Constants
 
 
 def transcribe_full_recording(
@@ -76,7 +77,7 @@ def transcribe_full_recording(
     return full_transcript
 
 
-def generate_soap_from_text(text: str, ai_service: VertexAIService) -> dict:
+def generate_soap_from_text(text: str, ai_service: VertexAIService, schema_version: str = Constants.SUMMARY_SCHEMA_VERSION_1_3) -> dict:
     """
     Generate SOAP-format summary from combined text using Vertex AI.
 
@@ -87,8 +88,8 @@ def generate_soap_from_text(text: str, ai_service: VertexAIService) -> dict:
     Returns:
         Dictionary with SOAP-structured notes (includes 'version' key)
     """
-    soap_notes = ai_service.process_transcript_to_soap(text)
-    soap_notes["version"] = "1"
+    soap_notes = ai_service.process_transcript_to_soap(text, schema_version=schema_version)
+    soap_notes["version"] = schema_version
     print(f"[SOAP] Generated SOAP notes successfully")
     return soap_notes
 

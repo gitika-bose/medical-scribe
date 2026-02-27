@@ -16,7 +16,6 @@ function LandingPage() {
       {/* Header */}
       <header className="header">
         <div className="logo-container">
-          <img src="/logo/android-chrome-192x192.png" alt="Juno Logo" className="logo" />
           <span className="logo-text">Juno</span>
         </div>
         <div className="header-nav">

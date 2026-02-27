@@ -1,6 +1,6 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
-from routes.appointments import appointments_bp
+from routes import all_blueprints
 from config import initialize_firebase
 import os
 
@@ -13,8 +13,9 @@ CORS(app)
 # Initialize Firebase
 initialize_firebase()
 
-# Register blueprints
-app.register_blueprint(appointments_bp)
+# Register all route blueprints
+for bp in all_blueprints:
+    app.register_blueprint(bp)
 
 # Health check endpoint
 @app.route('/health', methods=['GET'])
@@ -43,7 +44,10 @@ def root():
             'POST /appointments/{id}/finalize': 'Finalize appointment with full audio',
             'POST /appointments/{id}/upload-recording': 'Upload and process full audio (legacy)',
             'DELETE /appointments/{id}': 'Delete appointment and associated files',
-            'GET /appointments/search?q=<query>': 'Search appointments'
+            'GET /appointments/search?q=<query>': 'Search appointments',
+            'POST /appointments/generate-questions-try': 'Generate questions (no auth)',
+            'POST /appointments/upload-recording-try': 'Upload recording + SOAP (no auth)',
+            'POST /appointments/upload-notes-try': 'Notes to SOAP (no auth)',
         }
     }), 200
 
@@ -59,7 +63,7 @@ def internal_error(error):
 if __name__ == '__main__':
     # Get port from environment variable or use default
     port = int(os.environ.get('PORT', 8080))
-    
+
     # Run the application
     app.run(
         host='0.0.0.0',

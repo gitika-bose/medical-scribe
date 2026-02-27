@@ -33,7 +33,7 @@ function Footer() {
         </div>
         <div className="footer-section">
           <h4>Company</h4>
-          <a href="#about">About</a>
+          <Link to="/aboutus">About</Link>
           <a href="#privacy">Privacy</a>
           <a href="#terms">Terms</a>
         </div>

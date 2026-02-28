@@ -7,52 +7,41 @@ const problemCards = [
     ),
     iconBg: 'var(--primary-color)',
     hoverBorder: 'var(--primary-color)',
-    title: 'Healthcare is complex.',
-    description: 'Medical terminology, procedures, and systems are designed for trained professionals — not everyday patients trying to understand their own care.',
+    title: 'Complex terminology.',
+    description: 'Medical language is highly technical and often difficult to interpret without clinical training.',
   },
   {
     icon: (
       <svg className="w-7 h-7" style={{ color: 'var(--accent-color)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     ),
     iconBg: 'var(--accent-color)',
     hoverBorder: 'var(--accent-color)',
-    title: 'Language is technical.',
-    description: 'Lab results, prescriptions, and medical reports use specialized language that requires years of training to interpret — leaving patients in the dark.',
+    title: 'Rushed appointments.',
+    description: 'The average visit is 15–20 minutes. Patients leave with more questions than answers and no way to review what was discussed.',
   },
   {
     icon: (
       <svg className="w-7 h-7" style={{ color: 'var(--accent2-color)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
       </svg>
     ),
     iconBg: 'var(--accent2-color)',
     hoverBorder: 'var(--accent2-color)',
-    title: 'Appointments are short.',
-    description: 'The average doctor visit is 15-20 minutes. Patients often leave with more questions than answers — and no way to review what was discussed.',
+    title: 'Fragmented records.',
+    description: "Your medical history is scattered across providers and systems and no single view of your health.",
   },
   {
     icon: (
       <svg className="w-7 h-7" style={{ color: 'var(--accent3-color)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
       </svg>
     ),
     iconBg: 'var(--accent3-color)',
     hoverBorder: 'var(--accent3-color)',
-    title: 'Records are fragmented.',
-    description: "Your medical history lives across multiple providers, hospitals, and systems. There's no single place to see the full picture of your health.",
-  },
-  {
-    icon: (
-      <svg className="w-7 h-7" style={{ color: 'var(--accent4-color)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-      </svg>
-    ),
-    iconBg: 'var(--accent4-color)',
-    hoverBorder: 'var(--accent4-color)',
-    title: 'Insurance is opaque.',
-    description: "Coverage codes, deductibles, and explanations of benefits are nearly impossible to decode — leaving patients surprised by bills they didn't expect.",
+    title: 'Opaque insurance.',
+    description: 'Coverage codes and billing jargon leave patients surprised by bills they never expected.',
   },
   {
     icon: (
@@ -62,21 +51,21 @@ const problemCards = [
     ),
     iconBg: 'rgba(255, 255, 255, 0.2)',
     hoverBorder: 'rgba(255, 255, 255, 0.5)',
-    title: 'High stakes decisions.',
-    description: 'Patients are expected to make life-altering decisions about treatments, medications, and care plans — without fully understanding the information at hand.',
+    title: 'High-stakes decisions.',
+    description: 'Patients make life-altering choices about treatments and medications — often without full understanding.',
   },
 ]
 
 function ProblemSection() {
   return (
     <section className="py-24" style={{ backgroundColor: 'var(--dark-background-color)' }}>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16">
         <div className="text-center mb-16">
           <h2
-            className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6"
+            className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-4"
             style={{ fontFamily: 'var(--font-family-heading)' }}
           >
-            Medical information is complex and difficult for patients to interpret.
+            Healthcare shouldn't be this hard to understand.
           </h2>
         </div>
 

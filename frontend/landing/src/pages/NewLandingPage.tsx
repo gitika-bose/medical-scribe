@@ -4,7 +4,6 @@ import Footer from '../components/shared/Footer'
 import {
   HeroSection,
   ProblemSection,
-  MissionSection,
   PillarsSection,
   PlatformSection,
   AvailableTodaySection,
@@ -34,8 +33,8 @@ function NewLandingPage() {
           <a href="#problem" className="text-sm font-medium hover:opacity-70 transition-opacity" style={{ color: 'var(--dark-text-color)', textDecoration: 'none' }}>
             The Problem
           </a>
-          <a href="#mission" className="text-sm font-medium hover:opacity-70 transition-opacity" style={{ color: 'var(--dark-text-color)', textDecoration: 'none' }}>
-            Mission
+          <a href="#pillars" className="text-sm font-medium hover:opacity-70 transition-opacity" style={{ color: 'var(--dark-text-color)', textDecoration: 'none' }}>
+            Our Approach
           </a>
           <Link to="/aboutus" className="text-sm font-medium hover:opacity-70 transition-opacity" style={{ color: 'var(--dark-text-color)', textDecoration: 'none' }}>
             About Us
@@ -61,10 +60,9 @@ function NewLandingPage() {
       <div id="problem">
         <ProblemSection />
       </div>
-      <div id="mission">
-        <MissionSection />
+      <div id="pillars">
+        <PillarsSection />
       </div>
-      <PillarsSection />
       <PlatformSection />
       <AvailableTodaySection />
 

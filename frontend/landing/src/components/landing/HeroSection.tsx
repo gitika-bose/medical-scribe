@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom'
 function HeroSection() {
   return (
     <section className="pt-32 pb-20 bg-gradient-to-b from-[var(--light-background-color)] to-white overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+      <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16">
+        <div className="grid lg:grid-cols-2 gap-16 items-center">
           {/* Left Content */}
           <div className="relative z-10">
             <h1
@@ -17,25 +17,13 @@ function HeroSection() {
               Medical clarity, when it matters most.
             </h1>
             <p
-              className="text-xl mb-4"
+              className="text-xl mb-8"
               style={{
                 fontFamily: 'var(--font-family-body)',
                 color: 'var(--gray-text-color)',
               }}
             >
-              Improving medical literacy by making complex health information
-              understandable — before, during, and after every appointment.
-            </p>
-            <p
-              className="text-lg mb-8"
-              style={{
-                fontFamily: 'var(--font-family-body)',
-                color: 'var(--gray-text-color)',
-              }}
-            >
-              Juno transforms medical conversations, documents, and records into
-              clear, structured understanding so patients can make informed
-              decisions with confidence.
+              Juno transforms complex health information into clear, structured understanding so you can make confident decisions about your care.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Link
@@ -69,17 +57,17 @@ function HeroSection() {
           <div className="relative">
             {/* Connecting Lines (SVG) */}
             <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 400 400">
-            <defs>
+              <defs>
                 <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" style={{ stopColor: '#6B5FD8', stopOpacity: 0.6 }} />
-                <stop offset="100%" style={{ stopColor: '#00D4AA', stopOpacity: 0.8 }} />
+                  <stop offset="0%" style={{ stopColor: '#6B5FD8', stopOpacity: 0.6 }} />
+                  <stop offset="100%" style={{ stopColor: '#00D4AA', stopOpacity: 0.8 }} />
                 </linearGradient>
-            </defs>
-            <path d="M80 100 Q 150 200, 200 200" stroke="url(#lineGradient)" strokeWidth="2" fill="none" className="animate-pulse" style={{ animationDuration: '2s' }} />
-            <path d="M50 170 Q 150 200, 200 200" stroke="url(#lineGradient)" strokeWidth="2" fill="none" className="animate-pulse" style={{ animationDuration: '2s' }} />
-            <path d="M300 120 Q 250 180, 200 200" stroke="url(#lineGradient)" strokeWidth="2" fill="none" className="animate-pulse" style={{ animationDuration: '2.5s' }} />
-            <path d="M80 250 Q 120 220, 180 210" stroke="url(#lineGradient)" strokeWidth="2" fill="none" className="animate-pulse" style={{ animationDuration: '3s' }} />
-            <path d="M320 280 Q 280 240, 220 210" stroke="url(#lineGradient)" strokeWidth="2" fill="none" className="animate-pulse" style={{ animationDuration: '2.8s' }} />
+              </defs>
+              <path d="M80 90 Q 150 190, 200 195" stroke="url(#lineGradient)" strokeWidth="2" fill="none" className="animate-pulse" style={{ animationDuration: '2s' }} />
+              <path d="M50 160 Q 150 190, 200 195" stroke="url(#lineGradient)" strokeWidth="2" fill="none" className="animate-pulse" style={{ animationDuration: '2s' }} />
+              <path d="M300 110 Q 250 170, 200 195" stroke="url(#lineGradient)" strokeWidth="2" fill="none" className="animate-pulse" style={{ animationDuration: '2.5s' }} />
+              <path d="M60 280 Q 100 250, 180 210" stroke="url(#lineGradient)" strokeWidth="2" fill="none" className="animate-pulse" style={{ animationDuration: '3s' }} />
+              <path d="M320 270 Q 280 240, 220 210" stroke="url(#lineGradient)" strokeWidth="2" fill="none" className="animate-pulse" style={{ animationDuration: '2.8s' }} />
             </svg>
 
             <div className="relative w-full aspect-square max-w-lg mx-auto">
@@ -91,7 +79,9 @@ function HeroSection() {
                 <div className="w-full h-4 rounded mb-2" style={{ backgroundColor: 'var(--primary-color)', opacity: 0.2 }} />
                 <div className="w-full h-2 rounded mb-1" style={{ backgroundColor: 'var(--dark-border-color)' }} />
                 <div className="w-3/4 h-2 rounded mb-1" style={{ backgroundColor: 'var(--dark-border-color)' }} />
-                <div className="w-1/2 h-2 rounded" style={{ backgroundColor: 'var(--dark-border-color)' }} />
+                <div className="w-1/2 h-2 rounded mb-1" style={{ backgroundColor: 'var(--dark-border-color)' }} />
+                <div className="w-3/4 h-2 rounded mb-1" style={{ backgroundColor: 'var(--dark-border-color)' }} />
+
                 <span
                   className="absolute -top-2 -right-2 text-white text-xs px-2 py-1 rounded-full"
                   style={{ backgroundColor: 'var(--accent2-color)' }}
@@ -101,24 +91,24 @@ function HeroSection() {
               </div>
 
               <div
-                className="absolute top-8 right-8 w-28 h-36 bg-white rounded-lg shadow-lg p-2 transform rotate-6"
+                className="absolute top-4 right-8 w-28 h-36 bg-white rounded-lg shadow-lg p-2 transform rotate-6"
                 style={{ borderColor: 'var(--light-border-color)', borderWidth: 1, animationDuration: '4s' }}
               >
-                <div className="w-full h-4 rounded mb-2" style={{ backgroundColor: 'var(--accent-color)', opacity: 0.2 }} />
+                <div className="w-full h-4 rounded mb-2" style={{ backgroundColor: 'var(--accent4-color)', opacity: 0.2 }} />
                 <div className="w-full h-2 rounded mb-1" style={{ backgroundColor: 'var(--dark-border-color)' }} />
                 <div className="w-2/3 h-2 rounded mb-1" style={{ backgroundColor: 'var(--dark-border-color)' }} />
                 <div className="w-full h-2 rounded mb-1" style={{ backgroundColor: 'var(--dark-border-color)' }} />
                 <div className="w-3/4 h-2 rounded" style={{ backgroundColor: 'var(--dark-border-color)' }} />
                 <span
                   className="absolute -top-2 -right-2 text-white text-xs px-2 py-1 rounded-full"
-                  style={{ backgroundColor: 'var(--accent3-color)' }}
+                  style={{ backgroundColor: '#8B5CF6' }}
                 >
                   Records
                 </span>
               </div>
 
               <div
-                className="absolute top-1/3 -left-4 bg-white rounded-lg shadow-lg p-2 transform rotate-12"
+                className="absolute top-[28%] -left-4 bg-white rounded-lg shadow-lg p-2 transform rotate-12"
                 style={{ width: '5.5rem', height: '7rem', borderColor: 'var(--light-border-color)', borderWidth: 1, animationDuration: '2.5s' }}
               >
                 <div className="w-full h-4 rounded mb-2" style={{ backgroundColor: 'var(--accent3-color)', opacity: 0.2 }} />
@@ -134,7 +124,7 @@ function HeroSection() {
               </div>
 
               <div
-                className="absolute bottom-32 left-0 bg-white rounded-lg shadow-lg p-2 transform rotate-3"
+                className="absolute bottom-24 -left-2 bg-white rounded-lg shadow-lg p-2 transform rotate-3"
                 style={{ width: '6.5rem', height: '8.5rem', borderColor: 'var(--light-border-color)', borderWidth: 1, animationDuration: '3.5s' }}
               >
                 <div className="w-full h-4 rounded mb-2" style={{ backgroundColor: 'var(--accent4-color)', opacity: 0.2 }} />
@@ -159,11 +149,11 @@ function HeroSection() {
               >
                 <div className="w-full h-4 rounded mb-2" style={{ backgroundColor: 'var(--accent2-color)', opacity: 0.2 }} />
                 <div className="w-full h-2 rounded mb-1" style={{ backgroundColor: 'var(--dark-border-color)' }} />
-                <div className="w-1/3 h-8 ml-1" style={{ borderLeft: '2px solid var(--accent-color)' }} />
                 <div className="w-full h-2 rounded mt-1" style={{ backgroundColor: 'var(--dark-border-color)' }} />
+                <div className="w-2/3 h-2 rounded mt-1" style={{ backgroundColor: 'var(--dark-border-color)' }} />
                 <span
-                  className="absolute -top-2 -right-2 text-white text-xs px-2 py-1 rounded-full"
-                  style={{ backgroundColor: 'var(--accent-color)' }}
+                  className="absolute -top-2 -right-2 text-white text-xs font-bold px-2 py-1 rounded-full"
+                  style={{ backgroundColor: '#059669' }}
                 >
                   Rx
                 </span>
@@ -191,39 +181,39 @@ function HeroSection() {
                 </div>
               </div>
 
-              {/* Juno Outputs at Bottom */}
-              <div className="absolute -bottom-4 left-1/2 transform -translate-x-1/2 flex gap-3 flex-wrap justify-center">
-                <div className="bg-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2" style={{ border: '1px solid var(--primary-color)' }}>
+              {/* Outputs at Bottom */}
+              <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 flex gap-2 flex-wrap justify-center" style={{ width: '110%' }}>
+                <div className="bg-white px-3 py-2 rounded-full shadow-lg flex items-center gap-2" style={{ border: '2px solid var(--primary-color)' }}>
                   <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--primary-color)' }}>
                     <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                   </div>
-                  <span className="text-sm font-semibold" style={{ color: 'var(--dark-text-color)' }}>Juno Summary</span>
+                  <span className="text-xs font-bold" style={{ color: 'var(--primary-color)' }}>Summary</span>
                 </div>
-                <div className="bg-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2" style={{ border: '1px solid var(--accent-color)' }}>
+                <div className="bg-white px-3 py-2 rounded-full shadow-lg flex items-center gap-2" style={{ border: '2px solid var(--accent-color)' }}>
                   <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--accent-color)' }}>
                     <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
                     </svg>
                   </div>
-                  <span className="text-sm font-semibold" style={{ color: 'var(--dark-text-color)' }}>Juno Timeline</span>
+                  <span className="text-xs font-bold" style={{ color: 'var(--accent-color)' }}>Timeline</span>
                 </div>
-                <div className="bg-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2" style={{ border: '1px solid var(--accent2-color)' }}>
+                <div className="bg-white px-3 py-2 rounded-full shadow-lg flex items-center gap-2" style={{ border: '2px solid var(--accent2-color)' }}>
                   <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--accent2-color)' }}>
                     <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
-                  <span className="text-sm font-semibold" style={{ color: 'var(--dark-text-color)' }}>Juno Questions</span>
+                  <span className="text-xs font-bold" style={{ color: 'var(--accent2-color)' }}>Questions</span>
                 </div>
-                <div className="bg-white px-4 py-2 rounded-full shadow-lg flex items-center gap-2" style={{ border: '1px solid var(--accent3-color)' }}>
+                <div className="bg-white px-3 py-2 rounded-full shadow-lg flex items-center gap-2" style={{ border: '2px solid var(--accent3-color)' }}>
                   <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--accent3-color)' }}>
                     <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                     </svg>
                   </div>
-                  <span className="text-sm font-semibold" style={{ color: 'var(--dark-text-color)' }}>Juno Prep</span>
+                  <span className="text-xs font-bold" style={{ color: 'var(--accent3-color)' }}>Prep</span>
                 </div>
               </div>
             </div>

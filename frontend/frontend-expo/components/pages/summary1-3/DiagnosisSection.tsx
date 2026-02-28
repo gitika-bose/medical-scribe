@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { ReadMore } from '@/components/shared/ReadMore';
+import { Colors } from '@/constants/Colors';
 
 interface DiagnosisDetail {
   title: string;
@@ -36,7 +38,10 @@ export function DiagnosisSection({ diagnosis }: DiagnosisSectionProps) {
 
   return (
     <View style={styles.card}>
-      <Text style={styles.heading}>Diagnosis</Text>
+      <View style={styles.header}>
+        <Ionicons name="search-outline" size={20} color={Colors.accent2} />
+        <Text style={styles.heading}>Diagnosis</Text>
+      </View>
       <ReadMore items={items} initialCount={3} />
     </View>
   );
@@ -50,11 +55,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#E5E7EB',
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
   heading: {
     fontSize: 17,
     fontWeight: '600',
     color: '#111',
-    marginBottom: 12,
   },
   item: {
     flexDirection: 'row',

@@ -195,7 +195,7 @@ const ExplainAppComponent = forwardRef<HTMLDivElement>((_props, ref) => {
       }
 
       if (hasNotes) {
-        setLoadingStep('Saving notes…');
+        setLoadingStep('Uploading notes…');
         await tryUploadNotes(appointmentId, notesText.trim());
       }
 

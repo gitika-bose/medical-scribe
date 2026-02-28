@@ -165,6 +165,9 @@ function AvailableTodaySection() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                   </svg>
                 </a>
+                <p className="text-xs mt-2" style={{ color: 'var(--gray-text-color)' }}>
+                  No login required
+                </p>
               </div>
             </div>
           </div>

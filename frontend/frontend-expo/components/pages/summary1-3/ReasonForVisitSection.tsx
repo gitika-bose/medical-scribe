@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Colors } from '@/constants/Colors';
 
 interface ReasonForVisit {
   reason: string;
@@ -19,7 +21,10 @@ export function ReasonForVisitSection({ reasonForVisit }: ReasonForVisitSectionP
     <View style={styles.card}>
       <TouchableOpacity onPress={() => setCollapsed(!collapsed)} activeOpacity={0.7}>
         <View style={styles.headerRow}>
-          <Text style={styles.heading}>Reason for Visit</Text>
+          <View style={styles.headerLeft}>
+            <Ionicons name="medical-outline" size={20} color={Colors.purple[500]} />
+            <Text style={styles.heading}>Reason for Visit</Text>
+          </View>
           <Text style={[styles.toggleArrow, !collapsed && styles.toggleArrowExpanded]}>▸</Text>
         </View>
       </TouchableOpacity>
@@ -55,12 +60,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+    marginBottom: 12,
+  },
   heading: {
     fontSize: 17,
     fontWeight: '600',
     color: '#111',
-    marginBottom: 12,
-    flex: 1,
   },
   toggleArrow: {
     fontSize: 18,

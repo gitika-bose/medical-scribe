@@ -65,7 +65,9 @@ function HeroSection() {
             </div>
           </div>
 
-          {/* Connecting Lines (SVG) */}
+          {/* Right Animation Visual */}
+          <div className="relative">
+            {/* Connecting Lines (SVG) */}
             <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 400 400">
             <defs>
                 <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -74,14 +76,12 @@ function HeroSection() {
                 </linearGradient>
             </defs>
             <path d="M80 100 Q 150 200, 200 200" stroke="url(#lineGradient)" strokeWidth="2" fill="none" className="animate-pulse" style={{ animationDuration: '2s' }} />
-            <path d="M80 170 Q 150 200, 200 200" stroke="url(#lineGradient)" strokeWidth="2" fill="none" className="animate-pulse" style={{ animationDuration: '2s' }} />
-            <path d="M320 120 Q 250 180, 200 200" stroke="url(#lineGradient)" strokeWidth="2" fill="none" className="animate-pulse" style={{ animationDuration: '2.5s' }} />
-            <path d="M60 250 Q 120 220, 180 210" stroke="url(#lineGradient)" strokeWidth="2" fill="none" className="animate-pulse" style={{ animationDuration: '3s' }} />
-            <path d="M340 280 Q 280 240, 220 210" stroke="url(#lineGradient)" strokeWidth="2" fill="none" className="animate-pulse" style={{ animationDuration: '2.8s' }} />
+            <path d="M50 170 Q 150 200, 200 200" stroke="url(#lineGradient)" strokeWidth="2" fill="none" className="animate-pulse" style={{ animationDuration: '2s' }} />
+            <path d="M300 120 Q 250 180, 200 200" stroke="url(#lineGradient)" strokeWidth="2" fill="none" className="animate-pulse" style={{ animationDuration: '2.5s' }} />
+            <path d="M80 250 Q 120 220, 180 210" stroke="url(#lineGradient)" strokeWidth="2" fill="none" className="animate-pulse" style={{ animationDuration: '3s' }} />
+            <path d="M320 280 Q 280 240, 220 210" stroke="url(#lineGradient)" strokeWidth="2" fill="none" className="animate-pulse" style={{ animationDuration: '2.8s' }} />
             </svg>
 
-          {/* Right Animation Visual */}
-          <div className="relative">
             <div className="relative w-full aspect-square max-w-lg mx-auto">
               {/* Scattered Documents */}
               <div

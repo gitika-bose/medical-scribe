@@ -16,11 +16,13 @@ interface AlertModalProps {
   cancelLabel?: string;
   onConfirm: () => void;
   onCancel: () => void;
+  children?: React.ReactNode;
 }
 
 /**
  * A reusable alert / confirmation modal that mirrors the AlertDialog
- * pattern used in the web app.
+ * pattern used in the web app. Supports optional children rendered
+ * between the description and footer buttons.
  */
 export function AlertModal({
   visible,
@@ -30,6 +32,7 @@ export function AlertModal({
   cancelLabel = 'Cancel',
   onConfirm,
   onCancel,
+  children,
 }: AlertModalProps) {
   return (
     <Modal
@@ -42,6 +45,7 @@ export function AlertModal({
         <Pressable style={styles.container} onPress={() => {}}>
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.description}>{description}</Text>
+          {children}
 
           <View style={styles.footer}>
             <TouchableOpacity style={styles.cancelButton} onPress={onCancel}>
@@ -74,13 +78,13 @@ const styles = StyleSheet.create({
     maxWidth: 400,
   },
   title: {
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: '600',
     color: '#111',
     marginBottom: 8,
   },
   description: {
-    fontSize: 15,
+    fontSize: 17,
     color: '#555',
     lineHeight: 22,
     marginBottom: 24,
@@ -105,7 +109,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 8,
-    backgroundColor: '#111',
+    backgroundColor: '#6B5FD8',
   },
   confirmText: {
     fontSize: 15,

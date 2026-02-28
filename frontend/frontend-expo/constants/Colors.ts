@@ -1,70 +1,105 @@
 /**
  * Shared color scheme for Juno app
- * Based on frontend/shared-theme.css
+ * Updated to match the new landing page design system
  */
 
 export const Colors = {
   // Base colors
   background: '#ffffff',
-  foreground: '#252525',
+  foreground: '#1E293B',
   
-  // Primary brand colors (dark blue/black)
-  primary: '#030213',
+  // Primary brand color (purple - from landing page)
+  primary: '#6B5FD8',
+  primaryHover: '#5A4FC7',
   primaryForeground: '#ffffff',
   
   // Secondary colors
-  secondary: '#f3f3f5',
-  secondaryForeground: '#030213',
+  secondary: '#F1F5F9',
+  secondaryForeground: '#1E293B',
   
   // Muted colors
-  muted: '#ececf0',
-  mutedForeground: '#717182',
+  muted: '#F1F5F9',
+  mutedForeground: '#64748B',
   
-  // Accent colors
-  accent: '#e9ebef',
-  accentForeground: '#030213',
+  // Accent colors (from landing page)
+  accent: '#00D4AA',       // Teal/green accent
+  accent2: '#E85D75',      // Pink/coral accent
+  accent3: '#F59E0B',      // Amber accent
+  accent4: '#3B82F6',      // Blue accent
+  accentForeground: '#ffffff',
   
-  // Destructive/Error colors (red)
+  // Destructive/Error colors
   destructive: '#d4183d',
   destructiveForeground: '#ffffff',
   
-  // Border and input
-  border: '#E5E7EB',
-  input: 'transparent',
-  inputBackground: '#f3f3f5',
+  // Background variants
+  lightBackground: '#F8F7FF',
+  darkBackground: '#0F172A',
+  mediumBackground: '#F1F5F9',
   
-  // Brand colors - Red (primary brand color)
+  // Border and input
+  border: '#E2E8F0',
+  darkBorder: '#CBD5E1',
+  input: 'transparent',
+  inputBackground: '#F1F5F9',
+  
+  // Brand colors - Red
   red: {
-    50: '#fbf0ed',
-    300: '#e2c1c6',
-    500: '#db7f67',
-    600: '#db7f67',
-    700: '#a12808',
-    900: '#8d2307',
+    50: '#FEF2F2',
+    300: '#FCA5A5',
+    500: '#EF4444',
+    600: '#DC2626',
+    700: '#B91C1C',
+    900: '#7F1D1D',
   },
   
-  // Brand colors - Blue (secondary brand color)
+  // Brand colors - Blue
   blue: {
-    50: '#e3eef5',
-    300: '#77b6d7',
-    500: '#63a2ca',
-    600: '#3d86b4',
-    700: '#326e94',
-    900: '#1d1e2c',
+    50: '#EFF6FF',
+    300: '#93C5FD',
+    500: '#3B82F6',
+    600: '#2563EB',
+    700: '#6B5FD8',  // Now maps to primary purple
+    900: '#1E3A8A',
+  },
+  
+  // Brand colors - Purple (primary brand)
+  purple: {
+    50: '#F8F7FF',
+    100: '#EDE9FE',
+    200: '#DDD6FE',
+    300: '#C4B5FD',
+    400: '#A78BFA',
+    500: '#6B5FD8',
+    600: '#5A4FC7',
+    700: '#4C3FB6',
+    800: '#3B2F9E',
+    900: '#2E2580',
+  },
+  
+  // Brand colors - Teal/Green (accent)
+  teal: {
+    50: '#F0FDFA',
+    100: '#CCFBF1',
+    300: '#5EEAD4',
+    500: '#00D4AA',
+    600: '#0D9488',
+    700: '#0F766E',
   },
   
   // Additional brand colors
-  purple: {
-    500: '#d8a4d4',
-  },
   orange: {
-    500: '#dbbea1',
+    500: '#F59E0B',
   },
   green: {
-    500: '#a37b73',
+    500: '#10b981',
+    600: '#059669',
+  },
+  pink: {
+    500: '#E85D75',
   },
   
-  // Neutral grays (for consistency)
+  // Neutral grays
   gray: {
     50: '#F9FAFB',
     100: '#F3F4F6',
@@ -76,62 +111,5 @@ export const Colors = {
     700: '#374151',
     800: '#1F2937',
     900: '#111827',
-  },
-};
-
-// Legacy color mappings for backward compatibility
-// These should be gradually replaced with the brand colors above
-export const LegacyColors = {
-  // Old blue (should be replaced with brand blue)
-  oldBlue: {
-    50: '#EFF6FF',
-    100: '#DBEAFE',
-    200: '#BFDBFE',
-    300: '#93C5FD',
-    500: '#3B82F6',
-    600: '#2563EB',
-    700: '#1D4ED8',
-    800: '#1E40AF',
-    900: '#1E3A8A',
-  },
-  
-  // Old red (should be replaced with brand red)
-  oldRed: {
-    50: '#FEF2F2',
-    100: '#FEE2E2',
-    200: '#FECACA',
-    300: '#FCA5A5',
-    500: '#EF4444',
-    600: '#DC2626',
-    700: '#B91C1C',
-    800: '#991B1B',
-    900: '#7F1D1D',
-  },
-  
-  // Other colors
-  yellow: {
-    50: '#FEF3C7',
-    100: '#FDE68A',
-    400: '#FBBF24',
-    500: '#F59E0B',
-    700: '#92400E',
-  },
-  
-  green: {
-    500: '#10b981',
-    600: '#15803D',
-    700: '#DCFCE7',
-  },
-  
-  purple: {
-    500: '#A855F7',
-  },
-  
-  orange: {
-    500: '#F97316',
-  },
-  
-  pink: {
-    400: '#f472b6',
   },
 };

@@ -158,7 +158,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       } else if (result?.type === 'cancel' || result?.type === 'dismiss') {
         // User intentionally cancelled – don't treat as an error
-        console.log('Google Sign-In was cancelled by user');
         return;
       } else {
         throw new Error('Sign-in failed');

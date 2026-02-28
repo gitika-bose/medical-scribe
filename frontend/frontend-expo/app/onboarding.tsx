@@ -72,7 +72,7 @@ export default function OnboardingScreen() {
             />
             <Text style={styles.heading}>Meet Juno</Text>
             <Text style={styles.description}>
-              Your privacy first companion for medical appointments
+              Get medical clarity, when it matters most.
             </Text>
           </View>
         );
@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
   },
   continueButton: {
     width: '100%',
-    backgroundColor: '#111',
+    backgroundColor: '#6B5FD8',
     borderRadius: 999,
     paddingVertical: 16,
     paddingHorizontal: 24,
@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
   },
   indicatorActive: {
     width: 32,
-    backgroundColor: '#111',
+    backgroundColor: '#6B5FD8',
   },
   indicatorInactive: {
     width: 8,

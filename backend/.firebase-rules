@@ -1,0 +1,77 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Restricted users: can only read and delete, no create/update
+    function isRestricted() {
+      return request.auth.uid in [
+        'LKj2Bik5XDXFMHkJS1K5GrCISIE2',
+        'ZBZHIGyCyeNTRgsEzw8KAwQS1qO2',
+        'IcAqzH9InFWiEU4ivbQ9NOPf0V13',
+        'QFJyJfUT9UbZJUgXvZqg5JdMKkA3'
+      ];
+    }
+
+    // User documents
+    match /users/{userId} {
+      // Helper function to validate user data
+      function isValidUserData() {
+        return request.resource.data.keys().hasAll(['email', 'displayName', 'createdAt'])
+               && request.resource.data.email is string
+               && request.resource.data.displayName is string
+               && request.resource.data.createdAt is timestamp;
+      }
+      
+      // Allow user to create their own user document (blocked for restricted users)
+      allow create: if request.auth != null 
+                    && request.auth.uid == userId
+                    && isValidUserData()
+                    && !isRestricted();
+      
+      // Allow user to read their own document
+      allow read: if request.auth != null && request.auth.uid == userId;
+      
+      // Allow user to update their own document (blocked for restricted users)
+      allow update: if request.auth != null 
+                    && request.auth.uid == userId
+                    && !isRestricted();
+        
+      // Delete: user can delete their own document
+      allow delete: if request.auth != null && request.auth.uid == userId;
+      
+      // Appointments subcollection
+      match /appointments/{appointmentId} {
+        // Helper function to check valid appointment data
+        function isValidAppointment() {
+          return request.resource.data.keys().hasAll(['status', 'appointmentDate'])
+                 && request.resource.data.status in ['InProgress', 'Completed', 'Error']
+                 && request.resource.data.appointmentDate is timestamp;
+        }
+        
+        // Read: user can read their own appointments
+        allow read: if request.auth != null && request.auth.uid == userId;
+        
+        // Create: must be valid and belong to user (blocked for restricted users)
+        allow create: if request.auth != null 
+                      && request.auth.uid == userId
+                      && isValidAppointment()
+                      && !isRestricted();
+        
+        // Update: must be valid and belong to user (blocked for restricted users)
+        allow update: if request.auth != null 
+                      && request.auth.uid == userId
+                      && isValidAppointment()
+                      && !isRestricted();
+        
+        // Delete: user can delete their own appointments
+        allow delete: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+    
+    // Deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

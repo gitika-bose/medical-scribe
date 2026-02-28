@@ -1,6 +1,6 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
-from routes.appointments import appointments_bp
+from routes import all_blueprints
 from config import initialize_firebase
 import os
 
@@ -13,8 +13,9 @@ CORS(app)
 # Initialize Firebase
 initialize_firebase()
 
-# Register blueprints
-app.register_blueprint(appointments_bp)
+# Register all route blueprints
+for bp in all_blueprints:
+    app.register_blueprint(bp)
 
 # Health check endpoint
 @app.route('/health', methods=['GET'])
@@ -31,14 +32,22 @@ def root():
     """Root endpoint with API information"""
     return jsonify({
         'name': 'Medical Scribe Processing API',
-        'version': '1.0.0',
+        'version': '1.1.0',
         'endpoints': {
+            'POST /appointments': 'Create an empty appointment',
+            'POST /appointments/{id}/upload-recording-new': 'Upload recording to GCS (no processing)',
+            'POST /appointments/{id}/upload-notes': 'Store plain text notes on appointment',
+            'POST /appointments/{id}/upload-document': 'Upload PDF document to GCS',
+            'POST /appointments/{id}/process': 'Process appointment (transcribe, extract PDF, summarize)',
             'POST /appointments/{id}/audio-chunks': 'Upload audio chunk for transcription',
             'POST /appointments/{id}/generate-questions': 'Generate patient questions',
             'POST /appointments/{id}/finalize': 'Finalize appointment with full audio',
-            'POST /appointments/{id}/upload-recording': 'Create appointment using full audio',
+            'POST /appointments/{id}/upload-recording': 'Upload and process full audio (legacy)',
             'DELETE /appointments/{id}': 'Delete appointment and associated files',
-            'GET /appointments/search?q=<query>': 'Search appointments'
+            'GET /appointments/search?q=<query>': 'Search appointments',
+            'POST /appointments/generate-questions-try': 'Generate questions (no auth)',
+            'POST /appointments/upload-recording-try': 'Upload recording + SOAP (no auth)',
+            'POST /appointments/upload-notes-try': 'Notes to SOAP (no auth)',
         }
     }), 200
 
@@ -54,7 +63,7 @@ def internal_error(error):
 if __name__ == '__main__':
     # Get port from environment variable or use default
     port = int(os.environ.get('PORT', 8080))
-    
+
     # Run the application
     app.run(
         host='0.0.0.0',

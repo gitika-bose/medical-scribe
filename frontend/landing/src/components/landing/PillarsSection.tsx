@@ -7,11 +7,8 @@ function PillarsSection() {
             className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4"
             style={{ fontFamily: 'var(--font-family-heading)', color: 'var(--dark-text-color)' }}
           >
-            Three Core Pillars
+            Juno democratizes access <br /> to medical understanding
           </h2>
-          <p className="text-xl max-w-2xl mx-auto" style={{ color: 'var(--gray-text-color)' }}>
-            The foundation of everything we build
-          </p>
         </div>
 
         {/* Three Pillar Cards */}
@@ -38,10 +35,10 @@ function PillarsSection() {
             >
               Make It Understandable
             </h3>
-            <p className="leading-relaxed mb-4" style={{ color: 'var(--gray-text-color)' }}>
+            <p className="leading-relaxed mb-4 text-lg" style={{ color: 'var(--gray-text-color)' }}>
               We translate complex medical language, reports, and billing codes into plain, structured explanations.
             </p>
-            <p className="font-semibold text-sm" style={{ color: 'var(--primary-color)' }}>
+            <p className="font-semibold text-md" style={{ color: 'var(--primary-color)' }}>
               Understanding shouldn't require a medical degree.
             </p>
           </div>
@@ -68,10 +65,10 @@ function PillarsSection() {
             >
               See the Full Picture
             </h3>
-            <p className="leading-relaxed mb-4" style={{ color: 'var(--gray-text-color)' }}>
+            <p className="leading-relaxed mb-4 text-lg" style={{ color: 'var(--gray-text-color)' }}>
               Medical info is scattered across appointments, reports, and insurance docs. We bring it together into one clear narrative.
             </p>
-            <p className="font-semibold text-sm" style={{ color: 'var(--accent-color)' }}>
+            <p className="font-semibold text-md" style={{ color: 'var(--accent-color)' }}>
               Your health story, connected.
             </p>
           </div>
@@ -98,10 +95,10 @@ function PillarsSection() {
             >
               Empower Your Decisions
             </h3>
-            <p className="leading-relaxed mb-4" style={{ color: 'var(--gray-text-color)' }}>
+            <p className="leading-relaxed mb-4 text-lg" style={{ color: 'var(--gray-text-color)' }}>
               Better understanding leads to better conversations. Ask smarter questions, prepare for visits, and make confident choices.
             </p>
-            <p className="font-semibold text-sm" style={{ color: 'var(--accent2-color)' }}>
+            <p className="font-semibold text-md" style={{ color: 'var(--accent2-color)' }}>
               Knowledge is patient power.
             </p>
           </div>

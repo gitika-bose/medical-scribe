@@ -1,5 +1,3 @@
-import { Link } from 'react-router-dom'
-
 function HeroSection() {
   return (
     <section className="pt-32 pb-20 bg-gradient-to-b from-[var(--light-background-color)] to-white overflow-hidden">
@@ -26,8 +24,8 @@ function HeroSection() {
               Juno transforms complex health information into clear, structured understanding so you can make confident decisions about your care.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link
-                to="/contact"
+              <a
+                href="#available-today"
                 className="inline-flex items-center justify-center text-white px-8 py-4 font-semibold text-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-xl"
                 style={{
                   backgroundColor: 'var(--primary-color)',
@@ -38,23 +36,12 @@ function HeroSection() {
                 <svg className="ml-2 w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
-              </Link>
-              <Link
-                to="#how-it-works"
-                className="inline-flex items-center justify-center px-8 py-4 font-semibold text-lg transition-all"
-                style={{
-                  backgroundColor: 'var(--secondary-button-bg-color)',
-                  color: 'var(--secondary-button-text-color)',
-                  borderRadius: 'var(--button-rounded-radius)',
-                }}
-              >
-                See How It Works
-              </Link>
+              </a>
             </div>
           </div>
 
           {/* Right Animation Visual */}
-          <div className="relative">
+          <div className="relative scale-[0.6] -my-24 sm:scale-[0.75] sm:-my-12 md:scale-[0.85] md:-my-6 lg:scale-100 lg:my-0 origin-center">
             {/* Connecting Lines (SVG) */}
             <svg className="absolute inset-0 w-full h-full pointer-events-none" viewBox="0 0 400 400">
               <defs>
@@ -159,8 +146,8 @@ function HeroSection() {
                 </span>
               </div>
 
-              {/* Center Person */}
-              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+              {/* Center Person + Output Pills */}
+              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
                 <div className="relative">
                   <div
                     className="w-32 h-32 rounded-full flex items-center justify-center shadow-2xl"
@@ -179,41 +166,41 @@ function HeroSection() {
                     </svg>
                   </div>
                 </div>
-              </div>
 
-              {/* Outputs at Bottom */}
-              <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 flex gap-2 flex-wrap justify-center" style={{ width: '110%' }}>
-                <div className="bg-white px-3 py-2 rounded-full shadow-lg flex items-center gap-2" style={{ border: '2px solid var(--primary-color)' }}>
-                  <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--primary-color)' }}>
-                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
+                {/* Output Pills - directly under person */}
+                <div className="flex gap-2 flex-wrap justify-center mt-5" style={{ width: '20rem' }}>
+                  <div className="bg-white px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5" style={{ border: '2px solid var(--primary-color)' }}>
+                    <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--primary-color)' }}>
+                      <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                    <span className="text-xs font-bold" style={{ color: 'var(--primary-color)' }}>Summary</span>
                   </div>
-                  <span className="text-xs font-bold" style={{ color: 'var(--primary-color)' }}>Summary</span>
-                </div>
-                <div className="bg-white px-3 py-2 rounded-full shadow-lg flex items-center gap-2" style={{ border: '2px solid var(--accent-color)' }}>
-                  <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--accent-color)' }}>
-                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
+                  <div className="bg-white px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5" style={{ border: '2px solid var(--accent-color)' }}>
+                    <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--accent-color)' }}>
+                      <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    </div>
+                    <span className="text-xs font-bold" style={{ color: 'var(--accent-color)' }}>Timeline</span>
                   </div>
-                  <span className="text-xs font-bold" style={{ color: 'var(--accent-color)' }}>Timeline</span>
-                </div>
-                <div className="bg-white px-3 py-2 rounded-full shadow-lg flex items-center gap-2" style={{ border: '2px solid var(--accent2-color)' }}>
-                  <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--accent2-color)' }}>
-                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+                  <div className="bg-white px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5" style={{ border: '2px solid var(--accent2-color)' }}>
+                    <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--accent2-color)' }}>
+                      <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <span className="text-xs font-bold" style={{ color: 'var(--accent2-color)' }}>Questions</span>
                   </div>
-                  <span className="text-xs font-bold" style={{ color: 'var(--accent2-color)' }}>Questions</span>
-                </div>
-                <div className="bg-white px-3 py-2 rounded-full shadow-lg flex items-center gap-2" style={{ border: '2px solid var(--accent3-color)' }}>
-                  <div className="w-6 h-6 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--accent3-color)' }}>
-                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
-                    </svg>
+                  <div className="bg-white px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5" style={{ border: '2px solid var(--accent3-color)' }}>
+                    <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--accent3-color)' }}>
+                      <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                      </svg>
+                    </div>
+                    <span className="text-xs font-bold" style={{ color: 'var(--accent3-color)' }}>Prep</span>
                   </div>
-                  <span className="text-xs font-bold" style={{ color: 'var(--accent3-color)' }}>Prep</span>
                 </div>
               </div>
             </div>

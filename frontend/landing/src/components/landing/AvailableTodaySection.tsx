@@ -1,8 +1,6 @@
-import { Link } from 'react-router-dom'
-
 function AvailableTodaySection() {
   return (
-    <section className="py-24 bg-white">
+    <section id="available-today" className="py-24" style={{ backgroundColor: 'var(--medium-background-color)' }}>
       <div className="max-w-7xl mx-auto px-6 sm:px-10 lg:px-16">
         <div className="text-center mb-16">
           <h2
@@ -17,25 +15,26 @@ function AvailableTodaySection() {
         </div>
 
         <div className="grid lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
-          {/* Live Feature 1 */}
+          {/* Feature 1: Live Appointment Clarity */}
           <div
             className="relative rounded-3xl p-1"
             style={{ background: 'linear-gradient(to bottom right, var(--primary-color), var(--accent-color))' }}
           >
-            <div className="bg-white rounded-3xl p-8 lg:p-10 h-full">
+            <div className="bg-white rounded-3xl p-8 lg:p-10 h-full flex flex-col">
               <div className="flex items-center gap-3 mb-6">
-                <span className="flex h-3 w-3 relative">
-                  <span
-                    className="animate-ping absolute inline-flex h-3 w-3 rounded-full opacity-75"
-                    style={{ backgroundColor: 'var(--accent-color)' }}
-                  />
-                  <span
-                    className="relative inline-flex rounded-full h-3 w-3"
-                    style={{ backgroundColor: 'var(--accent-color)' }}
-                  />
-                </span>
-                <span className="font-semibold text-sm" style={{ color: 'var(--accent-color)' }}>
-                  Live Now
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center"
+                  style={{ background: 'linear-gradient(135deg, var(--primary-color), var(--accent-color))' }}
+                >
+                  <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                  </svg>
+                </div>
+                <span
+                  className="font-bold text-sm tracking-wide uppercase"
+                  style={{ color: 'var(--primary-color)' }}
+                >
+                  Available Now
                 </span>
               </div>
 
@@ -46,10 +45,10 @@ function AvailableTodaySection() {
                 Live Appointment Clarity
               </h3>
               <p className="mb-6 text-xl" style={{ color: 'var(--gray-text-color)' }}>
-                Real-time structured notes and smart question support during your visits. Never miss important details.
+                Real-time structured notes and smart question support during your visits. Never miss any important details.
               </p>
 
-              <ul className="space-y-2 mb-6">
+              <ul className="space-y-2 mb-8">
                 {[
                   'Real-time medical note taker',
                   'Smart question suggestions',
@@ -72,28 +71,48 @@ function AvailableTodaySection() {
                   </li>
                 ))}
               </ul>
+
+              <div className="mt-auto">
+                <a
+                  href="https://app.meetjuno.health"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center text-white px-8 py-3 font-semibold text-base transition-all hover:scale-105 hover:shadow-lg"
+                  style={{
+                    background: 'linear-gradient(to right, var(--primary-color), var(--accent-color))',
+                    borderRadius: 'var(--button-rounded-radius)',
+                    textDecoration: 'none',
+                  }}
+                >
+                  Try it now
+                  <svg className="ml-2 w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </a>
+              </div>
             </div>
           </div>
 
-          {/* Live Feature 2 */}
+          {/* Feature 2: Upload & Understand */}
           <div
             className="relative rounded-3xl p-1"
             style={{ background: 'linear-gradient(to bottom right, var(--accent2-color), var(--accent3-color))' }}
           >
-            <div className="bg-white rounded-3xl p-8 lg:p-10 h-full">
+            <div className="bg-white rounded-3xl p-8 lg:p-10 h-full flex flex-col">
               <div className="flex items-center gap-3 mb-6">
-                <span className="flex h-3 w-3 relative">
-                  <span
-                    className="animate-ping absolute inline-flex h-3 w-3 rounded-full opacity-75"
-                    style={{ backgroundColor: 'var(--accent2-color)' }}
-                  />
-                  <span
-                    className="relative inline-flex rounded-full h-3 w-3"
-                    style={{ backgroundColor: 'var(--accent2-color)' }}
-                  />
-                </span>
-                <span className="font-semibold text-sm" style={{ color: 'var(--accent2-color)' }}>
-                  Live Now
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center"
+                  style={{ background: 'linear-gradient(135deg, var(--accent2-color), var(--accent3-color))' }}
+                >
+                  <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <span
+                  className="font-bold text-sm tracking-wide uppercase"
+                  style={{ color: 'var(--accent2-color)' }}
+                >
+                  Available Now
                 </span>
               </div>
 
@@ -104,10 +123,10 @@ function AvailableTodaySection() {
                 Upload & Understand
               </h3>
               <p className="mb-6 text-xl" style={{ color: 'var(--gray-text-color)' }}>
-                Upload recordings, documents, or notes — get clear explanations and actionable next steps.
+                Upload recordings, documents, or notes and get clear explanations and next steps.
               </p>
 
-              <ul className="space-y-2 mb-6">
+              <ul className="space-y-2 mb-8">
                 {[
                   'Medical documents and recording upload',
                   'Plain language translation',
@@ -130,28 +149,25 @@ function AvailableTodaySection() {
                   </li>
                 ))}
               </ul>
+
+              <div className="mt-auto">
+                <a
+                  href="/upload-understand"
+                  className="inline-flex items-center justify-center text-white px-8 py-3 font-semibold text-base transition-all hover:scale-105 hover:shadow-lg"
+                  style={{
+                    background: 'linear-gradient(to right, var(--accent2-color), var(--accent3-color))',
+                    borderRadius: 'var(--button-rounded-radius)',
+                    textDecoration: 'none',
+                  }}
+                >
+                  Try it now
+                  <svg className="ml-2 w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  </svg>
+                </a>
+              </div>
             </div>
           </div>
-        </div>
-
-        {/* Prominent CTA */}
-        <div className="mt-14 text-center">
-          <Link
-            to="/contact"
-            className="inline-flex items-center justify-center text-white px-12 py-5 font-bold text-xl transition-all transform hover:scale-105 shadow-xl hover:shadow-2xl"
-            style={{
-              background: 'linear-gradient(to right, var(--primary-color), var(--accent-color))',
-              borderRadius: 'var(--button-rounded-radius)',
-            }}
-          >
-            Get Started — It's Free
-            <svg className="ml-3 w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-            </svg>
-          </Link>
-          <p className="mt-4 text-sm" style={{ color: 'var(--gray-text-color)' }}>
-            No credit card required. Start understanding your health today.
-          </p>
         </div>
       </div>
     </section>

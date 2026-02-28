@@ -24,7 +24,7 @@ function LandingPage() {
         </div>
         <div className="header-actions">
           <a href={APP_URL} className="login-button" onClick={() => analyticsEvents.landingClickJoinBeta('header')}>Login</a>
-          <Link to="/try" className="cta-button-small" onClick={() => analyticsEvents.landingClickTryNow('header')}>Try it now</Link>
+          <Link to="/upload-understand" className="cta-button-small" onClick={() => analyticsEvents.landingClickTryNow('header')}>Try it now</Link>
         </div>
       </header>
 
@@ -39,7 +39,7 @@ function LandingPage() {
              Juno explains what matters in plain language so you don’t miss anything.
             </p>
             <div className="hero-cta">
-              <Link to="/try" className="cta-button" onClick={() => analyticsEvents.landingClickTryNow('hero')}>Try it now</Link>
+              <Link to="/upload-understand" className="cta-button" onClick={() => analyticsEvents.landingClickTryNow('hero')}>Try it now</Link>
               {/* <Link to="/beta" className="cta-button-outline" onClick={() => analyticsEvents.landingClickJoinBeta('hero')}>Join the Beta</Link> */}
             </div>
             <div className="trust-badges">

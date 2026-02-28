@@ -45,7 +45,7 @@ function ExplainAppPage() {
                   color: 'var(--gray-text-color)',
                 }}
               >
-                Upload your medical notes, recordings, or documents. Juno explains what matters in plain language — so you don't miss anything important.
+                Upload your medical notes, recordings, or documents. Juno explains what matters in plain language, so you don't miss anything important.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <button
@@ -90,87 +90,6 @@ function ExplainAppPage() {
               </div>
             </div>
 
-            {/* Right Visual */}
-            {/* <div className="relative hidden lg:block">
-              <div className="w-full max-w-md mx-auto">
-                <div
-                  className="rounded-2xl p-8 shadow-2xl"
-                  style={{
-                    backgroundColor: 'white',
-                    border: '1px solid var(--light-border-color)',
-                  }}
-                >
-                  <div className="flex gap-3 mb-5">
-                    <div
-                      className="flex-1 rounded-lg px-3 py-2.5 text-center"
-                      style={{
-                        border: '2px dashed var(--dark-border-color)',
-                        backgroundColor: 'var(--light-background-color)',
-                      }}
-                    >
-                      <div className="text-lg mb-0.5">📄</div>
-                      <div className="text-xs font-medium" style={{ color: 'var(--gray-text-color)' }}>Documents</div>
-                    </div>
-                    <div
-                      className="flex-1 rounded-lg px-3 py-2.5 text-center"
-                      style={{
-                        border: '2px dashed var(--dark-border-color)',
-                        backgroundColor: 'var(--light-background-color)',
-                      }}
-                    >
-                      <div className="text-lg mb-0.5">🎙️</div>
-                      <div className="text-xs font-medium" style={{ color: 'var(--gray-text-color)' }}>Recordings</div>
-                    </div>
-                    <div
-                      className="flex-1 rounded-lg px-3 py-2.5 text-center"
-                      style={{
-                        border: '2px dashed var(--dark-border-color)',
-                        backgroundColor: 'var(--light-background-color)',
-                      }}
-                    >
-                      <div className="text-lg mb-0.5">📝</div>
-                      <div className="text-xs font-medium" style={{ color: 'var(--gray-text-color)' }}>Notes</div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                        style={{ backgroundColor: 'color-mix(in srgb, var(--primary-color) 15%, transparent)' }}
-                      >
-                        <span className="text-sm">📋</span>
-                      </div>
-                      <span className="text-sm font-medium" style={{ color: 'var(--dark-text-color)' }}>
-                        Explained in simple language
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                        style={{ backgroundColor: 'color-mix(in srgb, var(--accent-color) 15%, transparent)' }}
-                      >
-                        <span className="text-sm">✅</span>
-                      </div>
-                      <span className="text-sm font-medium" style={{ color: 'var(--dark-text-color)' }}>
-                        Clear action items
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                        style={{ backgroundColor: 'color-mix(in srgb, var(--accent2-color) 15%, transparent)' }}
-                      >
-                        <span className="text-sm">❓</span>
-                      </div>
-                      <span className="text-sm font-medium" style={{ color: 'var(--dark-text-color)' }}>
-                        Critical questions to ask your doctor
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div> */}
             {/* Right Visual */}
             <div className="relative scale-[0.75] -my-8 sm:scale-[0.85] sm:-my-4 md:scale-90 md:-my-2 lg:scale-100 lg:my-0 origin-center">
               <div className="relative w-full max-w-md mx-auto">

@@ -83,15 +83,15 @@ function Header() {
                 </div>
                 <div>
                   <div className="font-semibold text-sm" style={{ color: 'var(--dark-text-color)' }}>
-                    Live Appointment Clarity
+                    Medical Notetaker
                   </div>
                   <div className="text-xs mt-0.5" style={{ color: 'var(--gray-text-color)' }}>
-                    Real-time notes & smart questions during visits
+                    Live Note taker. Ask smart questions during visits
                   </div>
                 </div>
               </a>
               <Link
-                to="/upload-understand"
+                to="/explain-my-appointment"
                 className="flex items-start gap-3 px-5 py-4 hover:bg-gray-50 transition-colors"
                 style={{ textDecoration: 'none' }}
                 onClick={() => setFeaturesOpen(false)}
@@ -106,7 +106,7 @@ function Header() {
                 </div>
                 <div>
                   <div className="font-semibold text-sm" style={{ color: 'var(--dark-text-color)' }}>
-                    Upload & Understand
+                    Explain My Appointment
                   </div>
                   <div className="text-xs mt-0.5" style={{ color: 'var(--gray-text-color)' }}>
                     Upload docs or recordings for clear explanations

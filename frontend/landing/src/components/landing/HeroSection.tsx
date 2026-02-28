@@ -12,7 +12,7 @@ function HeroSection() {
                 color: 'var(--dark-text-color)',
               }}
             >
-              Medical clarity, when it matters most.
+              Medical clarity, <span style={{ color: 'var(--accent4-color)'}}>when it matters most.</span>
             </h1>
             <p
               className="text-xl mb-8"

@@ -72,7 +72,7 @@ export default function OnboardingScreen() {
             />
             <Text style={styles.heading}>Meet Juno</Text>
             <Text style={styles.description}>
-              Your privacy first companion for medical appointments
+              Get medical clarity, when it matters most.
             </Text>
           </View>
         );

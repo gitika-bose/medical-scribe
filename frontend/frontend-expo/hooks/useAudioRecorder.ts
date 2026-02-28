@@ -135,7 +135,7 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
           rotateSegment(true);
         }, CHUNK_INTERVAL_MS);
       } catch (err) {
-        const msg = err instanceof Error ? err.message : 'Failed to start recording';
+        const msg = err instanceof Error ? err.message : 'Failed to start note taking';
         setError(msg);
         console.error('Recording error:', err);
         throw err;

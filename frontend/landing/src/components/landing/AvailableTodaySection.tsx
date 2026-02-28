@@ -42,10 +42,10 @@ function AvailableTodaySection() {
                 className="text-3xl font-bold mb-3"
                 style={{ fontFamily: 'var(--font-family-heading)', color: 'var(--dark-text-color)' }}
               >
-                Live Appointment Clarity
+                Medical Notetaker
               </h3>
               <p className="mb-6 text-xl" style={{ color: 'var(--gray-text-color)' }}>
-                Real-time structured notes and smart question support during your visits. Never miss any important details.
+                Take live medical notes and ask smart questions during your visits. Never miss any important details.
               </p>
 
               <ul className="space-y-2 mb-8">
@@ -84,7 +84,7 @@ function AvailableTodaySection() {
                     textDecoration: 'none',
                   }}
                 >
-                  Try it now
+                  Start Notetaking
                   <svg className="ml-2 w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                   </svg>
@@ -93,7 +93,7 @@ function AvailableTodaySection() {
             </div>
           </div>
 
-          {/* Feature 2: Upload & Understand */}
+          {/* Feature 2: Explain My Appointment */}
           <div
             className="relative rounded-3xl p-1"
             style={{ background: 'linear-gradient(to bottom right, var(--accent2-color), var(--accent3-color))' }}
@@ -120,7 +120,7 @@ function AvailableTodaySection() {
                 className="text-3xl font-bold mb-3"
                 style={{ fontFamily: 'var(--font-family-heading)', color: 'var(--dark-text-color)' }}
               >
-                Upload & Understand
+                Explain My Appointment
               </h3>
               <p className="mb-6 text-xl" style={{ color: 'var(--gray-text-color)' }}>
                 Upload recordings, documents, or notes and get clear explanations and next steps.
@@ -152,7 +152,7 @@ function AvailableTodaySection() {
 
               <div className="mt-auto">
                 <a
-                  href="/upload-understand"
+                  href="/explain-my-appointment"
                   className="inline-flex items-center justify-center text-white px-8 py-3 font-semibold text-base transition-all hover:scale-105 hover:shadow-lg"
                   style={{
                     background: 'linear-gradient(to right, var(--accent2-color), var(--accent3-color))',
@@ -160,7 +160,7 @@ function AvailableTodaySection() {
                     textDecoration: 'none',
                   }}
                 >
-                  Try it now
+                  Explain now
                   <svg className="ml-2 w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                   </svg>

@@ -10,12 +10,12 @@ function Footer() {
             <span className="logo-text">Juno</span>
           </div>
           <p className="footer-description">
-            Your privacy-first companion for medical visits.
+            Medical clarity, when it matters most.
           </p>
           <div className="footer-links-mobile">
             <a href="https://app.meetjuno.health" target="_blank" rel="noopener noreferrer">Live Appointment</a>
             <span className="separator">|</span>
-            <Link to="/upload-understand">Upload & Understand</Link>
+            <Link to="/explain-my-appointment">Explain My Appointment</Link>
             <span className="separator">|</span>
             <Link to="/aboutus">About</Link>
             <span className="separator">|</span>
@@ -29,7 +29,7 @@ function Footer() {
         <div className="footer-section">
           <h4>Features</h4>
           <a href="https://app.meetjuno.health" target="_blank" rel="noopener noreferrer">Live Appointment Clarity</a>
-          <Link to="/upload-understand">Upload & Understand</Link>
+          <Link to="/explain-my-appointment">Explain My Appointment</Link>
         </div>
         <div className="footer-section">
           <h4>Company</h4>

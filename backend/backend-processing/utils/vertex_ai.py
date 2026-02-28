@@ -206,21 +206,25 @@ class VertexAIService:
             List of question strings.
         """
         
-        prompt = f"""This task is for informational note-taking only.
-It does not provide medical advice, diagnosis, or treatment.
-The output must not present an opinion.
-        
-Based on the following medical conversation transcript, generate 0-3 relevant questions that a patient might want to ask their healthcare provider. 
-        
-These questions should be:
-- Relevant to the information discussed
-- Common questions patients typically have
-- DO NOT hallucinate outside the transcript, and don't make any assumptions or suggestions. 
+        prompt = f"""
+        You are a medical Assistant designed to go through transcripts for medical appointments, medical documents and notes taken by users. And help them gain clarity in their medical appointment by generating 0-3 critical questions to ask their doctor as follow up.
 
+For all given medical conversation, assume that atleast two speakers (doctor and patient) are present. Identify the two speakers based on the conversation and treat the doctor's words as ground truth for the medical information.
+
+For all medical documents, understand the data and information provided, and treat it as ground truth for the medical information.
+
+For all notes taken by users, grasp the minute details noted. However, the medical documents and the recording are the ground truth.
+
+In case of information clash, follow the following hierarchy for information accuracy - Doctor's words in the transcript > Medical documents > Notes taken by users.
+
+Based on the above, generate 0-3 relevant questions that a patient might want to ask their healthcare provider.
+These questions should be:
+- Relevant to the information discussed.
+- DO NOT hallucinate outside the transcript, and don't make any assumptions or suggestions. 
 The objective is just to find points from the transcript that might need further clarification. If there are no such clarifying questions, DO NOT return anything.
 
-Transcript:
-{transcript}
+Raw Input:
+{{input}}
 
 Return ONLY a JSON array of question strings, nothing else. Format: ["question 1", "question 2", "question 3"]
 """

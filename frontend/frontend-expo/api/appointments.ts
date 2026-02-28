@@ -558,7 +558,7 @@ export async function updateAppointmentMetadata(
   }
 }
 
-/** Upload a recording file to GCS only (no processing). For upload-understand flow. */
+/** Upload a recording file to GCS only (no processing). For explain-my-appointment flow. */
 export async function uploadRecordingNew(
   appointmentId: string,
   file: { uri: string; name: string; mimeType?: string; size?: number },

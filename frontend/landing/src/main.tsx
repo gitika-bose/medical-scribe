@@ -3,20 +3,22 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import './index.css'
 import App from './App.tsx'
-import TryPage from './pages/TryPage.tsx'
+import ExplainAppPage from './pages/ExplainApp.tsx'
 import BetaPage from './BetaPage.tsx'
 import DementiaPage from './pages/DementiaPage.tsx'
 import AboutUsPage from './pages/AboutUsPage.tsx'
+import ContactPage from './pages/ContactPage.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<App />} />
-        <Route path="/try" element={<TryPage />} />
+        <Route path="/explain-my-appointment" element={<ExplainAppPage />} />
         <Route path="/beta" element={<BetaPage />} />
         <Route path="/dementia" element={<DementiaPage />} />
         <Route path="/aboutus" element={<AboutUsPage />} />
+        <Route path="/contact" element={<ContactPage />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,

@@ -15,17 +15,16 @@ function LandingPage() {
     <div className="landing-page">
       {/* Header */}
       <header className="header">
-        <div className="logo-container">
-          <img src="/logo/android-chrome-192x192.png" alt="Juno Logo" className="logo" />
+        <Link to="/" className="logo-container" style={{ textDecoration: 'none' }}>
           <span className="logo-text">Juno</span>
-        </div>
+        </Link>
         <div className="header-nav">
           <a href="#features" className="nav-link" onClick={() => analyticsEvents.landingClickNavLink('features')}>The Problem</a>
           <Link to="/aboutus" className="nav-link" onClick={() => analyticsEvents.landingClickNavLink('about-us')}>About Us</Link>
         </div>
         <div className="header-actions">
           <a href={APP_URL} className="login-button" onClick={() => analyticsEvents.landingClickJoinBeta('header')}>Login</a>
-          <Link to="/try" className="cta-button-small" onClick={() => analyticsEvents.landingClickTryNow('header')}>Try it now</Link>
+          <Link to="/explain-my-appointment" className="cta-button-small" onClick={() => analyticsEvents.landingClickTryNow('header')}>Try it now</Link>
         </div>
       </header>
 
@@ -40,7 +39,7 @@ function LandingPage() {
              Juno explains what matters in plain language so you don’t miss anything.
             </p>
             <div className="hero-cta">
-              <Link to="/try" className="cta-button" onClick={() => analyticsEvents.landingClickTryNow('hero')}>Try it now</Link>
+              <Link to="/explain-my-appointment" className="cta-button" onClick={() => analyticsEvents.landingClickTryNow('hero')}>Try it now</Link>
               {/* <Link to="/beta" className="cta-button-outline" onClick={() => analyticsEvents.landingClickJoinBeta('hero')}>Join the Beta</Link> */}
             </div>
             <div className="trust-badges">

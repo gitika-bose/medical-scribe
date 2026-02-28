@@ -1,567 +1,144 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
-  AppState,
-  Image,
+  ScrollView,
+  useWindowDimensions,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '@/hooks/useAuth';
-import { useAudioRecorder } from '@/hooks/useAudioRecorder';
-import { store } from '@/store';
-import {
-  startAppointment,
-  uploadAudioChunk,
-  generateQuestions,
-  finalizeAppointment,
-} from '@/api/appointments';
-import { analyticsEvents } from '@/api/analytics';
-import { AlertModal } from '@/components/shared/AlertModal';
 import { GuestDisclaimer } from '@/components/shared/GuestDisclaimer';
-import { QuestionsModal } from '@/components/pages/home/QuestionsModal';
+import { Header } from '@/components/shared/Header';
 import { Colors } from '@/constants/Colors';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
-  const { signOut, user } = useAuth();
-
-  const [isRecordingActive, setIsRecordingActive] = useState(false);
-  const [questions, setQuestions] = useState<string[] | null>(null);
-  const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [recordingDuration, setRecordingDuration] = useState(0);
-  const [firstChunkUploaded, setFirstChunkUploaded] = useState(false);
-
-  // Dialogs
-  const [showEndDialog, setShowEndDialog] = useState(false);
-  const [showConsentDialog, setShowConsentDialog] = useState(false);
-
-  const { isRecording, startRecording, stopRecording, flushChunk, error: recordingError } =
-    useAudioRecorder();
-
-  const autoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const durationTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const errorTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // ---------------------------------------------------------------------------
-  // Cleanup
-  // ---------------------------------------------------------------------------
-  useEffect(() => {
-    return () => {
-      if (autoTimeoutRef.current) clearTimeout(autoTimeoutRef.current);
-      if (durationTimerRef.current) clearInterval(durationTimerRef.current);
-      if (errorTimeoutRef.current) clearTimeout(errorTimeoutRef.current);
-    };
-  }, []);
-
-  // Auto-clear error after 5 seconds
-  useEffect(() => {
-    if (error) {
-      if (errorTimeoutRef.current) clearTimeout(errorTimeoutRef.current);
-      errorTimeoutRef.current = setTimeout(() => {
-        setError(null);
-        errorTimeoutRef.current = null;
-      }, 5000);
-    }
-    return () => {
-      if (errorTimeoutRef.current) clearTimeout(errorTimeoutRef.current);
-    };
-  }, [error]);
-
-  // Duration timer & 30-min auto-timeout
-  useEffect(() => {
-    if (isRecordingActive && isRecording) {
-      setRecordingDuration(0);
-      durationTimerRef.current = setInterval(() => {
-        setRecordingDuration((prev) => prev + 1);
-      }, 1000);
-
-      // 30-minute auto-timeout
-      autoTimeoutRef.current = setTimeout(() => {
-        console.log('Auto-timeout: Stopping recording after 30 minutes');
-        handleStopRecording();
-      }, 1_800_000);
-    } else {
-      if (autoTimeoutRef.current) {
-        clearTimeout(autoTimeoutRef.current);
-        autoTimeoutRef.current = null;
-      }
-      if (durationTimerRef.current) {
-        clearInterval(durationTimerRef.current);
-        durationTimerRef.current = null;
-      }
-    }
-    return () => {
-      if (autoTimeoutRef.current) clearTimeout(autoTimeoutRef.current);
-      if (durationTimerRef.current) clearInterval(durationTimerRef.current);
-    };
-  }, [isRecordingActive, isRecording]);
-
-  // ---------------------------------------------------------------------------
-  // Recording handlers
-  // ---------------------------------------------------------------------------
-
-  const handleRecordingClick = () => {
-    if (!isRecordingActive) {
-      setShowConsentDialog(true);
-    }
-  };
-
-  const handleConsentApproved = async () => {
-    setShowConsentDialog(false);
-    try {
-      setError(null);
-
-      const { appointmentId: newAppointmentId } = await startAppointment();
-      analyticsEvents.startRecording(newAppointmentId);
-      store.startRecording(newAppointmentId);
-
-      await startRecording(async (chunkUri: string) => {
-        try {
-          console.log('Uploading audio chunk...');
-          await uploadAudioChunk(newAppointmentId, chunkUri);
-          console.log('Audio chunk uploaded successfully');
-          setFirstChunkUploaded(true);
-        } catch (err) {
-          console.error('Failed to upload audio chunk:', err);
-          setError('Failed to upload audio. Recording continues...');
-        }
-      });
-
-      setFirstChunkUploaded(false);
-      setIsRecordingActive(true);
-    } catch (err) {
-      console.error('Failed to start appointment:', err);
-      setError('Failed to start appointment. Please try again.');
-    }
-  };
-
-  const handleConsentDeclined = () => {
-    setShowConsentDialog(false);
-  };
-
-  const handleGenerateQuestions = async () => {
-    const appointmentId = store.getCurrentRecordingId();
-    if (!appointmentId) {
-      setError('No active appointment');
-      return;
-    }
-
-    try {
-      setIsGeneratingQuestions(true);
-      setError(null);
-
-      // If no chunk has been uploaded yet, force-flush the current segment
-      // so the backend has a transcript to work with.
-      if (!firstChunkUploaded) {
-        console.log('[GenerateQuestions] No chunk uploaded yet — flushing current segment...');
-        await flushChunk();
-        // flushChunk triggers the onChunkReady callback which sets firstChunkUploaded
-      }
-
-      analyticsEvents.generateQuestions(appointmentId);
-      const { questions: generatedQuestions } = await generateQuestions(appointmentId);
-
-      if (!generatedQuestions || generatedQuestions.length === 0) {
-        setError('No questions available.');
-        setQuestions(null);
-      } else {
-        setQuestions(generatedQuestions);
-      }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error';
-      console.error('Failed to generate questions:', message);
-
-      if (message.toLowerCase().includes('no transcript')) {
-        setError('No questions available.');
-      } else if (message.toLowerCase().includes('unavailable')) {
-        setError('Service is currently unavailable. Please try again later.');
-      } else {
-        setError(`No questions available`);
-      }
-      setQuestions(null);
-    } finally {
-      setIsGeneratingQuestions(false);
-    }
-  };
-
-  const handleEndClick = () => {
-    setShowEndDialog(true);
-  };
-
-  const handleStopRecording = async () => {
-    const appointmentId = store.getCurrentRecordingId();
-
-    if (autoTimeoutRef.current) {
-      clearTimeout(autoTimeoutRef.current);
-      autoTimeoutRef.current = null;
-    }
-    if (durationTimerRef.current) {
-      clearInterval(durationTimerRef.current);
-      durationTimerRef.current = null;
-    }
-
-    try {
-      setIsProcessing(true);
-      setError(null);
-      setShowEndDialog(false);
-
-      if (!appointmentId) throw new Error('No active appointment');
-
-      // Stop recording – returns the last chunk URI
-      const lastChunkUri = await stopRecording();
-
-      store.setLastCompletedAppointmentId(appointmentId);
-      store.endRecording();
-
-      setIsRecordingActive(false);
-      setQuestions(null);
-      setFirstChunkUploaded(false);
-      setIsProcessing(false);
-
-      // Finalize in background (pass last chunk as audio fallback for recording link)
-      finalizeAppointment(appointmentId, lastChunkUri).catch((err) => {
-        console.error('Background finalization error:', err);
-      });
-
-      // Navigate to metadata page
-      router.push('/appointment-metadata' as any);
-    } catch (err) {
-      console.error('Failed to stop recording:', err);
-
-      if (appointmentId) {
-        store.setLastCompletedAppointmentId(appointmentId);
-      }
-      store.endRecording();
-
-      setError('Failed to save recording. Please try again.');
-      setIsRecordingActive(false);
-      setFirstChunkUploaded(false);
-      setIsProcessing(false);
-      setShowEndDialog(false);
-
-      // Still navigate to metadata page
-      router.push('/appointment-metadata' as any);
-    }
-  };
-
-  const handleCancelEnd = () => {
-    setShowEndDialog(false);
-  };
-
-  const handleSignOut = async () => {
-    if (isRecordingActive) return;
-    try {
-      await signOut();
-      router.replace('/login' as any);
-    } catch (err) {
-      console.error('Sign out error:', err);
-    }
-  };
-
-  // ---------------------------------------------------------------------------
-  // Helpers
-  // ---------------------------------------------------------------------------
-
-  const formatDuration = (seconds: number) => {
-    const m = Math.floor(seconds / 60)
-      .toString()
-      .padStart(2, '0');
-    const s = (seconds % 60).toString().padStart(2, '0');
-    return `${m}:${s}`;
-  };
-
-  // ---------------------------------------------------------------------------
-  // Render
-  // ---------------------------------------------------------------------------
+  const { width } = useWindowDimensions();
+  const isPhone = width < 600;
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={[styles.header]}>
-        <View style={styles.logoContainer}>
-          <Image 
-            source={require('@/assets/images/icon.png')} 
-            style={styles.logo}
-            resizeMode="contain"
-          />
-          <Text style={styles.headerTitle}>Juno</Text>
-        </View>
-      </View>
+      <Header />
 
-      {/* Guest disclaimer banner */}
       <GuestDisclaimer />
 
-      {/* Main Content */}
-      <View style={styles.main}>
-        {/* Error Messages */}
-        {(recordingError || error) && (
-          <View style={styles.errorBanner}>
-            <Text style={styles.errorText}>{recordingError || error}</Text>
-          </View>
-        )}
-
-        {/* Recording Button */}
-        <View style={styles.recordSection}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={[styles.scrollContent, isPhone && styles.scrollContentPhone]} showsVerticalScrollIndicator={false}>
+        {/* Option Cards – side by side */}
+        <View style={[styles.cardsContainer, isPhone && styles.cardsContainerPhone]}>
+          {/* Notetaker Card */}
           <TouchableOpacity
-            onPress={handleRecordingClick}
-            disabled={isRecordingActive || isProcessing}
-            activeOpacity={0.7}
-            style={[
-              styles.recordButton,
-              isRecordingActive
-                ? isRecording
-                  ? styles.recordButtonActive
-                  : styles.recordButtonPaused
-                : styles.recordButtonIdle,
-              (isRecordingActive || isProcessing) && { opacity: isRecordingActive ? 1 : 0.5 },
-            ]}
+            style={[styles.optionCard, styles.optionCardLeft, isPhone && styles.optionCardPhone]}
+            onPress={() => router.push('/notetaker' as any)}
+            activeOpacity={0.85}
           >
-          <Ionicons
-            name="mic"
-            size={isRecordingActive ? 48 : 56}
-            color={isRecordingActive ? (isRecording ? Colors.red[600] : Colors.gray[400]) : Colors.primaryForeground}
-          />
+            <View style={[styles.cardIconBox, isPhone && styles.cardIconBoxPhone]}>
+              <Ionicons name="mic" size={isPhone ? 18 : 22} color={Colors.primary} />
+            </View>
+            <Text style={[styles.cardTitle, styles.cardTitleDark, isPhone && styles.cardTitlePhone]}>Appointment{'\n'}Notetaker</Text>
           </TouchableOpacity>
 
-          {/* Recording badge */}
-          {isRecordingActive && isRecording && (
-            <View style={styles.recordingBadge}>
-              <Text style={styles.recordingBadgeText}>
-                Recording {formatDuration(recordingDuration)}
-              </Text>
+          {/* Explain Card */}
+          <TouchableOpacity
+            style={[styles.optionCard, styles.optionCardRight, isPhone && styles.optionCardPhone]}
+            onPress={() => router.push('/explain-my-appointment' as any)}
+            activeOpacity={0.85}
+          >
+            <View style={[styles.cardIconBox, isPhone && styles.cardIconBoxPhone]}>
+              <Ionicons name="cloud-upload" size={isPhone ? 18 : 22} color={Colors.primary} />
             </View>
-          )}
-
-          {/* Status text */}
-          <View style={styles.statusTextWrapper}>
-            {isRecordingActive && isRecording && (
-              <Text style={styles.statusText}>Listening and taking notes...</Text>
-            )}
-          </View>
+            <Text style={[styles.cardTitle, styles.cardTitleLight, isPhone && styles.cardTitlePhone]}>Explain My{'\n'}Appointment</Text>
+          </TouchableOpacity>
         </View>
 
-        {/* Controls – visible only when recording */}
-        {isRecordingActive && (
-          <View style={styles.controls}>
-            <TouchableOpacity
-              onPress={handleGenerateQuestions}
-              disabled={isGeneratingQuestions || questions !== null}
-              style={[
-                styles.controlButton,
-                questions !== null
-                  ? styles.controlButtonDone
-                  : styles.controlButtonPrimary,
-                (isGeneratingQuestions || questions !== null) && { opacity: 0.7 },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.controlButtonText,
-                  questions !== null && styles.controlButtonDoneText,
-                ]}
-              >
-                {isGeneratingQuestions
-                  ? 'Generating...'
-                  : questions !== null
-                  ? 'Questions Generated'
-                  : 'Generate Questions'}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={handleEndClick}
-              disabled={isProcessing}
-              style={[styles.controlButton, styles.controlButtonEnd]}
-            >
-              <Text style={styles.controlButtonText}>
-                {isProcessing ? 'Ending...' : 'End'}
-              </Text>
-            </TouchableOpacity>
+        {/* Info pills */}
+        <View style={styles.infoPills}>
+          <View style={[styles.pill, isPhone && styles.pillPhone]}>
+            <Ionicons name="shield-checkmark" size={isPhone ? 12 : 14} color={Colors.accent} />
+            <Text style={[styles.pillText, isPhone && styles.pillTextPhone]}>Privacy first</Text>
           </View>
-        )}
-      </View>
-
-      {/* ---- Modals ---- */}
-
-      {/* Consent Dialog */}
-      <AlertModal
-        visible={showConsentDialog}
-        title="Recording Consent"
-        description="Does the doctor agree to recording this appointment?"
-        confirmLabel="Yes, Record"
-        cancelLabel="No"
-        onConfirm={handleConsentApproved}
-        onCancel={handleConsentDeclined}
-      />
-
-      {/* End Recording Dialog */}
-      <AlertModal
-        visible={showEndDialog}
-        title="Stop Recording?"
-        description="Are you sure you want to stop the recording? This will end the appointment session."
-        confirmLabel="Yes, Stop Recording"
-        cancelLabel="Cancel"
-        onConfirm={handleStopRecording}
-        onCancel={handleCancelEnd}
-      />
-
-      {/* Questions Modal */}
-      {questions && (
-        <QuestionsModal
-          visible={true}
-          questions={questions}
-          onClose={() => setQuestions(null)}
-        />
-      )}
+          <View style={[styles.pill, isPhone && styles.pillPhone]}>
+            <Ionicons name="flash" size={isPhone ? 12 : 14} color={Colors.accent3} />
+            <Text style={[styles.pillText, isPhone && styles.pillTextPhone]}>Instant results</Text>
+          </View>
+        </View>
+      </ScrollView>
     </View>
   );
 }
 
-// =============================================================================
-// Styles
-// =============================================================================
-
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.background,
-  },
+  container: { flex: 1, backgroundColor: Colors.lightBackground },
 
-  // Header
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  // Scroll content
+  scrollView: { flex: 1 },
+  scrollContent: { padding: 28, paddingBottom: 48 },
+
+  // Cards container – side by side
+  cardsContainer: { flexDirection: 'row', gap: 24, marginTop: 8, marginBottom: 36, justifyContent: 'center' },
+
+  // Option card – base
+  optionCard: {
+    flex: 1,
+    aspectRatio: 1,
+    borderRadius: 20,
+    padding: 16,
     justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-    backgroundColor: Colors.background,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.10,
+    shadowRadius: 10,
+    maxWidth: 300,
+    maxHeight: 300,
   },
-  logoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
+  // Left card – light purple
+  optionCardLeft: {
+    backgroundColor: Colors.purple[200],
   },
-  logo: {
-    width: 28,
-    height: 28,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: Colors.blue[700],
-  },
-
-  // Main
-  main: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-  },
-
-  // Error
-  errorBanner: {
-    width: 'auto',
-    alignSelf: 'center',
-    position: 'absolute',
-    top: 24,
-    padding: 18,
-    backgroundColor: Colors.red[50],
-    borderWidth: 1,
-    borderColor: Colors.red[300],
-    borderRadius: 12,
-  },
-  errorText: {
-    fontSize: 14,
-    color: Colors.red[700],
-  },
-
-  // Record button area
-  recordSection: {
-    alignItems: 'center',
-    marginBottom: 48,
-  },
-  recordButton: {
-    borderRadius: 999,
-    alignItems: 'center',
-    justifyContent: 'center',
-    boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.15)',
-    elevation: 6,
-  },
-  recordButtonIdle: {
-    width: 144,
-    height: 144,
-    backgroundColor: Colors.red[700],
-  },
-  recordButtonActive: {
-    width: 96,
-    height: 96,
-    backgroundColor: Colors.red[50],
-  },
-  recordButtonPaused: {
-    width: 96,
-    height: 96,
-    backgroundColor: Colors.gray[100],
-  },
-
-  recordingBadge: {
-    marginTop: 12,
-    backgroundColor: Colors.red[600],
-    paddingVertical: 4,
-    paddingHorizontal: 14,
-    borderRadius: 999,
-  },
-  recordingBadgeText: {
-    color: Colors.primaryForeground,
-    fontSize: 12,
-    fontWeight: '600',
-  },
-
-  statusTextWrapper: {
-    marginTop: 12,
-    minHeight: 20,
-  },
-  statusText: {
-    fontSize: 15,
-    color: Colors.gray[500],
-  },
-
-  // Controls
-  controls: {
-    width: '100%',
-    maxWidth: 400,
-    gap: 12,
-  },
-  controlButton: {
-    borderRadius: 999,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-  },
-  controlButtonPrimary: {
-    backgroundColor: Colors.blue[600],
-  },
-  controlButtonDone: {
-    backgroundColor: Colors.green[500],
-  },
-  controlButtonEnd: {
+  // Right card – dark
+  optionCardRight: {
     backgroundColor: Colors.primary,
   },
-  controlButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: Colors.primaryForeground,
+  // White icon box in top-right
+  cardIconBox: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'flex-start',
   },
-  controlButtonDoneText: {
-    color: Colors.primaryForeground,
+  // Card title at bottom-left
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    lineHeight: 23,
   },
+  cardTitleDark: {
+    color: Colors.foreground,
+  },
+  cardTitleLight: {
+    color: '#fff',
+  },
+
+  // Info pills
+  infoPills: { flexDirection: 'row', gap: 12, justifyContent: 'center' },
+  pill: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: Colors.background, paddingVertical: 8, paddingHorizontal: 14,
+    borderRadius: 999, borderWidth: 1, borderColor: Colors.border,
+  },
+  pillText: { fontSize: 13, fontWeight: '500', color: Colors.mutedForeground },
+
+  // Phone-specific responsive overrides (width < 600)
+  scrollContentPhone: { padding: 16, paddingBottom: 36 },
+  cardsContainerPhone: { gap: 14, marginBottom: 24 },
+  optionCardPhone: { padding: 12, borderRadius: 16 },
+  cardIconBoxPhone: { width: 34, height: 34, borderRadius: 10 },
+  cardTitlePhone: { fontSize: 14, lineHeight: 19 },
+  pillPhone: { paddingVertical: 6, paddingHorizontal: 10 },
+  pillTextPhone: { fontSize: 11 },
 });

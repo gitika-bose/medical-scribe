@@ -1,20 +1,20 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import '../App.css'
-import './TryPage.css'
+import './ExplainAppRec.css'
 import Footer from '../components/shared/Footer'
 import {
-  tryUploadNotesAppointment,
-  tryUploadRecording,
-  tryGenerateQuestions,
+  tryUploadNotesAppointmentLegacy as tryUploadNotesAppointment,
+  tryUploadRecordingLegacy as tryUploadRecording,
+  tryGenerateQuestionsLegacy as tryGenerateQuestions,
 } from '../api/appointments'
-import type { SoapNotes } from '../api/appointments'
+import type { SoapNotesV12 as SoapNotes } from '../api/appointments'
 import { analyticsEvents } from '../api/analytics'
 
 const MAX_CHARS = 2000;
 const ACCEPTED_AUDIO_TYPES = '.webm,.m4a';
 
-function TryPage() {
+function ExplainAppRecPage() {
   useEffect(() => {
     analyticsEvents.tryPageOpen();
   }, []);
@@ -81,9 +81,9 @@ function TryPage() {
 
       // Set loading text
       if (hasRecording) {
-        setLoadingText('Juno is listening to your recording…');
+        setLoadingText('Juno is processing to your recording…');
       } else {
-        setLoadingText('Juno is reading your notes…');
+        setLoadingText('Juno is processing your notes…');
       }
 
       let processedSoapNotes: SoapNotes;
@@ -549,4 +549,4 @@ function TryPage() {
   );
 }
 
-export default TryPage
+export default ExplainAppRecPage

@@ -35,7 +35,6 @@ export const logAnalyticsEvent = (
   if (analytics) {
     try {
       firebaseLogEvent(analytics, eventName, eventParams);
-      console.log(`📊 Analytics event: ${eventName}`, eventParams);
     } catch (error) {
       console.warn('⚠️ Failed to log analytics event:', error);
     }

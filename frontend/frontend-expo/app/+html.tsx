@@ -19,18 +19,18 @@ export default function Root({ children }: { children: React.ReactNode }) {
 
         {/* Open Graph meta tags for link previews (Messenger, Slack, iMessage, etc.) */}
         <meta property="og:title" content="Juno" />
-        <meta property="og:description" content="Your AI-powered medical scribe. Record appointments and get smart summaries, action items, and follow-ups instantly." />
+        <meta property="og:description" content="Medical clarity, when it matters the most" />
         <meta property="og:image" content="/assets/images/icon.png" />
         <meta property="og:type" content="website" />
 
         {/* Twitter / X card meta */}
         <meta name="twitter:card" content="summary" />
         <meta name="twitter:title" content="Juno" />
-        <meta name="twitter:description" content="Your AI-powered medical scribe. Record appointments and get smart summaries, action items, and follow-ups instantly." />
+        <meta name="twitter:description" content="Medical clarity, when it matters the most" />
         <meta name="twitter:image" content="/assets/images/icon.png" />
 
         {/* General description */}
-        <meta name="description" content="Your AI-powered medical scribe. Record appointments and get smart summaries, action items, and follow-ups instantly." />
+        <meta name="description" content="Medical clarity, when it matters the most" />
 
         {/* 
           Disable body scrolling on web. This makes ScrollView components work closer to how they do on native. 

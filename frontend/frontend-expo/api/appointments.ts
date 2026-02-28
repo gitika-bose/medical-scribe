@@ -34,8 +34,124 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
 }
 
 // =============================================================================
-// Types
+// Types — Schema v1.2 (legacy)
 // =============================================================================
+
+export interface ProcessedSummaryV12 {
+  summary?: string;
+  reason_for_visit?: Array<{
+    reason: string;
+    description: string;
+  }>;
+  diagnosis?: {
+    details: Array<{
+      title: string;
+      description: string;
+      severity?: 'high' | 'medium' | 'low';
+    }>;
+  };
+  todos?: Array<{
+    type: string;
+    title: string;
+    description: string;
+    recommended: boolean;
+    verified: boolean;
+    dosage?: string;
+    frequency?: string;
+    timing?: string;
+    duration?: string;
+    timeframe?: string;
+  }>;
+  follow_up?: Array<{
+    description: string;
+    time_frame: string;
+  }>;
+  learnings?: Array<{
+    title: string;
+    description: string;
+  }>;
+}
+
+// =============================================================================
+// Types — Schema v1.3
+// =============================================================================
+
+export interface ProcessedSummaryV13 {
+  version: '1.3';
+  summary?: string;
+  reason_for_visit?: Array<{
+    reason: string;
+    description: string;
+  }>;
+  diagnosis?: {
+    details: Array<{
+      title: string;
+      description: string;
+      severity?: 'high' | 'medium' | 'low';
+    }>;
+  };
+  tests?: Array<{
+    title: string;
+    description: string;
+    importance: 'high' | 'low';
+    source?: string;
+  }>;
+  medications?: Array<{
+    title: string;
+    dosage?: string;
+    frequency?: string;
+    timing?: string;
+    duration?: string;
+    instructions?: string;
+    importance: 'high' | 'low';
+    source?: string;
+    change?: boolean;
+  }>;
+  procedures?: Array<{
+    title: string;
+    description: string;
+    timeframe?: string;
+    importance: 'high' | 'low';
+    source?: string;
+  }>;
+  other?: Array<{
+    title: string;
+    description: string;
+    dosage?: string;
+    frequency?: string;
+    timing?: string;
+    duration?: string;
+    importance: 'high' | 'low';
+    source?: string;
+  }>;
+  follow_up?: Array<{
+    description: string;
+    time_frame: string;
+  }>;
+  why_recommended?: string;
+  risks_side_effects?: Array<{
+    title: string;
+    description: string;
+    source?: string;
+    importance: 'high' | 'low';
+  }>;
+  action_todo?: Array<{
+    title: string;
+    importance: 'high' | 'low';
+    source?: string;
+  }>;
+}
+
+// =============================================================================
+// Combined types
+// =============================================================================
+
+export type ProcessedSummary = ProcessedSummaryV12 | ProcessedSummaryV13;
+
+/** Type guard: returns true when the summary follows the v1.3 schema. */
+export function isV13Summary(ps: ProcessedSummary | undefined | null): ps is ProcessedSummaryV13 {
+  return !!ps && (ps as ProcessedSummaryV13).version === '1.3';
+}
 
 export interface Appointment {
   status: 'InProgress' | 'Completed' | 'Error';
@@ -43,7 +159,7 @@ export interface Appointment {
   title?: string;
   doctor?: string;
   location?: string;
-  processedSummary?: any;
+  processedSummary?: ProcessedSummary;
   rawTranscript?: string;
   recordingLink?: string;
   error?: string;
@@ -442,6 +558,63 @@ export async function updateAppointmentMetadata(
   }
 }
 
+/** Upload a recording file to GCS only (no processing). For upload-understand flow. */
+export async function uploadRecordingNew(
+  appointmentId: string,
+  file: { uri: string; name: string; mimeType?: string; size?: number },
+): Promise<{ recordingGcsUri: string }> {
+  const user = auth.currentUser;
+  if (!user) throw new Error('User not authenticated');
+  if (!appointmentId) throw new Error('Invalid appointment ID');
+  if (!file || !file.uri) throw new Error('Invalid recording file');
+
+  try {
+    const isHealthy = await checkProcessingServiceHealth();
+    if (!isHealthy) {
+      throw new Error('Service is currently unavailable. Please try again later.');
+    }
+
+    const token = await user.getIdToken();
+    const formData = new FormData();
+
+    const isWebBlob = file.uri.startsWith('blob:');
+    if (isWebBlob) {
+      const response = await fetch(file.uri);
+      const blob = await response.blob();
+      formData.append('recording', blob, file.name);
+    } else {
+      const mimeType = file.mimeType || 'audio/m4a';
+      formData.append('recording', {
+        uri: file.uri,
+        name: file.name,
+        type: mimeType,
+      } as any);
+    }
+
+    analyticsEvents.uploadRecording(appointmentId, file.size);
+
+    const response = await fetch(
+      `${API_URL_PROCESSING}/appointments/${appointmentId}/upload-recording-new`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      },
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Upload recording (new) error:', errorText);
+      throw new Error(`Failed to upload recording: ${response.statusText}`);
+    }
+
+    return response.json();
+  } catch (err) {
+    console.error('❌ Failed to upload recording (new):', err);
+    throw new Error(err instanceof Error ? err.message : 'Failed to upload recording');
+  }
+}
+
 /** Upload a pre-recorded audio file for processing. */
 export async function uploadRecording(
   appointmentId: string,
@@ -549,6 +722,148 @@ export async function uploadRecording(
     } catch (updateErr) {
       console.error('❌ Failed to update appointment status to Error:', updateErr);
     }
+
+    throw new Error(errorMsg);
+  }
+}
+
+/** Upload a document (PDF) for processing. */
+export async function uploadDocument(
+  appointmentId: string,
+  file: { uri: string; name: string; mimeType?: string; size?: number },
+): Promise<{ documentGcsUri: string; documentCount: number }> {
+  const user = auth.currentUser;
+  if (!user) throw new Error('User not authenticated');
+  if (!appointmentId) throw new Error('Invalid appointment ID');
+  if (!file || !file.uri) throw new Error('Invalid document file');
+
+  try {
+    const isHealthy = await checkProcessingServiceHealth();
+    if (!isHealthy) {
+      throw new Error('Service is currently unavailable. Please try again later.');
+    }
+
+    const token = await user.getIdToken();
+    const formData = new FormData();
+
+    const isWebBlob = file.uri.startsWith('blob:');
+    if (isWebBlob) {
+      const response = await fetch(file.uri);
+      const blob = await response.blob();
+      formData.append('document', blob, file.name);
+    } else {
+      const mimeType = file.mimeType || 'application/pdf';
+      formData.append('document', {
+        uri: file.uri,
+        name: file.name,
+        type: mimeType,
+      } as any);
+    }
+
+    const response = await fetch(
+      `${API_URL_PROCESSING}/appointments/${appointmentId}/upload-document`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      },
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Upload document error:', errorText);
+      throw new Error(`Failed to upload document: ${response.statusText}`);
+    }
+
+    return response.json();
+  } catch (err) {
+    console.error('❌ Failed to upload document:', err);
+    throw new Error(err instanceof Error ? err.message : 'Failed to upload document');
+  }
+}
+
+/** Upload plain text notes to an appointment. */
+export async function uploadNotes(
+  appointmentId: string,
+  notes: string,
+): Promise<void> {
+  const user = auth.currentUser;
+  if (!user) throw new Error('User not authenticated');
+  if (!appointmentId) throw new Error('Invalid appointment ID');
+  if (!notes.trim()) throw new Error('No notes provided');
+
+  try {
+    const isHealthy = await checkProcessingServiceHealth();
+    if (!isHealthy) {
+      throw new Error('Service is currently unavailable. Please try again later.');
+    }
+
+    const token = await user.getIdToken();
+    const formData = new FormData();
+    formData.append('notes', notes.trim());
+
+    const response = await fetch(
+      `${API_URL_PROCESSING}/appointments/${appointmentId}/upload-notes`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      },
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Upload notes error:', errorText);
+      throw new Error(`Failed to upload notes: ${response.statusText}`);
+    }
+  } catch (err) {
+    console.error('❌ Failed to upload notes:', err);
+    throw new Error(err instanceof Error ? err.message : 'Failed to upload notes');
+  }
+}
+
+/** Process an appointment (transcribe + extract + SOAP). */
+export async function processAppointment(
+  appointmentId: string,
+): Promise<{ soapNotes: any; status: string }> {
+  const user = auth.currentUser;
+  if (!user) throw new Error('User not authenticated');
+  if (!appointmentId) throw new Error('Invalid appointment ID');
+
+  try {
+    const isHealthy = await checkProcessingServiceHealth();
+    if (!isHealthy) {
+      throw new Error('Service is currently unavailable. Please try again later.');
+    }
+
+    const headers = await getAuthHeaders();
+    const response = await fetch(
+      `${API_URL_PROCESSING}/appointments/${appointmentId}/process`,
+      {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({}),
+      },
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('❌ Process appointment error:', errorText);
+      throw new Error(`Failed to process appointment: ${response.statusText}`);
+    }
+
+    return response.json();
+  } catch (err) {
+    console.error('❌ Failed to process appointment:', err);
+    const errorMsg = err instanceof Error ? err.message : 'Failed to process appointment';
+
+    try {
+      const ref = doc(db, 'users', user.uid, 'appointments', appointmentId);
+      const snap = await getDoc(ref);
+      if (snap.exists() && snap.data()?.status !== 'Error') {
+        await updateDoc(ref, { status: 'Error', error: errorMsg });
+      }
+    } catch (_) {}
 
     throw new Error(errorMsg);
   }

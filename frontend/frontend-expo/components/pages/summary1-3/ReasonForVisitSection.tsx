@@ -8,32 +8,21 @@ interface ReasonForVisit {
 
 interface ReasonForVisitSectionProps {
   reasonForVisit: ReasonForVisit[];
-  collapsible?: boolean;
-  defaultCollapsed?: boolean;
 }
 
-export function ReasonForVisitSection({ reasonForVisit, collapsible = false, defaultCollapsed = false }: ReasonForVisitSectionProps) {
-  const [collapsed, setCollapsed] = useState(defaultCollapsed);
-  if (!reasonForVisit || reasonForVisit.length === 0) return null;
+export function ReasonForVisitSection({ reasonForVisit }: ReasonForVisitSectionProps) {
+  const [collapsed, setCollapsed] = useState(true);
 
-  const header = (
-    <View style={styles.headerRow}>
-      <Text style={styles.heading}>Reason for Visit</Text>
-      {collapsible && (
-        <Text style={[styles.toggleArrow, !collapsed && styles.toggleArrowExpanded]}>▸</Text>
-      )}
-    </View>
-  );
+  if (!reasonForVisit || reasonForVisit.length === 0) return null;
 
   return (
     <View style={styles.card}>
-      {collapsible ? (
-        <TouchableOpacity onPress={() => setCollapsed(!collapsed)} activeOpacity={0.7}>
-          {header}
-        </TouchableOpacity>
-      ) : (
-        header
-      )}
+      <TouchableOpacity onPress={() => setCollapsed(!collapsed)} activeOpacity={0.7}>
+        <View style={styles.headerRow}>
+          <Text style={styles.heading}>Reason for Visit</Text>
+          <Text style={[styles.toggleArrow, !collapsed && styles.toggleArrowExpanded]}>▸</Text>
+        </View>
+      </TouchableOpacity>
       {!collapsed && (
         <View style={styles.list}>
           {reasonForVisit.map((item, index) => (
@@ -60,8 +49,6 @@ const styles = StyleSheet.create({
     padding: 20,
     borderWidth: 1,
     borderColor: '#E5E7EB',
-    boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.05)',
-    elevation: 1,
   },
   headerRow: {
     flexDirection: 'row',

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,21 +10,17 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { useAuth } from '@/hooks/useAuth';
-import { getSingleAppointment, type Appointment } from '@/api/appointments';
+import { auth, db } from '@/api/firebase';
+import { isV13Summary, type AppointmentWithId, type ProcessedSummaryV12, type ProcessedSummaryV13 } from '@/api/appointments';
 import { analyticsEvents } from '@/api/analytics';
 import { formatAppointmentDate, formatAppointmentDateLong } from '@/utils/formatDate';
 import { DeleteAppointmentButton } from '@/components/shared/DeleteAppointmentButton';
 import { GuestDisclaimer } from '@/components/shared/GuestDisclaimer';
 import { Colors } from '@/constants/Colors';
-import {
-  SummarySection,
-  ReasonForVisitSection,
-  DiagnosisSection,
-  TodosSection,
-  FollowUpSection,
-  LearningsSection,
-} from '@/components/pages/appointment-detail';
+import { AppointmentSummaryV12 } from '@/components/pages/summary1-2';
+import { AppointmentSummaryV13 } from '@/components/pages/summary1-3';
 
 export default function AppointmentDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -32,40 +28,78 @@ export default function AppointmentDetailScreen() {
   const insets = useSafeAreaInsets();
   const { user, loading: authLoading } = useAuth();
 
-  const [appointment, setAppointment] = useState<Appointment | null>(null);
+  const [appointment, setAppointment] = useState<AppointmentWithId | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const isDeletingRef = useRef(false);
 
+  // Real-time listener for appointment changes
   useEffect(() => {
     if (authLoading) return;
+    if (!id) {
+      setError('Invalid appointment ID');
+      setIsLoading(false);
+      return;
+    }
 
-    const loadAppointment = async () => {
-      if (!id) {
-        setError('Invalid appointment ID');
-        setIsLoading(false);
-        return;
-      }
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      setError('User not authenticated');
+      setIsLoading(false);
+      return;
+    }
 
-      try {
-        setIsLoading(true);
-        setError(null);
-        const data = await getSingleAppointment(id);
+    setIsLoading(true);
+    setError(null);
 
-        if (data) {
-          setAppointment(data);
-          analyticsEvents.viewAppointmentDetail(id);
-        } else {
+    const appointmentRef = doc(db, 'users', currentUser.uid, 'appointments', id);
+    const unsubscribe = onSnapshot(
+      appointmentRef,
+      (docSnap) => {
+        if (!docSnap.exists()) {
+          if (isDeletingRef.current) {
+            // Appointment was deleted – navigate straight to appointments list
+            router.replace('/(tabs)/appointments' as any);
+            return;
+          }
           setError('Appointment not found');
+          setIsLoading(false);
+          return;
         }
-      } catch (err) {
-        console.error('Failed to load appointment:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load appointment');
-      } finally {
-        setIsLoading(false);
-      }
-    };
 
-    loadAppointment();
+        const data = docSnap.data();
+        if (!data.appointmentDate) {
+          setError('Appointment data is incomplete');
+          setIsLoading(false);
+          return;
+        }
+
+        const updated: AppointmentWithId = {
+          appointmentId: id,
+          status: data.status || 'InProgress',
+          appointmentDate: data.appointmentDate.toDate().toISOString(),
+          title: data.title,
+          doctor: data.doctor,
+          location: data.location,
+          processedSummary: data.processedSummary,
+          rawTranscript: data.rawTranscript,
+          recordingLink: data.recordingLink,
+          error: data.error,
+        };
+
+        setAppointment(updated);
+        setIsLoading(false);
+      },
+      (err) => {
+        console.error('Failed to listen to appointment:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load appointment');
+        setIsLoading(false);
+      },
+    );
+
+    analyticsEvents.viewAppointmentDetail(id);
+
+    return () => unsubscribe();
   }, [id, user, authLoading]);
 
   // ---------------------------------------------------------------------------
@@ -138,7 +172,7 @@ export default function AppointmentDetailScreen() {
           <View style={styles.reasonCard}>
             <Text style={styles.reasonLabel}>Reason</Text>
             <Text style={styles.reasonText}>
-              {(appointment as any).error ||
+              {(appointment as any)?.error ||
                 'We encountered an error while processing this appointment.'}
             </Text>
           </View>
@@ -179,14 +213,14 @@ export default function AppointmentDetailScreen() {
             <TouchableOpacity
               style={styles.feedbackButton}
               onPress={() => {
-                console.log('Feedback button clicked for appointment:', id);
+                console.log('Feedback button clicked');
               }}
               activeOpacity={0.7}
             >
               <Ionicons name="chatbox-outline" size={18} color={Colors.primaryForeground} />
               <Text style={styles.feedbackButtonText}>Submit Feedback</Text>
             </TouchableOpacity>
-            <DeleteAppointmentButton appointmentId={id!} onDeleteError={setError} style={{ flex: 1 }} />
+            <DeleteAppointmentButton appointmentId={id!} onDeleteStart={() => { isDeletingRef.current = true; }} onDeleteError={setError} style={{ flex: 1 }} />
           </View>
         </ScrollView>
       </View>
@@ -221,21 +255,38 @@ export default function AppointmentDetailScreen() {
             Please wait while we process your appointment...
           </Text>
         </View>
+
+        <View style={styles.processingBottomActions}>
+          <DeleteAppointmentButton appointmentId={appointment.appointmentId} onDeleteStart={() => { isDeletingRef.current = true; }} onDeleteError={setError} style={{ width: '100%' }}/>
+        </View>
       </View>
     );
   }
 
   // ---------------------------------------------------------------------------
-  // Completed state (full details)
+  // Completed state (full details) — version-based rendering
   // ---------------------------------------------------------------------------
-  const hasSummaryContent =
-    appointment.processedSummary &&
-    (appointment.processedSummary.summary ||
-      appointment.processedSummary.reason_for_visit ||
-      appointment.processedSummary.diagnosis ||
-      appointment.processedSummary.todos ||
-      appointment.processedSummary.follow_up ||
-      appointment.processedSummary.learnings);
+  const ps = appointment.processedSummary;
+  const isV13 = isV13Summary(ps);
+
+  const hasSummaryContent = (() => {
+    if (!ps) return false;
+    if (isV13) {
+      const v13 = ps as ProcessedSummaryV13;
+      return !!(
+        v13.summary || v13.reason_for_visit?.length || v13.diagnosis?.details?.length ||
+        v13.action_todo?.length || v13.tests?.length || v13.medications?.length ||
+        v13.procedures?.length || v13.other?.length || v13.follow_up?.length ||
+        v13.why_recommended
+      );
+    } else {
+      const v12 = ps as ProcessedSummaryV12;
+      return !!(
+        v12.summary || v12.reason_for_visit?.length || v12.diagnosis?.details?.length ||
+        v12.todos?.length || v12.follow_up?.length || v12.learnings?.length
+      );
+    }
+  })();
 
   return (
     <View style={styles.container}>
@@ -264,49 +315,22 @@ export default function AppointmentDetailScreen() {
         showsVerticalScrollIndicator={false}
       >
         {hasSummaryContent ? (
-          <>
-            {appointment.processedSummary!.summary && (
-              <SummarySection summary={appointment.processedSummary!.summary} />
-            )}
-
-            {appointment.processedSummary!.reason_for_visit && (
-              <ReasonForVisitSection
-                reasonForVisit={appointment.processedSummary!.reason_for_visit}
-              />
-            )}
-
-            {appointment.processedSummary!.diagnosis && (
-              <DiagnosisSection diagnosis={appointment.processedSummary!.diagnosis} />
-            )}
-
-            {appointment.processedSummary!.todos && (
-              <TodosSection todos={appointment.processedSummary!.todos} />
-            )}
-
-            {appointment.processedSummary!.follow_up && (
-              <FollowUpSection followUp={appointment.processedSummary!.follow_up} />
-            )}
-
-            {appointment.processedSummary!.learnings && (
-              <LearningsSection learnings={appointment.processedSummary!.learnings} />
-            )}
-          </>
+          isV13 ? (
+            <AppointmentSummaryV13 summary={ps as ProcessedSummaryV13} />
+          ) : (
+            <AppointmentSummaryV12 summary={ps as ProcessedSummaryV12} />
+          )
         ) : (
-          <>
-            <View style={styles.notFoundInline}>
-              <Ionicons name="document-text-outline" size={32} color={Colors.gray[400]} />
-              <Text style={styles.notFoundTitle}>No appointment details found</Text>
-            </View>
-            <View style={styles.reasonCard}>
-              <Text style={styles.reasonLabel}>Reason</Text>
-              <Text style={styles.reasonText}>
-                No summary data is available for this appointment.
-              </Text>
-            </View>
-          </>
+          <View style={styles.processingContainer}>
+            <ActivityIndicator size="large" color={Colors.blue[600]} />
+            <Text style={styles.processingTitle}>Finalizing Appointment</Text>
+            <Text style={styles.processingSubtitle}>
+              Your appointment summary is being prepared. This page will update automatically.
+            </Text>
+          </View>
         )}
 
-        <DeleteAppointmentButton appointmentId={id!} onDeleteError={setError} style={{ flex: 1, width: 'auto' }}/>
+        <DeleteAppointmentButton appointmentId={id!} onDeleteStart={() => { isDeletingRef.current = true; }} onDeleteError={setError} style={{ flex: 1, width: 'auto' }}/>
       </ScrollView>
     </View>
   );
@@ -492,5 +516,12 @@ const styles = StyleSheet.create({
     color: Colors.primaryForeground,
     fontSize: 15,
     fontWeight: '600',
+  },
+
+  // Processing bottom actions
+  processingBottomActions: {
+    paddingHorizontal: 20,
+    paddingBottom: 32,
+    paddingTop: 8,
   },
 });

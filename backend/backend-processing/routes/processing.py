@@ -218,7 +218,7 @@ def process_appointment(user_id, appointment_id):
         # Store all references in Firebase
         update_fields = {
             'lastUpdated': datetime.utcnow().isoformat(),
-            'status': 'Processing',
+            'status': 'InProgress',
         }
         if recording_gcs_uri:
             update_fields['recordingLink'] = recording_gcs_uri

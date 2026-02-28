@@ -15,9 +15,9 @@ function LandingPage() {
     <div className="landing-page">
       {/* Header */}
       <header className="header">
-        <div className="logo-container">
+        <Link to="/" className="logo-container" style={{ textDecoration: 'none' }}>
           <span className="logo-text">Juno</span>
-        </div>
+        </Link>
         <div className="header-nav">
           <a href="#features" className="nav-link" onClick={() => analyticsEvents.landingClickNavLink('features')}>The Problem</a>
           <Link to="/aboutus" className="nav-link" onClick={() => analyticsEvents.landingClickNavLink('about-us')}>About Us</Link>

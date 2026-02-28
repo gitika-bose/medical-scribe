@@ -1,32 +1,31 @@
 import '../App.css'
 import { Link } from 'react-router-dom'
 import Footer from '../components/shared/Footer'
+import { analyticsEvents } from '../api/analytics'
 
 function AboutUsPage() {
   return (
     <div className="landing-page">
       {/* Header */}
-      <header className="header">
-        <div className="logo-container">
-          <Link to="/">
-            <img src="/logo/android-chrome-192x192.png" alt="Juno Logo" className="logo" />
-          </Link>
-          <Link to="/" className="logo-text">Juno</Link>
-        </div>
-        <div className="header-nav">
-          <Link to="/#features" className="nav-link">The Problem</Link>
-        </div>
-        <div className="header-actions">
-          <Link to="/beta" className="login-button">Join the beta</Link>
-          <Link to="/try" className="cta-button-small">Try it now</Link>
-        </div>
-      </header>
+            <header className="header">
+              <Link to="/" className="logo-container" style={{ textDecoration: 'none' }}>
+                <span className="logo-text">Juno</span>
+              </Link>
+              <div className="header-actions">
+                <Link
+                  to="/"
+                  className="nav-link"
+                  onClick={() => analyticsEvents.tryClickBackHome()}
+                >
+                  ← Back to Home
+                </Link>
+              </div>
+            </header>
 
       {/* About Us Section */}
       <section className="about-us" id="about-us">
         <div className="about-content-wrapper">
           <div className="section-header">
-            <span className="section-label">ABOUT US</span>
             <h2>Empowering patients through better communication</h2>
           </div>
           <div className="about-layout">

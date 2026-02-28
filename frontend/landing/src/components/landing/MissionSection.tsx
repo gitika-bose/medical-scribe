@@ -6,20 +6,6 @@ function MissionSection() {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center">
-          {/* Badge */}
-          <div
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-8"
-            style={{ backgroundColor: 'color-mix(in srgb, var(--primary-color) 10%, transparent)' }}
-          >
-            <span
-              className="w-2 h-2 rounded-full animate-pulse"
-              style={{ backgroundColor: 'var(--primary-color)' }}
-            />
-            <span className="font-semibold text-sm" style={{ color: 'var(--primary-color)' }}>
-              Our Mission
-            </span>
-          </div>
-
           <h2
             className="text-3xl md:text-4xl lg:text-5xl font-bold mb-8"
             style={{ fontFamily: 'var(--font-family-heading)', color: 'var(--dark-text-color)' }}

@@ -5,15 +5,6 @@ function AvailableTodaySection() {
     <section className="py-24 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <span
-            className="inline-block px-4 py-2 rounded-full font-semibold text-sm mb-4"
-            style={{
-              backgroundColor: 'color-mix(in srgb, var(--primary-color) 10%, transparent)',
-              color: 'var(--primary-color)',
-            }}
-          >
-            Available Today
-          </span>
           <h2
             className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6"
             style={{ fontFamily: 'var(--font-family-heading)', color: 'var(--dark-text-color)' }}

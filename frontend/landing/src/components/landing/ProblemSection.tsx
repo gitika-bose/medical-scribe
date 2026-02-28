@@ -76,11 +76,8 @@ function ProblemSection() {
             className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6"
             style={{ fontFamily: 'var(--font-family-heading)' }}
           >
-            Medical information isn't designed to be understood by patients.
+            Medical information is complex and difficult for patients to interpret.
           </h2>
-          <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-            The healthcare system was built for providers — not patients. Here's what we're up against.
-          </p>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">

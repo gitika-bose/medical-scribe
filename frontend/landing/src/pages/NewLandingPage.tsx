@@ -23,7 +23,6 @@ function NewLandingPage() {
         }}
       >
         <Link to="/" className="flex items-center gap-2.5" style={{ textDecoration: 'none' }}>
-          <img src="/logo/android-chrome-192x192.png" alt="Juno Logo" className="h-7 w-auto" />
           <span
             className="text-2xl font-bold"
             style={{ color: 'var(--primary-color)' }}

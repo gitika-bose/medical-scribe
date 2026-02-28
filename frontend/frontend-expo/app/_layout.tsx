@@ -108,6 +108,8 @@ function RootLayoutNav() {
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="appointment/[id]" />
           <Stack.Screen name="appointment-metadata" />
+          <Stack.Screen name="notetaker" />
+          <Stack.Screen name="explain-my-appointment" />
           <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
         </Stack>
 
@@ -126,7 +128,7 @@ function RootLayoutNav() {
               zIndex: 999,
             }}
           >
-            <ActivityIndicator size="large" color="#2563EB" />
+            <ActivityIndicator size="large" color="#6B5FD8" />
           </View>
         )}
       </View>

@@ -5,8 +5,9 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  Image,
   ActivityIndicator,
+  Alert,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -14,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { doc, getDoc } from 'firebase/firestore';
 import { useAuth } from '@/hooks/useAuth';
 import { AlertModal } from '@/components/shared/AlertModal';
+import { Header } from '@/components/shared/Header';
 import { ReauthenticationModal } from '@/components/shared/ReauthenticationModal';
 import { db } from '@/api/firebase';
 import { Colors } from '@/constants/Colors';
@@ -118,17 +120,7 @@ export default function AccountScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={[styles.header]}>
-        <View style={styles.logoContainer}>
-          <Image 
-            source={require('@/assets/images/icon.png')} 
-            style={styles.logo}
-            resizeMode="contain"
-          />
-          <Text style={styles.headerTitle}>Juno</Text>
-        </View>
-      </View>
+      <Header />
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
         {/* User Info Card */}
@@ -214,9 +206,22 @@ export default function AccountScreen() {
         </View>
 
         {/* Sign Out Button */}
-        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
-          <Ionicons name="log-out-outline" size={22} color={Colors.red[600]} />
-          <Text style={styles.signOutButtonText}>Sign Out</Text>
+        <TouchableOpacity 
+          style={[styles.signOutButton, isGuestUser && styles.buttonDisabled]} 
+          onPress={() => {
+            if (isGuestUser) {
+              if (Platform.OS === 'web') {
+                window.alert('Refresh Page to Sign Out');
+              } else {
+                Alert.alert('Sign Out', 'Refresh Page to Sign Out');
+              }
+              return;
+            }
+            handleSignOut();
+          }}
+        >
+          <Ionicons name="log-out-outline" size={22} color={isGuestUser ? Colors.gray[400] : Colors.red[600]} />
+          <Text style={[styles.signOutButtonText, isGuestUser && { color: Colors.gray[400] }]}>Sign Out</Text>
         </TouchableOpacity>
 
         {/* Error Message */}
@@ -228,16 +233,16 @@ export default function AccountScreen() {
 
         {/* Delete Account Button */}
         <TouchableOpacity 
-          style={[styles.deleteAccountButton, isDeleting && styles.buttonDisabled]} 
-          onPress={handleDeleteAccountClick}
-          disabled={isDeleting}
+          style={[styles.deleteAccountButton, (isDeleting || isGuestUser) && styles.buttonDisabled]} 
+          onPress={isGuestUser ? undefined : handleDeleteAccountClick}
+          disabled={isDeleting || isGuestUser}
         >
           {isDeleting ? (
             <ActivityIndicator size="small" color={Colors.red[700]} />
           ) : (
             <>
-              <Ionicons name="trash-outline" size={22} color={Colors.red[700]} />
-              <Text style={styles.deleteAccountButtonText}>Delete Account</Text>
+              <Ionicons name="trash-outline" size={22} color={isGuestUser ? Colors.gray[400] : Colors.red[700]} />
+              <Text style={[styles.deleteAccountButtonText, isGuestUser && { color: Colors.gray[400] }]}>Delete Account</Text>
             </>
           )}
         </TouchableOpacity>
@@ -272,30 +277,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.gray[50],
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-    backgroundColor: Colors.background,
-  },
-  logoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  logo: {
-    width: 28,
-    height: 28,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: Colors.blue[700],
   },
   scrollView: {
     flex: 1,

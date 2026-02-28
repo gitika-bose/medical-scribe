@@ -1,0 +1,33 @@
+/* CSS Variables for the new landing page */
+:root {
+  /* Colors */
+  --primary-color: #6B5FD8;
+  --accent-color: #00D4AA;
+  --accent2-color: #E85D75;
+  --accent3-color: #F59E0B;
+  --accent4-color: #3B82F6;
+
+  /* Backgrounds */
+  --light-background-color: #F8F7FF;
+  --dark-background-color: #0F172A;
+  --medium-background-color: #F1F5F9;
+
+  /* Text */
+  --dark-text-color: #1E293B;
+  --gray-text-color: #64748B;
+
+  /* Borders */
+  --light-border-color: #E2E8F0;
+  --dark-border-color: #CBD5E1;
+
+  /* Typography */
+  --font-family-heading: 'Nunito Sans', sans-serif;
+  --font-family-body: 'Nunito Sans', sans-serif;
+
+  /* Buttons */
+  --button-rounded-radius: 0.75rem;
+  --primary-button-hover-bg-color: #5A4FC7;
+  --secondary-button-bg-color: #F1F5F9;
+  --secondary-button-text-color: #1E293B;
+  --secondary-button-hover-bg-color: #E2E8F0;
+}

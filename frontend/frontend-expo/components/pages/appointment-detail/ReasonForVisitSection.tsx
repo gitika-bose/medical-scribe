@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 
 interface ReasonForVisit {
   reason: string;
@@ -8,27 +8,47 @@ interface ReasonForVisit {
 
 interface ReasonForVisitSectionProps {
   reasonForVisit: ReasonForVisit[];
+  collapsible?: boolean;
+  defaultCollapsed?: boolean;
 }
 
-export function ReasonForVisitSection({ reasonForVisit }: ReasonForVisitSectionProps) {
+export function ReasonForVisitSection({ reasonForVisit, collapsible = false, defaultCollapsed = false }: ReasonForVisitSectionProps) {
+  const [collapsed, setCollapsed] = useState(defaultCollapsed);
   if (!reasonForVisit || reasonForVisit.length === 0) return null;
+
+  const header = (
+    <View style={styles.headerRow}>
+      <Text style={styles.heading}>Reason for Visit</Text>
+      {collapsible && (
+        <Text style={[styles.toggleArrow, !collapsed && styles.toggleArrowExpanded]}>▸</Text>
+      )}
+    </View>
+  );
 
   return (
     <View style={styles.card}>
-      <Text style={styles.heading}>Reason for Visit</Text>
-      <View style={styles.list}>
-        {reasonForVisit.map((item, index) => (
-          <View key={index} style={styles.item}>
-            <View style={styles.borderAccent} />
-            <View style={styles.content}>
-              <Text style={styles.reason}>{item.reason}</Text>
-              {item.description ? (
-                <Text style={styles.description}>{item.description}</Text>
-              ) : null}
+      {collapsible ? (
+        <TouchableOpacity onPress={() => setCollapsed(!collapsed)} activeOpacity={0.7}>
+          {header}
+        </TouchableOpacity>
+      ) : (
+        header
+      )}
+      {!collapsed && (
+        <View style={styles.list}>
+          {reasonForVisit.map((item, index) => (
+            <View key={index} style={styles.item}>
+              <View style={styles.borderAccent} />
+              <View style={styles.content}>
+                <Text style={styles.reason}>{item.reason}</Text>
+                {item.description ? (
+                  <Text style={styles.description}>{item.description}</Text>
+                ) : null}
+              </View>
             </View>
-          </View>
-        ))}
-      </View>
+          ))}
+        </View>
+      )}
     </View>
   );
 }
@@ -43,11 +63,25 @@ const styles = StyleSheet.create({
     boxShadow: '0px 1px 3px rgba(0, 0, 0, 0.05)',
     elevation: 1,
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   heading: {
     fontSize: 17,
     fontWeight: '600',
     color: '#111',
     marginBottom: 12,
+    flex: 1,
+  },
+  toggleArrow: {
+    fontSize: 18,
+    color: '#9CA3AF',
+    marginBottom: 12,
+  },
+  toggleArrowExpanded: {
+    transform: [{ rotate: '90deg' }],
   },
   list: {
     gap: 12,

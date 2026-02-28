@@ -10,37 +10,37 @@ function Footer() {
             <span className="logo-text">Juno</span>
           </div>
           <p className="footer-description">
-            Your privacy-first companion for medical visits.
+            Medical clarity, when it matters most.
           </p>
           <div className="footer-links-mobile">
-            <Link to="/#features">The Problem</Link>
+            <a href="https://app.meetjuno.health" target="_blank" rel="noopener noreferrer">Live Appointment</a>
             <span className="separator">|</span>
-            <Link to="/beta#earlyAccess">Join the Beta</Link>
+            <Link to="/explain-my-appointment">Explain My Appointment</Link>
+            <span className="separator">|</span>
+            <Link to="/aboutus">About</Link>
             <span className="separator">|</span>
             <a href="#privacy">Privacy</a>
             <span className="separator">|</span>
             <a href="#terms">Terms</a>
             <span className="separator">|</span>
-            <a href="#help">Help Center</a>
-            <span className="separator">|</span>
-            <a href="#contact">Contact</a>
+            <Link to="/contact">Contact</Link>
           </div>
         </div>
         <div className="footer-section">
-          <h4>Product</h4>
-          <Link to="/#features">The Problem</Link>
-          <Link to="/beta#earlyAccess">Join the Beta</Link>
+          <h4>Features</h4>
+          <a href="https://app.meetjuno.health" target="_blank" rel="noopener noreferrer">Live Appointment Clarity</a>
+          <Link to="/explain-my-appointment">Explain My Appointment</Link>
         </div>
         <div className="footer-section">
           <h4>Company</h4>
-          <a href="#about">About</a>
+          <Link to="/aboutus">About</Link>
           <a href="#privacy">Privacy</a>
           <a href="#terms">Terms</a>
         </div>
         <div className="footer-section">
           <h4>Support</h4>
           <a href="#help">Help Center</a>
-          <a href="#contact">Contact</a>
+          <Link to="/contact">Contact</Link>
         </div>
       </div>
       <div className="footer-bottom">

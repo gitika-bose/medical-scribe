@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -6,24 +6,20 @@ import {
   FlatList,
   ActivityIndicator,
   StyleSheet,
-  Alert,
-  Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import * as DocumentPicker from 'expo-document-picker';
 import { useAuth } from '@/hooks/useAuth';
 import { store } from '@/store';
 import {
-  startAppointment,
-  uploadRecording,
   fetchAppointments,
   listenToInProgressAppointments,
   type AppointmentWithId,
 } from '@/api/appointments';
 import { formatAppointmentDate } from '@/utils/formatDate';
 import { GuestDisclaimer } from '@/components/shared/GuestDisclaimer';
+import { Header } from '@/components/shared/Header';
 import { Colors } from '@/constants/Colors';
 
 export default function AppointmentsScreen() {
@@ -119,58 +115,14 @@ export default function AppointmentsScreen() {
   // ---------------------------------------------------------------------------
   // Handlers
   // ---------------------------------------------------------------------------
-  const handleNewAppointment = () => {
+  const handleLiveNotes = () => {
     setShowDropdown(false);
-    setIsStarting(true);
-    router.push('/(tabs)' as any);
-    setIsStarting(false);
+    router.push('/notetaker' as any);
   };
 
-  const handleUploadClick = async () => {
+  const handleUploadUnderstand = () => {
     setShowDropdown(false);
-    
-    try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: 'audio/*',
-        copyToCacheDirectory: true,
-      });
-
-      if (result.canceled) {
-        return;
-      }
-
-      const file = result.assets[0];
-      if (!file) return;
-
-      // Create appointment first
-      const { appointmentId } = await startAppointment();
-      
-      // Set processing state and start upload in background
-      setIsProcessing(true);
-      Alert.alert('Upload Started', 'Processing in background...');
-      
-      // Fire and forget - upload in background
-      uploadRecording(appointmentId, file)
-        .then(() => {
-          setIsProcessing(false);
-          Alert.alert('Success', 'Recording uploaded and processed successfully!');
-        })
-        .catch((err) => {
-          console.error('Failed to upload recording:', err);
-          const errorMsg = err instanceof Error ? err.message : 'Failed to upload recording';
-          setError(errorMsg);
-          Alert.alert('Error', errorMsg);
-          setIsProcessing(false);
-        });
-      
-      // Stay on appointments page - do not navigate to metadata page
-      
-    } catch (err) {
-      console.error('Failed to pick document:', err);
-      const errorMsg = err instanceof Error ? err.message : 'Failed to select file';
-      setError(errorMsg);
-      Alert.alert('Error', errorMsg);
-    }
+    router.push('/explain-my-appointment' as any);
   };
 
   const handleAppointmentClick = (appointment: AppointmentWithId) => {
@@ -223,13 +175,15 @@ export default function AppointmentsScreen() {
           </Text>
         </View>
 
-        {isInProgress ? (
-        <ActivityIndicator size="small" color={Colors.blue[600]} style={styles.cardIcon} />
-      ) : isError ? (
-        <Ionicons name="alert-circle" size={20} color={Colors.red[600]} style={styles.cardIcon} />
-      ) : (
-        <Ionicons name="chevron-forward" size={20} color={Colors.gray[400]} style={styles.cardIcon} />
-        )}
+        <View style={styles.cardActions}>
+          {isInProgress ? (
+            <ActivityIndicator size="small" color={Colors.blue[600]} />
+          ) : isError ? (
+            <Ionicons name="alert-circle" size={20} color={Colors.red[600]} />
+          ) : (
+            <Ionicons name="chevron-forward" size={20} color={Colors.gray[400]} />
+          )}
+        </View>
       </TouchableOpacity>
     );
   };
@@ -252,17 +206,7 @@ export default function AppointmentsScreen() {
   // ---------------------------------------------------------------------------
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={[styles.header, { }]}>
-        <View style={styles.logoContainer}>
-          <Image 
-            source={require('@/assets/images/icon.png')} 
-            style={styles.logo}
-            resizeMode="contain"
-          />
-          <Text style={styles.headerTitle}>Juno</Text>
-        </View>
-
+      <Header rightContent={
         <View>
           <TouchableOpacity
             style={[
@@ -283,24 +227,22 @@ export default function AppointmentsScreen() {
             <View style={styles.dropdown}>
               <TouchableOpacity
                 style={styles.dropdownItem}
-                onPress={handleNewAppointment}
-                disabled={isStarting}
+                onPress={handleLiveNotes}
               >
-                <Ionicons name="mic" size={20} color={Colors.blue[600]} />
-                <Text style={styles.dropdownText}>Live Recording</Text>
+                <Ionicons name="mic" size={20} color={Colors.primary} />
+                <Text style={styles.dropdownText}>Appointment Notetaker</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.dropdownItem}
-                onPress={handleUploadClick}
-                disabled={isProcessing}
+                onPress={handleUploadUnderstand}
               >
-                <Ionicons name="cloud-upload" size={20} color={Colors.blue[600]} />
-                <Text style={styles.dropdownText}>Upload Recording</Text>
+                <Ionicons name="cloud-upload" size={20} color={Colors.accent4} />
+                <Text style={styles.dropdownText}>Explain My Appointment</Text>
               </TouchableOpacity>
             </View>
           )}
         </View>
-      </View>
+      } />
 
       {/* Guest disclaimer banner */}
       <GuestDisclaimer />
@@ -322,13 +264,6 @@ export default function AppointmentsScreen() {
         />
       )}
 
-      {/* Processing banner */}
-      {/* {isProcessing && (
-        <View style={[styles.processingBanner, { paddingBottom: insets.bottom + 60 }]}>
-          <ActivityIndicator size="small" color={Colors.primaryForeground} />
-          <Text style={styles.processingText}>Processing recent appointment upload...</Text>
-        </View>
-      )} */}
     </View>
   );
 }
@@ -341,33 +276,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.gray[50],
-  },
-
-  // Header
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-    backgroundColor: Colors.background,
-    zIndex: 20,
-  },
-  logoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  logo: {
-    width: 28,
-    height: 28,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: Colors.blue[700],
   },
 
   // New button
@@ -394,7 +302,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 48,
     right: 0,
-    width: 200,
+    width: 230,
     backgroundColor: Colors.background,
     borderRadius: 12,
     borderWidth: 1,
@@ -477,8 +385,11 @@ const styles = StyleSheet.create({
   cardTitleInProgress: {
     color: Colors.blue[900],
   },
-  cardIcon: {
-    marginLeft: 12,
+  cardActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginLeft: 8,
   },
 
   // Empty

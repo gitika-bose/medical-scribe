@@ -16,7 +16,7 @@ function LandingPage() {
         <div className="header-nav">
           <a href="#features" className="nav-link">Features</a>
           <a href="#how-it-works" className="nav-link">How It Works</a>
-          <a href="#about-us" className="nav-link">About Us</a>
+          <a href="/aboutus" className="nav-link">About Us</a>
         </div>
         <div className="header-actions">
           <a href={APP_URL} className="login-button">Login</a>

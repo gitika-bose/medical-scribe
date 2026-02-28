@@ -15,17 +15,16 @@ function LandingPage() {
     <div className="landing-page">
       {/* Header */}
       <header className="header">
-        <div className="logo-container">
-          <img src="/logo/android-chrome-192x192.png" alt="Juno Logo" className="logo" />
+        <Link to="/" className="logo-container" style={{ textDecoration: 'none' }}>
           <span className="logo-text">Juno</span>
-        </div>
+        </Link>
         <div className="header-nav">
           <a href="#features" className="nav-link" onClick={() => analyticsEvents.landingClickNavLink('features')}>The Problem</a>
-          <a href="#about-us" className="nav-link" onClick={() => analyticsEvents.landingClickNavLink('about-us')}>About Us</a>
+          <Link to="/aboutus" className="nav-link" onClick={() => analyticsEvents.landingClickNavLink('about-us')}>About Us</Link>
         </div>
         <div className="header-actions">
-          <a href="/beta" className="login-button" onClick={() => analyticsEvents.landingClickJoinBeta('header')}>Join the beta</a>
-          <Link to="/try" className="cta-button-small" onClick={() => analyticsEvents.landingClickTryNow('header')}>Try it now</Link>
+          <a href={APP_URL} className="login-button" onClick={() => analyticsEvents.landingClickJoinBeta('header')}>Login</a>
+          <Link to="/explain-my-appointment" className="cta-button-small" onClick={() => analyticsEvents.landingClickTryNow('header')}>Try it now</Link>
         </div>
       </header>
 
@@ -40,8 +39,8 @@ function LandingPage() {
              Juno explains what matters in plain language so you don’t miss anything.
             </p>
             <div className="hero-cta">
-              <Link to="/try" className="cta-button" onClick={() => analyticsEvents.landingClickTryNow('hero')}>Try it now</Link>
-              <Link to="/beta" className="cta-button-outline" onClick={() => analyticsEvents.landingClickJoinBeta('hero')}>Join the Beta</Link>
+              <Link to="/explain-my-appointment" className="cta-button" onClick={() => analyticsEvents.landingClickTryNow('hero')}>Try it now</Link>
+              {/* <Link to="/beta" className="cta-button-outline" onClick={() => analyticsEvents.landingClickJoinBeta('hero')}>Join the Beta</Link> */}
             </div>
             <div className="trust-badges">
               <span className="badge">No login required</span>
@@ -131,61 +130,27 @@ function LandingPage() {
           <div className="feature-card">
             <h3>Forget key instructions</h3>
             <p>
-              Get organized summaries with diagnoses, treatment plans, medications, 
-              and follow-up instructions automatically extracted.
+              Juno doesn't choose what to show you. Even the smallest detail is captured
+              and instantly available to you.
             </p>
           </div>
           <div className="feature-card">
             <h3>Misunderstand medications</h3>
             <p>
-              During the appointment, Juno helps you ask relevant questions 
-              so you never leave the appointment room confused.
+              Juno lists all follow-up actions, including medications with details like dosages and timings.
             </p>
           </div>
           <div className="feature-card">
             <h3>Can’t explain things to family</h3>
             <p>
-              Your data is encrypted and automatically deleted after processing. 
-              We only keep what you see and nothing more.
+              Juno allows you to easily share this information with loved ones and caregivers, giving them full access if you prefer.
             </p>
           </div>
           <div className="feature-card">
             <h3>Feel embarrassed repeteadly calling the doctor with questions</h3>
             <p>
-              Get all the relevant questions you need to ask at once, at the appointment or afterwards.
+              Juno generates all the relevant questions you need to ask at once, at the appointment or afterwards.
             </p>
-          </div>
-        </div>
-      </section>
-
-      {/* About Us Section */}
-      <section className="about-us" id="about-us">
-        <div className="about-content-wrapper">
-          <div className="section-header">
-            <span className="section-label">ABOUT US</span>
-            <h2>Empowering patients through better communication</h2>
-          </div>
-          <div className="about-layout">
-            <div className="about-image-side">
-              <img src="/aboutuspic.jpg" alt="Tejit Pabari and Gitika Bose" className="about-founders-photo" />
-              <p className="about-caption">Tejit Pabari (Co-Founder & CEO) and Gitika Bose (Co-Founder & CTO)</p>
-            </div>
-            <div className="about-text-side">
-              <p>
-                Juno was born from a simple observation: healthcare conversations are complex, 
-                and it's nearly impossible to remember everything discussed during an appointment. 
-                The founders have been through this countless times during medical visits for themselves and loved ones.
-              </p>
-              <p>
-                After consulting with numerous doctors in the US, we developed this AI powered note taking solution.
-                With privacy and security at its core, we built a tool that empowers patients 
-                to take control of their health information.
-              </p>
-              <p>
-                Whether you're managing a chronic condition, caring for a loved one, or simply want to 
-                be more informed about your health, Juno is here to help you every step of the way.
-              </p>
-            </div>
           </div>
         </div>
       </section>

@@ -1,0 +1,5 @@
+export { default as HeroSection } from './HeroSection'
+export { default as ProblemSection } from './ProblemSection'
+export { default as PillarsSection } from './PillarsSection'
+export { default as PlatformSection } from './PlatformSection'
+export { default as AvailableTodaySection } from './AvailableTodaySection'

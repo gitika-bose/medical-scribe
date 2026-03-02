@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Colors } from '@/constants/Colors';
 
 interface CollapsibleCardProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -49,11 +50,11 @@ export function CollapsibleCard({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    backgroundColor: Colors.background,
+    borderRadius: 14,
     padding: 20,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: Colors.border,
   },
   headerRow: {
     flexDirection: 'row',
@@ -70,11 +71,11 @@ const styles = StyleSheet.create({
   heading: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#111',
+    color: Colors.foreground,
   },
   toggleArrow: {
     fontSize: 18,
-    color: '#9CA3AF',
+    color: Colors.gray[400],
     marginBottom: 12,
   },
   toggleArrowExpanded: {

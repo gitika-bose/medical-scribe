@@ -26,7 +26,6 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  // Redirect if already logged in
   useEffect(() => {
     if (user) {
       router.replace('/(tabs)');
@@ -37,23 +36,10 @@ export default function LoginScreen() {
     try {
       setEmailLoading(true);
       setError(null);
-
-      // Validate inputs
-      if (!email.trim()) {
-        setError('Please enter your email address.');
-        return;
-      }
-
-      if (!password.trim()) {
-        setError('Please enter your password.');
-        return;
-      }
-
-      // Sign in the user
+      if (!email.trim()) { setError('Please enter your email address.'); return; }
+      if (!password.trim()) { setError('Please enter your password.'); return; }
       await signInWithEmail(email.trim(), password);
       analyticsEvents.userLogin('email');
-
-      // Navigate to home screen after successful login
       router.replace('/(tabs)');
     } catch (err: any) {
       console.error('Login error:', err);
@@ -77,9 +63,7 @@ export default function LoginScreen() {
     }
   };
 
-  const handleGuestClick = () => {
-    setShowGuestConsent(true);
-  };
+  const handleGuestClick = () => { setShowGuestConsent(true); };
 
   const handleGuestConsentAgree = async () => {
     setShowGuestConsent(false);
@@ -96,9 +80,7 @@ export default function LoginScreen() {
     }
   };
 
-  const handleGuestConsentCancel = () => {
-    setShowGuestConsent(false);
-  };
+  const handleGuestConsentCancel = () => { setShowGuestConsent(false); };
 
   const isAnyLoading = loading || emailLoading || guestLoading;
 
@@ -127,11 +109,11 @@ export default function LoginScreen() {
 
         {/* Email Input */}
         <View style={styles.inputContainer}>
-          <Ionicons name="mail-outline" size={20} color="#6B7280" style={styles.inputIcon} />
+          <Ionicons name="mail-outline" size={20} color={Colors.mutedForeground} style={styles.inputIcon} />
           <TextInput
             style={styles.input}
             placeholder="Email"
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={Colors.gray[400]}
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
@@ -142,11 +124,11 @@ export default function LoginScreen() {
 
         {/* Password Input */}
         <View style={styles.inputContainer}>
-          <Ionicons name="lock-closed-outline" size={20} color="#6B7280" style={styles.inputIcon} />
+          <Ionicons name="lock-closed-outline" size={20} color={Colors.mutedForeground} style={styles.inputIcon} />
           <TextInput
             style={styles.input}
             placeholder="Password"
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor={Colors.gray[400]}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -156,8 +138,8 @@ export default function LoginScreen() {
         </View>
 
         {/* Forgot Password Link */}
-        <TouchableOpacity 
-          style={styles.forgotPasswordContainer} 
+        <TouchableOpacity
+          style={styles.forgotPasswordContainer}
           onPress={() => router.push('/forgotPassword')}
           activeOpacity={0.7}
         >
@@ -195,7 +177,6 @@ export default function LoginScreen() {
 
         {/* Social Login Buttons */}
         <View style={styles.socialButtonsContainer}>
-          {/* Google Sign in button */}
           <TouchableOpacity
             style={[styles.socialButton, (isAnyLoading || !isGoogleSignInReady) && styles.buttonDisabled]}
             onPress={handleGmailLogin}
@@ -203,14 +184,13 @@ export default function LoginScreen() {
             activeOpacity={0.7}
           >
             {loading ? (
-              <ActivityIndicator size="small" color="#111" />
+              <ActivityIndicator size="small" color={Colors.foreground} />
             ) : (
               <Ionicons name="logo-google" size={20} color="#DB4437" />
             )}
             <Text style={styles.socialButtonText}>Google</Text>
           </TouchableOpacity>
 
-          {/* Try as guest button */}
           <TouchableOpacity
             style={[styles.socialButton, isAnyLoading && styles.buttonDisabled]}
             onPress={handleGuestClick}
@@ -218,16 +198,15 @@ export default function LoginScreen() {
             activeOpacity={0.7}
           >
             {guestLoading ? (
-              <ActivityIndicator size="small" color="#111" />
+              <ActivityIndicator size="small" color={Colors.foreground} />
             ) : (
-              <Ionicons name="person-outline" size={20} color='#326e94' />
+              <Ionicons name="person-outline" size={20} color={Colors.primary} />
             )}
             <Text style={styles.socialButtonText}>Try it as a guest</Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Guest consent popup */}
       <AlertModal
         visible={showGuestConsent}
         title="Guest Account Notice"
@@ -244,7 +223,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: Colors.lightBackground,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,
@@ -265,32 +244,32 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 32,
     fontWeight: '700',
-    color: Colors.blue[700],
+    color: Colors.primary,
     marginBottom: 12,
   },
   subtitle: {
     fontSize: 16,
-    color: '#6B7280',
+    color: Colors.mutedForeground,
     textAlign: 'center',
   },
   errorContainer: {
     marginBottom: 16,
     padding: 12,
-    backgroundColor: '#FEF2F2',
+    backgroundColor: Colors.red[50],
     borderWidth: 1,
-    borderColor: '#FECACA',
+    borderColor: Colors.red[300],
     borderRadius: 12,
   },
   errorText: {
     fontSize: 14,
-    color: '#B91C1C',
+    color: Colors.red[700],
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F9FAFB',
+    backgroundColor: Colors.surfaceBackground,
     borderWidth: 1,
-    borderColor: '#D1D5DB',
+    borderColor: Colors.inputBorder,
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -302,7 +281,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 16,
-    color: '#111',
+    color: Colors.foreground,
   },
   forgotPasswordContainer: {
     alignSelf: 'flex-end',
@@ -310,7 +289,7 @@ const styles = StyleSheet.create({
   },
   forgotPasswordText: {
     fontSize: 14,
-    color: Colors.blue[700],
+    color: Colors.primary,
   },
   registerAccountContainer: {
     flexDirection: 'row',
@@ -320,14 +299,15 @@ const styles = StyleSheet.create({
   },
   registerAccountText: {
     fontSize: 14,
-    color: '#111',
+    color: Colors.foreground,
   },
   registerAccountLink: {
     fontSize: 14,
-    color: Colors.blue[700],
+    color: Colors.primary,
+    fontWeight: '600',
   },
   loginButton: {
-    backgroundColor: Colors.blue[700],
+    backgroundColor: Colors.primary,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
@@ -350,12 +330,12 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: Colors.border,
   },
   dividerText: {
     marginHorizontal: 16,
     fontSize: 14,
-    color: '#9CA3AF',
+    color: Colors.mutedForeground,
   },
   socialButtonsContainer: {
     flexDirection: 'row',
@@ -368,16 +348,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: Colors.background,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: Colors.border,
     borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 16,
   },
   socialButtonText: {
     fontSize: 14,
-    color: '#111',
+    color: Colors.foreground,
     fontWeight: '500',
   },
 });

@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
     color: '#111',
   },
   sendOTPButton: {
-    backgroundColor: Colors.blue[700],
+    backgroundColor: Colors.primary,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
@@ -219,6 +219,6 @@ const styles = StyleSheet.create({
   },
   signInLink: {
     fontSize: 14,
-    color: Colors.blue[700],
+    color: Colors.primary,
   },
 });

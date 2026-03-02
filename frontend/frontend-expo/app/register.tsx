@@ -237,10 +237,10 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   termsLink: {
-    color: Colors.blue[700],
+    color: Colors.primary,
   },
   createAccountButton: {
-    backgroundColor: Colors.blue[700],
+    backgroundColor: Colors.primary,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
@@ -266,6 +266,6 @@ const styles = StyleSheet.create({
   },
   signInLink: {
     fontSize: 14,
-    color: Colors.blue[700],
+    color: Colors.primary,
   },
 });

@@ -128,7 +128,7 @@ function RootLayoutNav() {
               zIndex: 999,
             }}
           >
-            <ActivityIndicator size="large" color="#6B5FD8" />
+            <ActivityIndicator size="large" color="#7C8B6B" />
           </View>
         )}
       </View>

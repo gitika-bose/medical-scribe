@@ -1,0 +1,105 @@
+{
+    "version": "1.3", // DO NOT CHANGE THE VERSION. This is for internal use to keep track of the version of the schema.
+    "title": "string", // Title of the appointment or visit, e.g., "Annual Checkup", "Follow-up for Blood Pressure"
+    "doctor_name": "string",
+    "location": "string",
+    "date": "string", // Date of the appointment in ISO format (YYYY-MM-DD)
+    "summary": "string", // Short snapshot of the visit (under 100 words). Include key points only - what the visit was about, solutions and todos.
+    /* Reason for visit as provided by the patient. Don't invent and deviate from the actual reason for visit provided by the patient.  */
+    "reason_for_visit": [
+        {
+            "reason": "string", // Reason for visit as provided by the patient, e.g., "Routine checkup", "High blood pressure", "Follow-up on lab results"
+            "description": "string" // Additional details about the reason for visit, e.g., "Daily headaches and dissiness for the past week", "Blood pressure readings consistently above 140/90"
+        }
+    ],
+    /* Diagnosis given by the doctor of the problem. Don't invent and deviate from the actual diagnosis provided by the doctor. */
+    "diagnosis": {
+        "details": [
+            {
+                "title": "string", // Title of the diagnosis exactly as mentioned by the doctor, e.g., "Hypertension", "Type 2 Diabetes". Use medical terms as mentioned by the doctor.
+                "description": "string", // Description and explaination for diagnosis. Explain in layman terms. Maximum 100 words.
+                "severity": "high | medium | low" // As labelled by the doctor. Unless doctor labels the severity, keep it low.
+            }
+        ]
+    },
+    /* Follow up tests suggested by the doctor. Don't invent and deviate from the actual todos provided by the doctor. Optional, if there are no follow-up tests, return an empty list. */
+    "tests": [
+        { 
+            // Group tests that belong together. Eg, Vitamin D and B12 test can be grouped together as they are both vitamin tests
+            "title": "string", // Title of the TEST, e.g. "Cholesterol level Test", "Vitamin D and B12", "Immunity Tests (COVID-19, Flu, Strep)"
+            "description": "string", // Description of the TEST, e.g. "Get fasting cholesterol level test done at the lab", "Get Vitamin D and B12 levels checked", "Get tested for COVID-19, Flu and Strep as experiencing symptoms of cough, fever and sore throat". Keep it short and to the point. Max 50 words.
+            "importance": "high | low", // Importance of the test as labelled by the doctor. If doctor doesn't specify, decide on your own. Only most important tests are high.
+            "source": "string" // Source for the test. Can be one of "documents", "recording" or "notes", in order of presedence.
+        }
+    ],
+    /* Medications suggested by the doctor. Don't invent and deviate from the actual todos provided by the doctor. Optional, if there are no medications, return an empty list. */
+    "medications": [
+        {
+            // Keep each medication as a separate todo even if they belong together. Eg, if the doctor recommends starting both Metformin and Glipizide, create 2 separate todos
+            // Add the dosage in the title
+            "title": "string", // Title of the MEDICATION todo, e.g. "Metformin 500mg", "Glipizide 5mg", "Vitamin D supplement 2000 IU"
+            "dosage": "string", // Dosage for the medication, e.g. "500mg", "5mg"
+            "frequency": "string", // Frequency of the medication, e.g. "Twice a day", "Every 8 hours",
+            "timing": "string", // Timing for the medication, e.g. "Take with meals", "Take on an empty stomach", "Once in the morning and once at night"
+            "duration": "string", // Duration for the medication, e.g. "For 2 weeks", "Indefinitely until next follow-up"
+            "instructions": "string", // Instructions for the medication, e.g. "Start daily and increase to twice a day after 1 week if no side effects. Watch for signs of low blood sugar such as dizziness, sweating and confusion. Avoid alcohol while on this medication." Keep them short and to the point. Max 50 words.
+            "importance": "high | low", // Importance of the medication as labelled by the doctor. If doctor doesn't specify, decide on your own. Only most important medications are high.
+            "source": "string", // Source for the medication. Can be one of "documents", "recording" or "notes", in order of presedence.
+            "change": "boolean" // If there is any change from previous medication. Default = False. Only true if you are certain there is a change.
+        }
+    ],
+    "procedures": [ // Procedures suggested by the doctor. Don't invent and deviate from the actual todos provided by the doctor. Optional, if there are no procedures, return an empty list.
+        {
+            // Keep each procedure as a separate todo even if they belong together. Eg, if the doctor recommends both colonoscopy and endoscopy, create 2 separate todos
+            "title": "string", // Title of the PROCEDURE todo, e.g. "Colonoscopy", "Knee MRI", "Physical Therapy"
+            // Description, Reason and Instructions for the PROCEDURE todo. 
+            // Eg. "Evaluate persistent knee pain and rule out meniscus tear. Avoid strenuous activity until then.", "Improve mobility and strengthen muscles after knee injury. Start in 2 weeks after initial rest and ice treatment."
+            "description": "string", // Keep it short and to the point. Max 50 words.
+            "timeframe": "string", // Timeframe for the procedure, e.g. "Within the next month", "As soon as possible", "Within 2 weeks"
+            "importance": "high | low", // Importance of the procedure as labelled by the doctor. If doctor doesn't specify, decide on your own. Only most important procedures are high.
+            "source": "string" // Source for the procedure. Can be one of "documents", "recording" or "notes", in order of presedence.
+        }
+    ],
+    "other": [ // Other instructions or todos suggested by the doctor that don't fit into Tests, Medication or Procedure. Don't invent and deviate from the actual todos provided by the doctor. Optional, if there are no other instructions, return an empty list.
+        {
+            // Eg, "Care" instructions such as wound care, nasal spray care etc, "Lifestyle Change" instructions such as diet and exercise recommendations etc.
+            // Group insturctions that belong together. 
+            "title": "string", // Title of the OTHER todo, e.g. "Wound care for leg ulcer", "Use DASH diet for blood pressure control", "Saline and Flonase spray for nasal congestion",
+            // Description, Reason and Instructions for the OTHER todo. Also add any details mentioned for it. 
+            // E.g. "Clean the wound with saline and apply antibiotic ointment daily until next follow-up.", "Adopt DASH diet which emphasizes fruits, vegetables, whole grains and lean proteins to help with blood pressure control. Limit sodium intake to less than 1500mg per day.", "Use saline spray first to moisturize the nose and reduce side effects of dryness, followed by Flonase to reduce inflammation and control turbinate swelling. Follow up in 1 week if symptoms persist."
+            "description": "string", 
+            "dosage": "string", // Dosage for the medication, e.g. "500mg", "5mg" - ONLY IF APPLICABLE. If not applicable, leave it out.
+            "frequency": "string", // Frequency of the medication, e.g. "Twice a day", "Every 8 hours", - ONLY IF APPLICABLE. If not applicable, leave it out.
+            "timing": "string", // Timing for the medication, e.g. "Take with meals", "Take on an empty stomach", "Once in the morning and once at night" - ONLY IF APPLICABLE. If not applicable, leave it out.
+            "duration": "string", // Duration for the medication, e.g. "For 2 weeks", "Indefinitely until next follow-up" - ONLY IF APPLICABLE. If not applicable, leave it out.
+            "importance": "high | low", // Importance of the procedure as labelled by the doctor. If doctor doesn't specify, decide on your own. Only most important procedures are high. Be more critical of the importance in this case.
+            "source": "string" // Source for the procedure. Can be one of "documents", "recording" or "notes", in order of presedence.
+        }
+    ],
+    "follow_up": [ // When to follow up next with the doctor and for what reason. Don't invent and deviate from the actual follow-up instructions provided by the doctor. OPTIONAL, if there are no follow-up instructions, return an empty list.
+        {
+            "time_frame": "string", // Time frame for follow-up, e.g. "In 1 month", "In 3 months", "In 1 year"
+            // Description, reason and instructions for follow-up
+            // E.g. "Evaluate blood pressure control and adjust medications as needed.", Repeat blood tests to monitor cholesterol levels.", "Annual checkup and preventive care."
+            "description": "string" 
+        }
+    ],
+    "why_recommended": "string", // Explanation of why the tests, medications, procedures and other instructions were recommended by the doctor. This should be a summary of the doctor's rationale for the recommendations. Keep it short and to the point. Max 100 words. "Goals (curative vs control vs symptom relief), Risk reduction reasoning, Guideline alignment (without naming specific frameworks unless doctor did))
+    "risks_side_effects": [ // Risks and side effects of the recommended tests, medications, procedures and other instructions. Don't invent and deviate from the actual risks and side effects provided by the doctor. Optional, if there are no risks or side effects mentioned, return an empty list.
+        {
+            "title": "string", // Title of the risk or side effect, e.g. "Low blood sugar (hypoglycemia)", "Gastrointestinal upset", "Allergic reaction"
+            // Include the time frame, medication dosage etc in the title itself. 
+            "description": "string", // Description of the risk or side effect, e.g. "Symptoms of low blood sugar include dizziness, sweating, confusion and shakiness. If experiencing these symptoms, check blood sugar levels and consume fast-acting carbohydrates such as glucose tablets or juice.", "Common side effects include nausea, diarrhea and stomach upset. Take with food to minimize these side effects.", "Watch for signs of allergic reaction such as rash, itching, swelling and difficulty breathing. Seek immediate medical attention if these occur."
+            // Keep it short and to the point. Max 50 words.
+            "source": "string", // Source for the risk or side effect. Can be one of "documents", "recording" or "notes", in order of presedence.
+            "importance": "high | low" // Importance of the risk or side effect as labelled by the doctor. If doctor doesn't specify, decide on your own. Only most important risks and side effects are high. Be more critical of the importance in this case.
+        }
+    ],
+    "action_todo": [ // Summary of the above - the most important action items from all of the above lists, in order of importance. Only include the most critical ones. Don't invent and deviate from the actual instructions provided by the doctor. Return atlesat 1 item.
+        {
+            "title": "string", // Title of the actionable todo, e.g. "Schedule next MRI", "Pick up anti-nausea medication", "Daily Blood pressure monitoring", "Use saline spray for nasal congestion"
+            "importance": "high | low", // Importance of the actionable todo as labelled by the doctor. If doctor doesn't specify, decide on your own. Only most important actionable todos are high.
+            "source": "string" // Source for the actionable todo. Can be one of "documents", "recording" or "notes", in order of presedence.
+        }
+    ]
+}

@@ -39,6 +39,6 @@ wheels/
 Thumbs.db
 
 # Service Account Keys
-*.json
+serviceAccountKey.json
 !bruno.json
 !collection.bru

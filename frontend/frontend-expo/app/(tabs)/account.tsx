@@ -9,11 +9,11 @@ import {
   Alert,
   Platform,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { doc, getDoc } from 'firebase/firestore';
 import { useAuth } from '@/hooks/useAuth';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { AlertModal } from '@/components/shared/AlertModal';
 import { Header } from '@/components/shared/Header';
 import { ReauthenticationModal } from '@/components/shared/ReauthenticationModal';
@@ -22,7 +22,7 @@ import { Colors } from '@/constants/Colors';
 
 export default function AccountScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
+  const { isDesktop } = useResponsiveLayout();
   const { user, signOut, deleteAccount, reauthenticateWithPassword, reauthenticateWithGoogle, isGuestUser } = useAuth();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showReauthModal, setShowReauthModal] = useState(false);
@@ -41,7 +41,6 @@ export default function AccountScreen() {
   };
 
   const handleDeleteAccountClick = () => {
-    // Determine authentication method based on user's provider data
     const isGoogleUser = user?.providerData.some(
       (provider) => provider.providerId === 'google.com'
     );
@@ -51,7 +50,6 @@ export default function AccountScreen() {
   };
 
   const handleDeleteAccountConfirm = () => {
-    // Show reauthentication modal before proceeding
     setShowDeleteConfirm(false);
     setShowReauthModal(true);
   };
@@ -63,23 +61,17 @@ export default function AccountScreen() {
 
   const handleReauthConfirm = async (password?: string) => {
     try {
-      // Reauthenticate based on auth method
       if (authMethod === 'email' && password) {
         await reauthenticateWithPassword(password);
       } else if (authMethod === 'google') {
         await reauthenticateWithGoogle();
       }
 
-      // Close reauth modal
       setShowReauthModal(false);
-
-      // Proceed with account deletion
       setIsDeleting(true);
       setError(null);
 
       await deleteAccount();
-
-      // Navigate to login after successful deletion
       router.replace('/login' as any);
     } catch (err: any) {
       console.error('Delete account error:', err);
@@ -98,11 +90,11 @@ export default function AccountScreen() {
   useEffect(() => {
     const fetchDisplayName = async () => {
       if (!user) return;
-      
+
       try {
         const userRef = doc(db, 'users', user.uid);
         const userSnap = await getDoc(userRef);
-        
+
         if (userSnap.exists()) {
           const userData = userSnap.data();
           setDisplayName(userData.displayName || user.email?.split('@')[0] || 'User');
@@ -122,133 +114,99 @@ export default function AccountScreen() {
     <View style={styles.container}>
       <Header />
 
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-        {/* User Info Card */}
-        <TouchableOpacity style={styles.userInfoCard}>
-          <View style={styles.avatarContainer}>
-            <Ionicons name="person-circle-outline" size={60} color={Colors.blue[600]} />
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={[
+          styles.content,
+          isDesktop && styles.contentDesktop,
+        ]}
+      >
+        <View style={[styles.innerContent, isDesktop && styles.innerContentDesktop]}>
+          {/* User Info Card */}
+          <View style={styles.userInfoCard}>
+            <View style={styles.avatarContainer}>
+              <View style={styles.avatarCircle}>
+                <Ionicons name="person" size={28} color={Colors.primary} />
+              </View>
+            </View>
+            <View style={styles.userInfo}>
+              <Text style={styles.userName}>{displayName || 'User'}</Text>
+              <Text style={styles.userEmail}>{user?.email || 'No email'}</Text>
+            </View>
           </View>
-          <View style={styles.userInfo}>
-            <Text style={styles.userName}>{displayName || 'User'}</Text>
-            <Text style={styles.userEmail}>{user?.email || 'No email'}</Text>
+
+          {/* Settings Section */}
+          <View style={styles.section}>
+            <View style={styles.menuGroup}>
+              <TouchableOpacity style={styles.menuItem}>
+                <View style={styles.menuItemLeft}>
+                  <View style={[styles.menuIconBg, { backgroundColor: Colors.green[100] }]}>
+                    <Ionicons name="shield-checkmark-outline" size={18} color={Colors.green[600]} />
+                  </View>
+                  <Text style={styles.menuItemText}>Privacy Policy</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={Colors.gray[400]} />
+              </TouchableOpacity>
+
+              <View style={styles.menuDivider} />
+
+              <TouchableOpacity style={styles.menuItem}>
+                <View style={styles.menuItemLeft}>
+                  <View style={[styles.menuIconBg, { backgroundColor: Colors.blue[50] }]}>
+                    <Ionicons name="document-text-outline" size={18} color={Colors.blue[600]} />
+                  </View>
+                  <Text style={styles.menuItemText}>Terms of Service</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={Colors.gray[400]} />
+              </TouchableOpacity>
+            </View>
           </View>
-          <Ionicons name="chevron-forward" size={20} color={Colors.gray[400]} />
-        </TouchableOpacity>
 
-        {/* Account Settings Section */}
-        {/* <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Account Settings</Text>
-          
-          <View style={styles.menuGroup}>
-            <TouchableOpacity style={styles.menuItem}>
-              <View style={styles.menuItemLeft}>
-                <Ionicons name="person-outline" size={22} color={Colors.gray[600]} />
-                <Text style={styles.menuItemText}>Edit Profile</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={Colors.gray[400]} />
-            </TouchableOpacity>
-
-            <View style={styles.menuDivider} />
-
-            <TouchableOpacity style={styles.menuItem}>
-              <View style={styles.menuItemLeft}>
-                <Ionicons name="lock-closed-outline" size={22} color={Colors.gray[600]} />
-                <Text style={styles.menuItemText}>Change Password</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={Colors.gray[400]} />
-            </TouchableOpacity> */}
-
-            {/* <View style={styles.menuDivider} />
-
-            <TouchableOpacity style={styles.menuItem}>
-              <View style={styles.menuItemLeft}>
-                <Ionicons name="notifications-outline" size={22} color={Colors.gray[600]} />
-                <Text style={styles.menuItemText}>Notifications</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={Colors.gray[400]} />
-            </TouchableOpacity> */}
-          {/* </View>
-        </View> */}
-
-        {/* App Settings Section */}
-        <View style={styles.section}>
-          {/* <Text style={styles.sectionTitle}>App Settings</Text> */}
-          
-          <View style={styles.menuGroup}>
-            <TouchableOpacity style={styles.menuItem}>
-              <View style={styles.menuItemLeft}>
-                <Ionicons name="shield-checkmark-outline" size={22} color={Colors.gray[600]} />
-                <Text style={styles.menuItemText}>Privacy Policy</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={Colors.gray[400]} />
-            </TouchableOpacity>
-
-            <View style={styles.menuDivider} />
-
-            <TouchableOpacity style={styles.menuItem}>
-              <View style={styles.menuItemLeft}>
-                <Ionicons name="document-text-outline" size={22} color={Colors.gray[600]} />
-                <Text style={styles.menuItemText}>Terms of Service</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={Colors.gray[400]} />
-            </TouchableOpacity>
-
-            {/* <View style={styles.menuDivider} />
-
-            <TouchableOpacity style={styles.menuItem}>
-              <View style={styles.menuItemLeft}>
-                <Ionicons name="help-circle-outline" size={22} color={Colors.gray[600]} />
-                <Text style={styles.menuItemText}>Help & Support</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={Colors.gray[400]} />
-            </TouchableOpacity> */}
-          </View>
-        </View>
-
-        {/* Sign Out Button */}
-        <TouchableOpacity 
-          style={[styles.signOutButton, isGuestUser && styles.buttonDisabled]} 
-          onPress={() => {
-            if (isGuestUser) {
-              if (Platform.OS === 'web') {
-                window.alert('Refresh Page to Sign Out');
-              } else {
-                Alert.alert('Sign Out', 'Refresh Page to Sign Out');
+          {/* Sign Out Button */}
+          <TouchableOpacity
+            style={[styles.actionButton, isGuestUser && styles.buttonDisabled]}
+            onPress={() => {
+              if (isGuestUser) {
+                if (Platform.OS === 'web') {
+                  window.alert('Refresh Page to Sign Out');
+                } else {
+                  Alert.alert('Sign Out', 'Refresh Page to Sign Out');
+                }
+                return;
               }
-              return;
-            }
-            handleSignOut();
-          }}
-        >
-          <Ionicons name="log-out-outline" size={22} color={isGuestUser ? Colors.gray[400] : Colors.red[600]} />
-          <Text style={[styles.signOutButtonText, isGuestUser && { color: Colors.gray[400] }]}>Sign Out</Text>
-        </TouchableOpacity>
+              handleSignOut();
+            }}
+          >
+            <Ionicons name="log-out-outline" size={20} color={isGuestUser ? Colors.gray[400] : Colors.red[600]} />
+            <Text style={[styles.actionButtonText, { color: isGuestUser ? Colors.gray[400] : Colors.red[600] }]}>Sign Out</Text>
+          </TouchableOpacity>
 
-        {/* Error Message */}
-        {error && (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{error}</Text>
-          </View>
-        )}
-
-        {/* Delete Account Button */}
-        <TouchableOpacity 
-          style={[styles.deleteAccountButton, (isDeleting || isGuestUser) && styles.buttonDisabled]} 
-          onPress={isGuestUser ? undefined : handleDeleteAccountClick}
-          disabled={isDeleting || isGuestUser}
-        >
-          {isDeleting ? (
-            <ActivityIndicator size="small" color={Colors.red[700]} />
-          ) : (
-            <>
-              <Ionicons name="trash-outline" size={22} color={isGuestUser ? Colors.gray[400] : Colors.red[700]} />
-              <Text style={[styles.deleteAccountButtonText, isGuestUser && { color: Colors.gray[400] }]}>Delete Account</Text>
-            </>
+          {/* Error Message */}
+          {error && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
           )}
-        </TouchableOpacity>
 
-        {/* App Version */}
-        <Text style={styles.versionText}>Version 1.0.0</Text>
+          {/* Delete Account Button */}
+          <TouchableOpacity
+            style={[styles.actionButton, (isDeleting || isGuestUser) && styles.buttonDisabled]}
+            onPress={isGuestUser ? undefined : handleDeleteAccountClick}
+            disabled={isDeleting || isGuestUser}
+          >
+            {isDeleting ? (
+              <ActivityIndicator size="small" color={Colors.red[700]} />
+            ) : (
+              <>
+                <Ionicons name="trash-outline" size={20} color={isGuestUser ? Colors.gray[400] : Colors.red[700]} />
+                <Text style={[styles.actionButtonText, { color: isGuestUser ? Colors.gray[400] : Colors.red[700] }]}>Delete Account</Text>
+              </>
+            )}
+          </TouchableOpacity>
+
+          {/* App Version */}
+          <Text style={styles.versionText}>Version 1.0.0</Text>
+        </View>
       </ScrollView>
 
       {/* Delete Account Confirmation Modal */}
@@ -276,37 +234,49 @@ export default function AccountScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.gray[50],
+    backgroundColor: Colors.lightBackground,
   },
   scrollView: {
     flex: 1,
   },
   content: {
-    padding: 16,
-    paddingBottom: 40,
+    padding: 20,
+    paddingBottom: 100,
   },
-  section: {
-    marginBottom: 24,
+  contentDesktop: {
+    alignItems: 'center',
+    paddingHorizontal: 28,
+    paddingTop: 28,
   },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: Colors.foreground,
-    marginBottom: 12,
-    paddingHorizontal: 4,
+  innerContent: {
+    width: '100%',
   },
+  innerContentDesktop: {
+    maxWidth: 560,
+    width: '100%',
+  },
+
+  // User info
   userInfoCard: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: Colors.background,
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: 16,
+    padding: 18,
     marginBottom: 24,
     borderWidth: 1,
     borderColor: Colors.border,
   },
   avatarContainer: {
-    marginRight: 12,
+    marginRight: 14,
+  },
+  avatarCircle: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: Colors.primaryMuted,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   userInfo: {
     flex: 1,
@@ -319,11 +289,16 @@ const styles = StyleSheet.create({
   },
   userEmail: {
     fontSize: 14,
-    color: Colors.gray[500],
+    color: Colors.mutedForeground,
+  },
+
+  // Sections
+  section: {
+    marginBottom: 24,
   },
   menuGroup: {
     backgroundColor: Colors.background,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: Colors.border,
     overflow: 'hidden',
@@ -333,60 +308,51 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 16,
-    backgroundColor: Colors.background,
   },
   menuDivider: {
     height: 1,
     backgroundColor: Colors.border,
-    marginLeft: 54,
+    marginLeft: 58,
   },
   menuItemLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
   },
+  menuIconBg: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   menuItemText: {
-    fontSize: 16,
+    fontSize: 15,
     color: Colors.foreground,
   },
-  signOutButton: {
+
+  // Action buttons (sign out, delete)
+  actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
     backgroundColor: Colors.background,
     padding: 16,
-    borderRadius: 12,
-    marginTop: 8,
+    borderRadius: 14,
     marginBottom: 12,
     borderWidth: 1,
     borderColor: Colors.border,
   },
-  signOutButtonText: {
-    fontSize: 16,
+  actionButtonText: {
+    fontSize: 15,
     fontWeight: '500',
-    color: Colors.red[600],
-  },
-  deleteAccountButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: Colors.background,
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  deleteAccountButtonText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: Colors.red[700],
   },
   buttonDisabled: {
     opacity: 0.5,
   },
+
+  // Error
   errorContainer: {
     marginBottom: 16,
     padding: 12,
@@ -399,9 +365,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.red[700],
   },
+
+  // Version
   versionText: {
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.gray[400],
     textAlign: 'center',
+    marginTop: 8,
   },
 });

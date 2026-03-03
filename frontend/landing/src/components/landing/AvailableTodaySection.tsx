@@ -42,17 +42,18 @@ function AvailableTodaySection() {
                 className="text-3xl font-bold mb-3"
                 style={{ fontFamily: 'var(--font-family-heading)', color: 'var(--dark-text-color)' }}
               >
-                Medical Notetaker
+                Ready to join the Juno community?
               </h3>
               <p className="mb-6 text-xl" style={{ color: 'var(--gray-text-color)' }}>
-                Take live medical notes and ask smart questions during your visits. Never miss any important details.
+                Log in to take live medical notes and ask relevant questions during your visits. Never forget any important details.
               </p>
 
               <ul className="space-y-2 mb-8">
                 {[
                   'Real-time medical note taker',
                   'Smart question suggestions',
-                  'Appointment summary and action items',
+                  'Appointment summaries and action items',
+                  'Consolidated medical history'
                 ].map((item, i) => (
                   <li key={i} className="flex items-center gap-3">
                     <svg
@@ -84,7 +85,7 @@ function AvailableTodaySection() {
                     textDecoration: 'none',
                   }}
                 >
-                  Start Notetaking
+                  Login
                   <svg className="ml-2 w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                   </svg>
@@ -120,10 +121,10 @@ function AvailableTodaySection() {
                 className="text-3xl font-bold mb-3"
                 style={{ fontFamily: 'var(--font-family-heading)', color: 'var(--dark-text-color)' }}
               >
-                Explain My Appointment
+                Need an appointment explained?
               </h3>
               <p className="mb-6 text-xl" style={{ color: 'var(--gray-text-color)' }}>
-                Upload recordings, documents, or notes and get clear explanations and next steps.
+                Upload recordings, documents, or notes and get clear explanations and next steps without setting up an account.
               </p>
 
               <ul className="space-y-2 mb-8">

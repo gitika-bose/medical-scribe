@@ -15,10 +15,7 @@ import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { GuestDisclaimer } from '@/components/shared/GuestDisclaimer';
 import {
   fetchAppointments,
-  isV13Summary,
   type AppointmentWithId,
-  type ProcessedSummaryV13,
-  type ProcessedSummaryV12,
 } from '@/api/appointments';
 import { formatAppointmentDate } from '@/utils/formatDate';
 import { Colors } from '@/constants/Colors';
@@ -60,12 +57,11 @@ export default function HomeScreen() {
   const { isPhone, isDesktop } = useResponsiveLayout();
 
   const [recentVisits, setRecentVisits] = useState<AppointmentWithId[]>([]);
-  const [actionTodos, setActionTodos] = useState<Array<{ title: string; importance: string }>>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const { date: todayDate } = getTodayHeader();
 
-  // ── Fetch recent appointments + care plan data ────────────────────────
+  // ── Fetch recent appointments ─────────────────────────────────────────
   useEffect(() => {
     if (authLoading || !user) {
       setIsLoading(false);
@@ -79,35 +75,6 @@ export default function HomeScreen() {
 
         // Recent visits: last 3 appointments
         setRecentVisits(allAppointments.slice(0, 3));
-
-        // Care plan: action_todo from the most recent completed appointment
-        const completedWithSummary = allAppointments.find(
-          (a) =>
-            a.status === 'Completed' &&
-            a.processedSummary &&
-            isV13Summary(a.processedSummary),
-        );
-        if (completedWithSummary) {
-          const summary = completedWithSummary.processedSummary as ProcessedSummaryV13;
-          setActionTodos(summary.action_todo || []);
-        } else {
-          // Fallback: check for v1.2 todos
-          const completedV12 = allAppointments.find(
-            (a) =>
-              a.status === 'Completed' &&
-              a.processedSummary &&
-              !isV13Summary(a.processedSummary),
-          );
-          if (completedV12) {
-            const summary = completedV12.processedSummary as ProcessedSummaryV12;
-            setActionTodos(
-              (summary.todos || []).map((t) => ({
-                title: t.title,
-                importance: 'low',
-              })),
-            );
-          }
-        }
       } catch (err) {
         console.error('Failed to load home data:', err);
       } finally {
@@ -245,29 +212,6 @@ export default function HomeScreen() {
             </View>
           )}
 
-          {/* ── Care Plan ───────────────────────────────────────────────── */}
-          <Text style={[styles.sectionTitle, styles.sectionTitleStandalone, isPhone && styles.sectionTitlePhone]}>
-            Care Plan
-          </Text>
-
-          {isLoading ? (
-            <View style={styles.loadingBox}>
-              <ActivityIndicator size="small" color={Colors.primary} />
-            </View>
-          ) : actionTodos.length === 0 ? (
-            <View style={styles.emptyCard}>
-              <Ionicons name="clipboard-outline" size={28} color={Colors.gray[400]} />
-              <Text style={styles.emptyText}>No action items yet</Text>
-            </View>
-          ) : (
-            <View style={styles.carePlanList}>
-              {actionTodos.map((todo, index) => (
-                <View key={index} style={styles.carePlanCard}>
-                  <Text style={styles.carePlanTitle}>{todo.title}</Text>
-                </View>
-              ))}
-            </View>
-          )}
         </View>
       </ScrollView>
     </View>
@@ -423,10 +367,6 @@ const styles = StyleSheet.create({
   sectionTitlePhone: {
     fontSize: 17,
   },
-  sectionTitleStandalone: {
-    marginBottom: 14,
-    marginTop: 8,
-  },
   seeAll: {
     fontSize: 14,
     fontWeight: '500',
@@ -482,22 +422,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.statusReady,
     letterSpacing: 0.5,
-  },
-
-  // ── Care Plan ──────────────────────────────────────────────────────────
-  carePlanList: {
-    gap: 10,
-    marginBottom: 16,
-  },
-  carePlanCard: {
-    backgroundColor: Colors.carePlanBackground,
-    borderRadius: 14,
-    padding: 16,
-  },
-  carePlanTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: Colors.foreground,
   },
 
   // ── Empty / Loading ────────────────────────────────────────────────────

@@ -229,7 +229,7 @@ export default function AppointmentsScreen() {
                   onPress={handleLiveNotes}
                 >
                   <Ionicons name="mic" size={20} color={Colors.primary} />
-                  <Text style={styles.dropdownText}>Appointment Notetaker</Text>
+                  <Text style={styles.dropdownText}>Live</Text>
                 </TouchableOpacity>
                 <View style={styles.dropdownDivider} />
                 <TouchableOpacity
@@ -237,7 +237,7 @@ export default function AppointmentsScreen() {
                   onPress={handleUploadUnderstand}
                 >
                   <Ionicons name="cloud-upload-outline" size={20} color={Colors.accent4} />
-                  <Text style={styles.dropdownText}>Explain My Appointment</Text>
+                  <Text style={styles.dropdownText}>Upload</Text>
                 </TouchableOpacity>
               </View>
             </>

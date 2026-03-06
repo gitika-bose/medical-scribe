@@ -1,8 +1,4 @@
 {
   "name": "medical-scribe",
-  "private": true,
-  "workspaces": [
-    "frontend/app",
-    "frontend/landing"
-  ]
+  "private": true
 }

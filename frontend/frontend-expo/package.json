@@ -6,7 +6,8 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "eas-build-pre-install": "chmod 755 . && rm -rf node_modules && mkdir -p node_modules && chmod 755 node_modules || true"
   },
   "dependencies": {
     "@babel/runtime": "^7.28.6",

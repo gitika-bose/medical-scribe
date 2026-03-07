@@ -1,25 +1,11 @@
-import { useState, useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { useRef } from 'react'
 import './NewLandingPage.css'
 import ExplainAppComponentV2 from '../components/ExplainAppComponentV2'
 import { HeroSection } from '../components/landing'
 import Footer from '../components/shared/Footer'
 
 function NewLandingPage() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const tryRef = useRef<HTMLDivElement>(null);
-
-  const scrollToTry = () => {
-    setMobileMenuOpen(false);
-    tryRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const scrollToSection = (id: string) => {
-    setMobileMenuOpen(false);
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const closeMobile = () => setMobileMenuOpen(false);
 
   return (
     <div className="new-landing-page min-h-screen w-full" style={{ fontFamily: 'var(--font-family-body)' }}>

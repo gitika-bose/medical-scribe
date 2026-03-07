@@ -1,7 +1,4 @@
 {
   "name": "medical-scribe",
-  "private": true,
-  "dependencies": {
-    "html2pdf.js": "^0.14.0"
-  }
+  "private": true
 }

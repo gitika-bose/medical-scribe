@@ -93,9 +93,6 @@ const ExplainAppComponentV2 = forwardRef<HTMLDivElement>((_props, ref) => {
   const [questions, setQuestions] = useState<string[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // --- Modal state ---
-  const [showDownloadModal, setShowDownloadModal] = useState(false);
-
   // --- Feedback state ---
   const [helpfulness, setHelpfulness] = useState<number>(0);
   const [hoverRating, setHoverRating] = useState<number>(0);
@@ -106,9 +103,6 @@ const ExplainAppComponentV2 = forwardRef<HTMLDivElement>((_props, ref) => {
   // --- Waitlist state ---
   const [waitlistEmail, setWaitlistEmail] = useState('');
   const [waitlistStatus, setWaitlistStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
-
-  // --- Ref for PDF capture ---
-  const summaryRef = useRef<HTMLDivElement>(null);
 
   // Derived
   const charCount = notesText.length;
@@ -188,20 +182,6 @@ const ExplainAppComponentV2 = forwardRef<HTMLDivElement>((_props, ref) => {
     } finally { setIsLoading(false); setLoadingStep(''); }
   };
 
-  // PDF Download
-  const handleDownloadPDF = async () => {
-    if (!summaryRef.current) return;
-    const html2pdf = (await import('html2pdf.js')).default;
-    html2pdf().set({
-      margin: [10, 10, 10, 10],
-      filename: 'Juno-Appointment-Summary.pdf',
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-    }).from(summaryRef.current).save();
-    setShowDownloadModal(false);
-  };
-
   // Feedback
   const handleFeedbackSubmit = async () => {
     if (helpfulness === 0) return;
@@ -254,13 +234,9 @@ const ExplainAppComponentV2 = forwardRef<HTMLDivElement>((_props, ref) => {
             </div>
             <h2 className="v2-results-title">{title || 'Your Appointment Summary'}</h2>
           </div>
-          <button className="v2-download-btn" onClick={() => setShowDownloadModal(true)}>
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
-            Download Report
-          </button>
         </div>
 
-        <div ref={summaryRef}>
+        <div>
           {soapNotes?.summary && (
             <div className="v2-result-card">
               <div className="v2-result-section-header"><span className="v2-result-section-icon">📋</span><h3 className="v2-result-heading">Summary</h3></div>
@@ -479,23 +455,6 @@ const ExplainAppComponentV2 = forwardRef<HTMLDivElement>((_props, ref) => {
       {/* Output */}
       {renderOutput()}
       </div>{/* close v2-main-layout */}
-
-      {/* Download Modal */}
-      {showDownloadModal && (
-        <div className="v2-modal-overlay" onClick={() => setShowDownloadModal(false)}>
-          <div className="v2-modal" onClick={e => e.stopPropagation()}>
-            <div className="v2-modal-header">
-              <h3 className="v2-modal-title">Download Report</h3>
-              <button className="v2-modal-close" onClick={() => setShowDownloadModal(false)}>✕</button>
-            </div>
-            <p className="v2-modal-body">Download a PDF copy of your appointment summary to your device.</p>
-            <div className="v2-modal-actions">
-              <button className="v2-modal-btn-outline" onClick={() => setShowDownloadModal(false)}>Cancel</button>
-              <button className="v2-modal-btn-primary" onClick={handleDownloadPDF}>Download</button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Feedback */}
       <section id="feedback" className="v2-feedback-section">

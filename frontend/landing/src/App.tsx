@@ -5,6 +5,8 @@ import BetaPage from './BetaPage'
 import AboutUsPage from './pages/AboutUsPage'
 import ExplainAppPage from './pages/ExplainApp'
 import ContactPage from './pages/ContactPage'
+import PrivacyPage from './pages/PrivacyPage'
+import TermsPage from './pages/TermsPage'
 
 function App() {
   return (
@@ -15,6 +17,8 @@ function App() {
       <Route path="/dementia" element={<DementiaPage />} />
       <Route path="/aboutus" element={<AboutUsPage />} />
       <Route path="/contact" element={<ContactPage />} />
+      <Route path="/privacy" element={<PrivacyPage />} />
+      <Route path="/terms" element={<TermsPage />} />
     </Routes>
   )
 }

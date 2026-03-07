@@ -25,7 +25,7 @@ function HeroSection() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <a
-                href="#available-today"
+                href="#explain-upload"
                 className="inline-flex items-center justify-center text-white px-8 py-4 font-semibold text-lg transition-all transform hover:scale-105 shadow-lg hover:shadow-xl"
                 style={{
                   backgroundColor: 'var(--primary-color)',

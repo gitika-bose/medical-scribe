@@ -15,33 +15,33 @@ function Footer() {
           <div className="footer-links-mobile">
             <a href="https://app.meetjuno.health" target="_blank" rel="noopener noreferrer">Live Appointment</a>
             <span className="separator">|</span>
-            <Link to="/explain-my-appointment">Explain My Appointment</Link>
+            <a href="/#explain-upload">Explain My Appointment</a>
             <span className="separator">|</span>
             <Link to="/aboutus">About</Link>
             <span className="separator">|</span>
-            <a href="#privacy">Privacy</a>
+            <Link to="/privacy">Privacy</Link>
             <span className="separator">|</span>
-            <a href="#terms">Terms</a>
+            <Link to="/terms">Terms</Link>
             <span className="separator">|</span>
             <Link to="/contact">Contact</Link>
           </div>
         </div>
         <div className="footer-section">
           <h4>Features</h4>
-          <a href="https://app.meetjuno.health" target="_blank" rel="noopener noreferrer">Live Appointment Clarity</a>
-          <Link to="/explain-my-appointment">Explain My Appointment</Link>
+          {/* <a href="https://app.meetjuno.health" target="_blank" rel="noopener noreferrer">Live Appointment Clarity</a> */}
+          <a href="/#explain-upload">Explain My Appointment</a>
         </div>
         <div className="footer-section">
           <h4>Company</h4>
           <Link to="/aboutus">About</Link>
-          <a href="#privacy">Privacy</a>
-          <a href="#terms">Terms</a>
+          <Link to="/privacy">Privacy</Link>
+          <Link to="/terms">Terms</Link>
         </div>
-        <div className="footer-section">
+        {/* <div className="footer-section">
           <h4>Support</h4>
           <a href="#help">Help Center</a>
           <Link to="/contact">Contact</Link>
-        </div>
+        </div> */}
       </div>
       <div className="footer-bottom">
         <p>&copy; 2026 Juno. All rights reserved.</p>

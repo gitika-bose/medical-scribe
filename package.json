@@ -1,8 +1,7 @@
 {
   "name": "medical-scribe",
   "private": true,
-  "workspaces": [
-    "frontend/app",
-    "frontend/landing"
-  ]
+  "dependencies": {
+    "html2pdf.js": "^0.14.0"
+  }
 }

@@ -204,12 +204,22 @@ const ExplainAppComponent = forwardRef<HTMLDivElement>((_props, ref) => {
       const processedSoapNotes = processResult.soapNotes;
       const processedTitle = processResult.title ?? processResult.soapNotes?.title ?? null;
 
-      setLoadingStep('Generating questions…');
-      const questionsResult = await tryGenerateQuestions(appointmentId);
-
+      // Set summary results immediately so they display even if questions fail
       setSoapNotes(processedSoapNotes);
       setTitle(processedTitle);
-      setQuestions(questionsResult.questions.length > 0 ? questionsResult.questions : null);
+
+      // Generate questions separately — non-fatal
+      setLoadingStep('Generating questions…');
+      try {
+        const questionsResult = await tryGenerateQuestions(appointmentId);
+        const generatedQuestions = questionsResult?.questions;
+        if (Array.isArray(generatedQuestions) && generatedQuestions.length > 0) {
+          setQuestions(generatedQuestions);
+        }
+      } catch (questionsErr) {
+        console.warn('Question generation failed (non-fatal):', questionsErr);
+      }
+
       analyticsEvents.trySubmitSuccess(hasRecording, hasNotes);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Something went wrong. Please try again.';

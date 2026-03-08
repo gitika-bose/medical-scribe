@@ -5,18 +5,14 @@ function Footer() {
     <footer className="footer">
       <div className="footer-content">
         <div className="footer-section">
-          <div className="logo-container">
-            <img src="/logo/android-chrome-192x192.png" alt="Juno Logo" className="logo" />
-            <span className="logo-text">Juno</span>
-          </div>
+          <Link to="/" className="logo-container" style={{display: 'flex'}}>
+              <img src="/logo/android-chrome-192x192.png" alt="Juno Logo" className="logo" />
+              <span className="logo-text">Juno</span>
+          </Link>
           <p className="footer-description">
             Medical clarity, when it matters most.
           </p>
           <div className="footer-links-mobile">
-            <a href="https://app.meetjuno.health" target="_blank" rel="noopener noreferrer">Live Appointment</a>
-            <span className="separator">|</span>
-            <a href="/#explain-upload">Explain My Appointment</a>
-            <span className="separator">|</span>
             <Link to="/aboutus">About</Link>
             <span className="separator">|</span>
             <Link to="/privacy">Privacy</Link>
@@ -25,11 +21,6 @@ function Footer() {
             <span className="separator">|</span>
             <Link to="/contact">Contact</Link>
           </div>
-        </div>
-        <div className="footer-section">
-          <h4>Features</h4>
-          {/* <a href="https://app.meetjuno.health" target="_blank" rel="noopener noreferrer">Live Appointment Clarity</a> */}
-          <a href="/#explain-upload">Explain My Appointment</a>
         </div>
         <div className="footer-section">
           <h4>Company</h4>

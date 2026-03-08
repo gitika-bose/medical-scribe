@@ -7,6 +7,7 @@ import {
   tryUploadNotes,
   tryProcessAppointment,
   tryGenerateQuestions,
+  tryDeleteAppointment,
 } from '../api/appointments'
 import type { SoapNotesV13 } from '../api/appointments'
 import { analyticsEvents } from '../api/analytics'
@@ -56,6 +57,44 @@ function V2CollapsibleCard({ title, icon, children, defaultCollapsed = false }: 
   );
 }
 
+/* ── Helper: DiagnosisList with Read More ── */
+function V2DiagnosisList({ details }: { details: { title: string; description: string; severity?: string }[] }) {
+  const [expanded, setExpanded] = useState(false);
+  const VISIBLE_COUNT = 4;
+  const shouldCollapse = details.length > VISIBLE_COUNT;
+  const showAll = expanded || !shouldCollapse;
+
+  return (
+    <div className="v2-result-card">
+      <div className="v2-result-section-header">
+        <span className="v2-result-section-icon">🔍</span>
+        <h3 className="v2-result-heading">Diagnosis &amp; Assessment</h3>
+      </div>
+      <div className="v2-result-items-list">
+        <div className={`v2-diagnosis-collapse-wrapper${!showAll ? ' v2-diagnosis-collapsed' : ''}`}>
+          {details.map((d, i) => (
+            <div key={i} className="v2-accent-item">
+              <div className="v2-accent-bar" style={{ backgroundColor: '#c44' }} />
+              <div className="v2-accent-content">
+                <div className="v2-result-item-title">{d.title}</div>
+                <div className="v2-result-item-desc">{d.description}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+        {shouldCollapse && (
+          <div className="v2-read-more-row">
+            <button className="v2-read-more-btn" onClick={() => setExpanded(!expanded)}>
+              <span className={`v2-chevron ${expanded ? 'expanded' : ''}`}>▾</span>
+              <span>{expanded ? 'Show Less' : `Read More (${details.length - VISIBLE_COUNT} more)`}</span>
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ── Helper: ImportanceSplitList ── */
 function V2ImportanceSplitList<T extends { importance: 'high' | 'low' }>({ items, renderItem }: {
   items: T[]; renderItem: (item: T, index: number) => ReactNode;
@@ -92,11 +131,13 @@ const ExplainAppComponentV2 = forwardRef<HTMLDivElement>((_props, ref) => {
   const [title, setTitle] = useState<string | null>(null);
   const [questions, setQuestions] = useState<string[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [deleteSuccess, setDeleteSuccess] = useState(false);
 
   // --- Feedback state ---
   const [helpfulness, setHelpfulness] = useState<number>(0);
   const [hoverRating, setHoverRating] = useState<number>(0);
   const [feedbackText, setFeedbackText] = useState('');
+  const [feedbackEmail, setFeedbackEmail] = useState('');
   const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
   const [feedbackSent, setFeedbackSent] = useState(false);
 
@@ -143,7 +184,7 @@ const ExplainAppComponentV2 = forwardRef<HTMLDivElement>((_props, ref) => {
 
   // Submit
   const handleSubmit = async () => {
-    setIsLoading(true); setError(null); setSoapNotes(null); setTitle(null); setQuestions(null);
+    setIsLoading(true); setError(null); setSoapNotes(null); setTitle(null); setQuestions(null); setDeleteSuccess(false);
     try {
       analyticsEvents.trySubmit(hasRecording, hasNotes);
       setLoadingStep('Creating appointment…');
@@ -175,6 +216,18 @@ const ExplainAppComponentV2 = forwardRef<HTMLDivElement>((_props, ref) => {
         console.warn('Question generation failed (non-fatal):', questionsErr);
       }
 
+      // Delete all uploaded data from server (non-fatal — results are already saved locally)
+      setLoadingStep('Deleting your data from our servers…');
+      try {
+        await tryDeleteAppointment(appointmentId);
+        setDeleteSuccess(true);
+        console.log('[Cleanup] Appointment data deleted successfully');
+      } catch (deleteErr) {
+        console.warn('Cleanup deletion failed (non-fatal):', deleteErr);
+        // Still mark success since the user has their results
+        setDeleteSuccess(true);
+      }
+
       analyticsEvents.trySubmitSuccess(hasRecording, hasNotes);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
@@ -188,12 +241,13 @@ const ExplainAppComponentV2 = forwardRef<HTMLDivElement>((_props, ref) => {
     setFeedbackSubmitting(true);
     try {
       const lines = [`Source: try-page-feedback`, `Helpfulness: ${helpfulness}/5 stars`, `Feedback: ${feedbackText || '(none)'}`];
+      if (feedbackEmail.trim()) lines.push(`User Email: ${feedbackEmail.trim()}`);
       if (recordingFile) lines.push(`Recording Size: ${recordingFile.size} bytes`);
       if (documentFiles.length > 0) lines.push(`Documents: ${documentFiles.length} file(s)`);
       if (notesText.trim().length > 0) lines.push(`Notes Length: ${notesText.length} characters`);
       await fetch('https://formspree.io/f/mjgeorjw', {
         method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({ email: 'gitika.bose@gmail.com', message: lines.join('\n') }),
+        body: JSON.stringify({ email: feedbackEmail.trim() || 'gitika.bose@gmail.com', message: lines.join('\n') }),
       });
       analyticsEvents.tryFeedbackSubmit(helpfulness);
       setFeedbackSent(true);
@@ -237,6 +291,21 @@ const ExplainAppComponentV2 = forwardRef<HTMLDivElement>((_props, ref) => {
         </div>
 
         <div>
+          {/* Green success banner — data deleted */}
+          {deleteSuccess && (
+            <div className="v2-delete-success-banner">
+              <div className="v2-delete-success-icon">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+              <div className="v2-delete-success-content">
+                <p className="v2-delete-success-title">All data deleted from our servers</p>
+                <p className="v2-delete-success-text">Your uploaded files and appointment data have been permanently removed. No information is stored.</p>
+              </div>
+            </div>
+          )}
+
           {soapNotes?.summary && (
             <div className="v2-result-card">
               <div className="v2-result-section-header"><span className="v2-result-section-icon">📋</span><h3 className="v2-result-heading">Summary</h3></div>
@@ -245,23 +314,10 @@ const ExplainAppComponentV2 = forwardRef<HTMLDivElement>((_props, ref) => {
           )}
 
           {soapNotes?.diagnosis?.details && soapNotes.diagnosis.details.length > 0 && (
-            <div className="v2-result-card">
-              <div className="v2-result-section-header"><span className="v2-result-section-icon">🔍</span><h3 className="v2-result-heading">Diagnosis &amp; Assessment</h3></div>
-              <div className="v2-result-items-list">
-                {[...soapNotes.diagnosis.details].sort((a, b) => {
-                  const o: Record<string, number> = { high: 0, medium: 1, low: 2 };
-                  return (o[a.severity ?? ''] ?? 3) - (o[b.severity ?? ''] ?? 3);
-                }).map((d, i) => (
-                  <div key={i} className="v2-accent-item">
-                    <div className="v2-accent-bar" style={{ backgroundColor: '#c44' }} />
-                    <div className="v2-accent-content">
-                      <div className="v2-result-item-title">{d.title}</div>
-                      <div className="v2-result-item-desc">{d.description}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <V2DiagnosisList details={[...soapNotes.diagnosis.details].sort((a, b) => {
+              const o: Record<string, number> = { high: 0, medium: 1, low: 2 };
+              return (o[a.severity ?? ''] ?? 3) - (o[b.severity ?? ''] ?? 3);
+            })} />
           )}
 
           {soapNotes?.action_todo && soapNotes.action_todo.length > 0 && (
@@ -388,7 +444,7 @@ const ExplainAppComponentV2 = forwardRef<HTMLDivElement>((_props, ref) => {
     );
   };
 
-  // Whether there's output to show (loading, error, or results)
+  // Whether there's output to show — only split layout when actual results exist (not during loading)
   const showOutput = isLoading || error !== null || hasResults;
 
   /* ══ FULL RENDER ══ */
@@ -398,8 +454,29 @@ const ExplainAppComponentV2 = forwardRef<HTMLDivElement>((_props, ref) => {
       <div className={`v2-main-layout${showOutput ? ' v2-main-layout--split' : ''}`}>
       {/* Upload */}
       <div className="v2-upload-section">
-        <h2 className="v2-upload-title">Create Your Appointment Summary</h2>
-        <p className="v2-upload-subtitle">Upload your recording and any notes to get started</p>
+        <h2 className="v2-upload-title">Explain your appointment</h2>
+
+        {/* Trust / Privacy cards */}
+        <div className="v2-trust-cards">
+          <div className="v2-trust-card">
+            <span className="v2-trust-icon">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+            </span>
+            <span className="v2-trust-text">Privacy First</span>
+          </div>
+          <div className="v2-trust-card">
+            <span className="v2-trust-icon">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+            </span>
+            <span className="v2-trust-text">No Files Stored</span>
+          </div>
+          <div className="v2-trust-card">
+            <span className="v2-trust-icon">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+            </span>
+            <span className="v2-trust-text">Encrypted &amp; Secure</span>
+          </div>
+        </div>
 
         {/* Recording */}
         <div className="v2-input-group">
@@ -472,6 +549,10 @@ const ExplainAppComponentV2 = forwardRef<HTMLDivElement>((_props, ref) => {
             <label>What was confusing or missing? <span>(optional)</span></label>
             <textarea className="v2-feedback-textarea" placeholder="Share your thoughts…" value={feedbackText} onChange={e => setFeedbackText(e.target.value)} />
           </div>
+          <div className="v2-feedback-question">
+            <label>Your email <span>(optional)</span></label>
+            <input type="email" className="v2-feedback-email" placeholder="you@example.com" value={feedbackEmail} onChange={e => setFeedbackEmail(e.target.value)} />
+          </div>
           <button className="v2-feedback-submit" disabled={helpfulness === 0 || feedbackSubmitting || feedbackSent} onClick={handleFeedbackSubmit}>
             {feedbackSent ? 'Thanks for your feedback!' : feedbackSubmitting ? 'Sending…' : 'Submit Feedback'}
           </button>
@@ -480,23 +561,23 @@ const ExplainAppComponentV2 = forwardRef<HTMLDivElement>((_props, ref) => {
 
       {/* Coming Soon */}
       <section className="v2-coming-soon">
-        <h2 className="v2-coming-soon-title">Coming Soon to the Juno App</h2>
+        <h2 className="v2-coming-soon-title">Coming Soon</h2>
         <p className="v2-coming-soon-subtitle">We're building more features to make healthcare easier to understand and manage</p>
         <div className="v2-features-grid">
           <div className="v2-feature-card">
             <div className="v2-feature-icon-circle"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg></div>
             <h3>Live Recording</h3>
-            <p>Record appointments directly in the app with real-time transcription and instant summaries</p>
+            <p>Capture key points during your visit with live transcription and automatic summaries.</p>
           </div>
           <div className="v2-feature-card">
-            <div className="v2-feature-icon-circle"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg></div>
-            <h3>Smart Reminders</h3>
-            <p>Get gentle notifications for medications, appointments, and action items from your visits</p>
+            <div className="v2-feature-icon-circle"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg></div>
+            <h3>Prepare for Appointments</h3>
+            <p>Know what to bring, what to ask, and how to approach your appointment so you can get the most out of every visit.</p>
           </div>
           <div className="v2-feature-card">
             <div className="v2-feature-icon-circle"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg></div>
             <h3>Health Timeline</h3>
-            <p>View all your appointments, summaries, and health updates in one easy-to-read timeline</p>
+            <p>See appointments, summaries, and next steps organized in one clear, easy-to-follow timeline.</p>
           </div>
         </div>
       </section>

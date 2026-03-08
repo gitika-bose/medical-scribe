@@ -187,3 +187,19 @@
     display: block;
   }
 }
+
+/* ======================================================
+   Hero SVG responsive sizing
+   ====================================================== */
+.hero-svg-graphic {
+  width: 100%;
+  max-width: 560px;
+  height: auto;
+}
+
+
+@media (max-width: 640px) {
+  .hero-svg-graphic {
+    max-width: 360px;
+  }
+}

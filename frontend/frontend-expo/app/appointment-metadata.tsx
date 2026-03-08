@@ -196,7 +196,7 @@ export default function AppointmentMetadataScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: Colors.lightBackground,
   },
   scrollView: {
     flex: 1,

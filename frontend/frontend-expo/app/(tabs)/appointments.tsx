@@ -7,10 +7,10 @@ import {
   ActivityIndicator,
   StyleSheet,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/hooks/useAuth';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { store } from '@/store';
 import {
   fetchAppointments,
@@ -22,10 +22,32 @@ import { GuestDisclaimer } from '@/components/shared/GuestDisclaimer';
 import { Header } from '@/components/shared/Header';
 import { Colors } from '@/constants/Colors';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers (consistent with Home screen)
+// ─────────────────────────────────────────────────────────────────────────────
+
+function getAppointmentTitle(appointment: AppointmentWithId): string {
+  if (appointment.title) return appointment.title;
+  if (appointment.doctor) return appointment.doctor;
+  if (appointment.location) return `Appointment at ${appointment.location}`;
+  return formatAppointmentDate(appointment.appointmentDate);
+}
+
+function getAppointmentSubtitle(appointment: AppointmentWithId): string {
+  const parts: string[] = [];
+  if (appointment.doctor) parts.push(appointment.doctor);
+  parts.push(formatAppointmentDate(appointment.appointmentDate));
+  return parts.join(' · ');
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Component
+// ─────────────────────────────────────────────────────────────────────────────
+
 export default function AppointmentsScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const { user, loading: authLoading } = useAuth();
+  const { isDesktop } = useResponsiveLayout();
 
   const [appointments, setAppointments] = useState<AppointmentWithId[]>([]);
   const [isStarting, setIsStarting] = useState(false);
@@ -36,9 +58,7 @@ export default function AppointmentsScreen() {
   const [inProgressAppointments, setInProgressAppointments] = useState<AppointmentWithId[]>([]);
   const [isRecordingActive, setIsRecordingActive] = useState(false);
 
-  // ---------------------------------------------------------------------------
   // Recording state check
-  // ---------------------------------------------------------------------------
   useEffect(() => {
     const checkRecordingState = () => {
       setIsRecordingActive(store.isRecordingActive());
@@ -48,9 +68,7 @@ export default function AppointmentsScreen() {
     return () => clearInterval(interval);
   }, []);
 
-  // ---------------------------------------------------------------------------
   // Initial load
-  // ---------------------------------------------------------------------------
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
@@ -76,16 +94,13 @@ export default function AppointmentsScreen() {
     loadAppointments();
   }, [user, authLoading]);
 
-  // ---------------------------------------------------------------------------
   // Real-time listener for InProgress appointments
-  // ---------------------------------------------------------------------------
   useEffect(() => {
     if (authLoading || !user) return;
 
     const unsubscribe = listenToInProgressAppointments(
       (updated) => {
         setInProgressAppointments(updated);
-        // Refresh full list to catch status transitions
         fetchAppointments()
           .then(setAppointments)
           .catch((err) => console.error('Failed to refresh appointments:', err));
@@ -98,9 +113,7 @@ export default function AppointmentsScreen() {
     return () => unsubscribe();
   }, [user, authLoading]);
 
-  // ---------------------------------------------------------------------------
   // Merge appointments
-  // ---------------------------------------------------------------------------
   const allAppointments = useMemo(() => {
     const map = new Map<string, AppointmentWithId>();
     appointments.forEach((a) => map.set(a.appointmentId, a));
@@ -112,9 +125,7 @@ export default function AppointmentsScreen() {
     return merged;
   }, [appointments, inProgressAppointments]);
 
-  // ---------------------------------------------------------------------------
   // Handlers
-  // ---------------------------------------------------------------------------
   const handleLiveNotes = () => {
     setShowDropdown(false);
     router.push('/notetaker' as any);
@@ -129,64 +140,47 @@ export default function AppointmentsScreen() {
     router.push(`/appointment/${appointment.appointmentId}` as any);
   };
 
-  const getAppointmentTitle = (appointment: AppointmentWithId): string => {
-    if (appointment.title) return appointment.title;
-    if (appointment.doctor) return appointment.doctor;
-    if (appointment.location) return `Appointment at ${appointment.location}`;
-    return formatAppointmentDate(appointment.appointmentDate);
-  };
-
-  // ---------------------------------------------------------------------------
-  // Render helpers
-  // ---------------------------------------------------------------------------
-  const renderItem = ({ item }: { item: AppointmentWithId }) => {
-    const isError = item.status === 'Error';
-    const isInProgress = item.status === 'InProgress';
-
+  // ── Status badge (consistent with Home) ───────────────────────────────
+  const renderStatusBadge = (item: AppointmentWithId) => {
+    if (item.status === 'InProgress') {
+      return (
+        <View style={[styles.statusBadge, styles.statusBadgeProgress]}>
+          <ActivityIndicator size="small" color={Colors.statusProgress} />
+        </View>
+      );
+    }
+    if (item.status === 'Error') {
+      return (
+        <View style={[styles.statusBadge, styles.statusBadgeError]}>
+          <Ionicons name="alert-circle" size={16} color={Colors.statusError} />
+        </View>
+      );
+    }
     return (
-      <TouchableOpacity
-        style={[
-          styles.appointmentCard,
-          isError && styles.cardError,
-          isInProgress && styles.cardInProgress,
-        ]}
-        onPress={() => handleAppointmentClick(item)}
-        activeOpacity={0.7}
-      >
-        <View style={styles.cardContent}>
-          <Text
-            style={[
-              styles.cardDate,
-              isError && styles.cardDateError,
-              isInProgress && styles.cardDateInProgress,
-            ]}
-          >
-            {formatAppointmentDate(item.appointmentDate)}
-          </Text>
-          <Text
-            style={[
-              styles.cardTitle,
-              isError && styles.cardTitleError,
-              isInProgress && styles.cardTitleInProgress,
-            ]}
-            numberOfLines={2}
-          >
-            {getAppointmentTitle(item)}
-          </Text>
-        </View>
-
-        <View style={styles.cardActions}>
-          {isInProgress ? (
-            <ActivityIndicator size="small" color={Colors.blue[600]} />
-          ) : isError ? (
-            <Ionicons name="alert-circle" size={20} color={Colors.red[600]} />
-          ) : (
-            <Ionicons name="chevron-forward" size={20} color={Colors.gray[400]} />
-          )}
-        </View>
-      </TouchableOpacity>
+      <View style={[styles.statusBadge, styles.statusBadgeReady]}>
+        <Text style={styles.statusBadgeText}>READY</Text>
+      </View>
     );
   };
+
+  // Render helpers
+  const renderItem = ({ item }: { item: AppointmentWithId }) => (
+    <TouchableOpacity
+      style={styles.appointmentCard}
+      onPress={() => handleAppointmentClick(item)}
+      activeOpacity={0.7}
+    >
+      <View style={styles.cardContent}>
+        <Text style={styles.cardTitle} numberOfLines={1}>
+          {getAppointmentTitle(item)}
+        </Text>
+        <Text style={styles.cardSubtitle} numberOfLines={1}>
+          {getAppointmentSubtitle(item)}
+        </Text>
+      </View>
+      {renderStatusBadge(item)}
+    </TouchableOpacity>
+  );
 
   const renderEmpty = () => {
     if (isLoading) return null;
@@ -201,9 +195,7 @@ export default function AppointmentsScreen() {
     );
   };
 
-  // ---------------------------------------------------------------------------
   // Main render
-  // ---------------------------------------------------------------------------
   return (
     <View style={styles.container}>
       <Header rightContent={
@@ -217,6 +209,7 @@ export default function AppointmentsScreen() {
             disabled={isStarting || isProcessing || isRecordingActive}
             activeOpacity={0.7}
           >
+            <Ionicons name="add" size={18} color={Colors.primaryForeground} />
             <Text style={styles.newButtonText}>
               {isStarting ? 'Starting...' : 'New'}
             </Text>
@@ -224,33 +217,39 @@ export default function AppointmentsScreen() {
 
           {/* Dropdown */}
           {showDropdown && (
-            <View style={styles.dropdown}>
+            <>
               <TouchableOpacity
-                style={styles.dropdownItem}
-                onPress={handleLiveNotes}
-              >
-                <Ionicons name="mic" size={20} color={Colors.primary} />
-                <Text style={styles.dropdownText}>Appointment Notetaker</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.dropdownItem}
-                onPress={handleUploadUnderstand}
-              >
-                <Ionicons name="cloud-upload" size={20} color={Colors.accent4} />
-                <Text style={styles.dropdownText}>Explain My Appointment</Text>
-              </TouchableOpacity>
-            </View>
+                style={styles.dropdownOverlay}
+                onPress={() => setShowDropdown(false)}
+                activeOpacity={1}
+              />
+              <View style={styles.dropdown}>
+                <TouchableOpacity
+                  style={styles.dropdownItem}
+                  onPress={handleLiveNotes}
+                >
+                  <Ionicons name="mic" size={20} color={Colors.primary} />
+                  <Text style={styles.dropdownText}>Live</Text>
+                </TouchableOpacity>
+                <View style={styles.dropdownDivider} />
+                <TouchableOpacity
+                  style={styles.dropdownItem}
+                  onPress={handleUploadUnderstand}
+                >
+                  <Ionicons name="cloud-upload-outline" size={20} color={Colors.accent4} />
+                  <Text style={styles.dropdownText}>Upload</Text>
+                </TouchableOpacity>
+              </View>
+            </>
           )}
         </View>
       } />
 
-      {/* Guest disclaimer banner */}
       <GuestDisclaimer />
 
-      {/* List */}
       {isLoading ? (
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.blue[600]} />
+          <ActivityIndicator size="large" color={Colors.primary} />
           <Text style={styles.loadingText}>Loading appointments...</Text>
         </View>
       ) : (
@@ -259,23 +258,25 @@ export default function AppointmentsScreen() {
           keyExtractor={(item) => item.appointmentId}
           renderItem={renderItem}
           ListEmptyComponent={renderEmpty}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[
+            styles.listContent,
+            isDesktop && styles.listContentDesktop,
+          ]}
           showsVerticalScrollIndicator={false}
         />
       )}
-
     </View>
   );
 }
 
-// =============================================================================
+// ═══════════════════════════════════════════════════════════════════════════════
 // Styles
-// =============================================================================
+// ═══════════════════════════════════════════════════════════════════════════════
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.gray[50],
+    backgroundColor: Colors.lightBackground,
   },
 
   // New button
@@ -283,7 +284,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: Colors.blue[600],
+    backgroundColor: Colors.primary,
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 999,
@@ -298,19 +299,27 @@ const styles = StyleSheet.create({
   },
 
   // Dropdown
+  dropdownOverlay: {
+    position: 'absolute',
+    top: -100,
+    left: -1000,
+    right: -1000,
+    bottom: -1000,
+    zIndex: 25,
+  },
   dropdown: {
     position: 'absolute',
     top: 48,
     right: 0,
     width: 230,
     backgroundColor: Colors.background,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: Colors.border,
-    boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
+    boxShadow: '0px 4px 16px rgba(0, 0, 0, 0.08)',
     elevation: 8,
     zIndex: 30,
-    paddingVertical: 4,
+    paddingVertical: 6,
   },
   dropdownItem: {
     flexDirection: 'row',
@@ -319,9 +328,14 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 16,
   },
+  dropdownDivider: {
+    height: 1,
+    backgroundColor: Colors.border,
+    marginHorizontal: 16,
+  },
   dropdownText: {
     fontSize: 15,
-    color: Colors.primary,
+    color: Colors.foreground,
   },
 
   // Loading
@@ -333,63 +347,68 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 15,
-    color: Colors.gray[500],
+    color: Colors.mutedForeground,
   },
 
   // List
   listContent: {
     padding: 16,
     paddingBottom: 100,
-    gap: 12,
+    gap: 10,
+  },
+  listContentDesktop: {
+    maxWidth: 720,
+    alignSelf: 'center',
+    width: '100%',
+    paddingHorizontal: 28,
+    paddingTop: 24,
   },
 
-  // Appointment card
+  // Appointment card (consistent with Home visitCard)
   appointmentCard: {
     backgroundColor: Colors.background,
-    borderRadius: 12,
+    borderRadius: 14,
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: Colors.border,
   },
-  cardError: {
-    backgroundColor: Colors.red[50],
-    borderColor: Colors.red[300],
-  },
-  cardInProgress: {
-    backgroundColor: Colors.blue[50],
-    borderColor: Colors.blue[300],
-  },
   cardContent: {
     flex: 1,
   },
-  cardDate: {
-    fontSize: 13,
-    color: Colors.gray[500],
-    marginBottom: 4,
-  },
-  cardDateError: {
-    color: Colors.red[600],
-  },
-  cardDateInProgress: {
-    color: Colors.blue[600],
-  },
   cardTitle: {
     fontSize: 15,
-    color: Colors.primary,
+    fontWeight: '600',
+    color: Colors.foreground,
+    marginBottom: 3,
   },
-  cardTitleError: {
-    color: Colors.red[900],
+  cardSubtitle: {
+    fontSize: 13,
+    color: Colors.mutedForeground,
   },
-  cardTitleInProgress: {
-    color: Colors.blue[900],
+
+  // Status badges (consistent with Home)
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginLeft: 10,
   },
-  cardActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginLeft: 8,
+  statusBadgeReady: {
+    backgroundColor: Colors.statusReadyBg,
+  },
+  statusBadgeProgress: {
+    backgroundColor: Colors.statusProgressBg,
+  },
+  statusBadgeError: {
+    backgroundColor: Colors.statusErrorBg,
+  },
+  statusBadgeText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: Colors.statusReady,
+    letterSpacing: 0.5,
   },
 
   // Empty
@@ -400,30 +419,12 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 16,
-    color: Colors.gray[500],
+    color: Colors.mutedForeground,
     marginTop: 8,
   },
   emptySubtitle: {
     fontSize: 14,
     color: Colors.gray[400],
     textAlign: 'center',
-  },
-
-  // Processing banner
-  processingBanner: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: Colors.blue[600],
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-  },
-  processingText: {
-    color: Colors.primaryForeground,
-    fontSize: 14,
   },
 });

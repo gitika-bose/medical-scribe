@@ -2,11 +2,11 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/hooks/useAuth';
+import { Colors } from '@/constants/Colors';
 
 /**
  * An inline card banner shown under the header of screens when the user
  * is signed in with the shared guest / test account.
- * Styled similar to the error banner on the recording screen.
  */
 export function GuestDisclaimer() {
   const { isGuestUser } = useAuth();
@@ -15,7 +15,7 @@ export function GuestDisclaimer() {
 
   return (
     <View style={styles.banner}>
-      <Ionicons name="warning-outline" size={16} color="#92400E" />
+      <Ionicons name="warning-outline" size={16} color={Colors.amber[700]} />
       <Text style={styles.text}>
         Guest account data is public. Delete after use.
       </Text>
@@ -33,15 +33,15 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginTop: 12,
     padding: 14,
-    backgroundColor: '#FEF3C7',
+    backgroundColor: Colors.amber[50],
     borderWidth: 1,
-    borderColor: '#FDE68A',
+    borderColor: Colors.amber[300],
     borderRadius: 12,
   },
   text: {
     flex: 1,
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
-    color: '#92400E',
+    color: Colors.amber[700],
   },
 });

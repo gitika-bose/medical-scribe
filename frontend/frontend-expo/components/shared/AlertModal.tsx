@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 8,
-    backgroundColor: '#6B5FD8',
+    backgroundColor: '#7C8B6B',
   },
   confirmText: {
     fontSize: 15,

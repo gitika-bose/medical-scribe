@@ -5,12 +5,12 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
-  useWindowDimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/hooks/useAuth';
+import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { useAudioRecorder } from '@/hooks/useAudioRecorder';
 import { store } from '@/store';
 import {
@@ -29,8 +29,7 @@ export default function NotetakerScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
-  const { width } = useWindowDimensions();
-  const isPhone = width < 600;
+  const { isPhone, isDesktop } = useResponsiveLayout();
 
   const [isRecordingActive, setIsRecordingActive] = useState(false);
   const [questions, setQuestions] = useState<string[] | null>(null);
@@ -51,9 +50,7 @@ export default function NotetakerScreen() {
   const durationTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const errorTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ---------------------------------------------------------------------------
   // Cleanup
-  // ---------------------------------------------------------------------------
   useEffect(() => {
     return () => {
       if (autoTimeoutRef.current) clearTimeout(autoTimeoutRef.current);
@@ -104,10 +101,7 @@ export default function NotetakerScreen() {
     };
   }, [isRecordingActive, isRecording]);
 
-  // ---------------------------------------------------------------------------
   // Handlers
-  // ---------------------------------------------------------------------------
-
   const handleStartRecording = () => {
     setShowConsentDialog(true);
   };
@@ -261,10 +255,7 @@ export default function NotetakerScreen() {
     return `${m}:${s}`;
   };
 
-  // ---------------------------------------------------------------------------
   // Render
-  // ---------------------------------------------------------------------------
-
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
@@ -287,18 +278,18 @@ export default function NotetakerScreen() {
         </View>
       )}
 
-      {/* ===== Recording active view ===== */}
+      {/* Recording active view */}
       {isRecordingActive ? (
-        <View style={styles.recordingView}>
+        <View style={[styles.recordingView, isDesktop && styles.recordingViewDesktop]}>
           <View style={styles.recordSection}>
-            <TouchableOpacity
-              activeOpacity={1}
-              style={[styles.recordButton, isRecording ? styles.recordButtonActive : styles.recordButtonPaused]}
-            >
+            <View style={[styles.recordButton, isRecording ? styles.recordButtonActive : styles.recordButtonPaused]}>
+              {/* Pulsing ring for active recording */}
+              {isRecording && <View style={styles.pulseRing} />}
               <Ionicons name="mic" size={48} color={isRecording ? Colors.red[600] : Colors.gray[400]} />
-            </TouchableOpacity>
+            </View>
             {isRecording && (
               <View style={styles.recordingBadge}>
+                <View style={styles.recordingDot} />
                 <Text style={styles.recordingBadgeText}>Recording {formatDuration(recordingDuration)}</Text>
               </View>
             )}
@@ -306,7 +297,7 @@ export default function NotetakerScreen() {
               {isRecording ? 'Listening and taking notes...' : ''}
             </Text>
           </View>
-          <View style={styles.controls}>
+          <View style={[styles.controls, isDesktop && styles.controlsDesktop]}>
             <TouchableOpacity
               onPress={handleGenerateQuestions}
               disabled={isGeneratingQuestions || questions !== null}
@@ -336,8 +327,8 @@ export default function NotetakerScreen() {
           </View>
         </View>
       ) : (
-        /* ===== Start recording view ===== */
-        <View style={styles.startView}>
+        /* Start recording view */
+        <View style={[styles.startView, isDesktop && styles.startViewDesktop]}>
           <View style={styles.startSection}>
             <View style={styles.startIconContainer}>
               <Ionicons name="mic" size={56} color={Colors.primary} />
@@ -358,7 +349,7 @@ export default function NotetakerScreen() {
         </View>
       )}
 
-      {/* ---- Modals ---- */}
+      {/* Modals */}
       <AlertModal
         visible={showConsentDialog}
         title="Notetaking Consent"
@@ -402,23 +393,6 @@ const styles = StyleSheet.create({
   backButton: { padding: 8, borderRadius: 999 },
   headerTitle: { fontSize: 20, fontWeight: '700', color: Colors.primary },
 
-  // Explanation banner
-  explanationBanner: {
-    marginHorizontal: 20,
-    marginTop: 12,
-    padding: 12,
-    backgroundColor: Colors.purple[50],
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: Colors.purple[200],
-  },
-  explanationText: {
-    fontSize: 13,
-    color: Colors.mutedForeground,
-    lineHeight: 19,
-    textAlign: 'center',
-  },
-
   // Error
   errorBanner: {
     alignSelf: 'center', marginHorizontal: 24, marginTop: 12,
@@ -429,10 +403,11 @@ const styles = StyleSheet.create({
 
   // Start view
   startView: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
-  startSection: { alignItems: 'center', maxWidth: 360 },
+  startViewDesktop: { paddingHorizontal: 48 },
+  startSection: { alignItems: 'center', maxWidth: 400 },
   startIconContainer: {
     width: 100, height: 100, borderRadius: 50,
-    backgroundColor: Colors.purple[50],
+    backgroundColor: Colors.primaryMuted,
     alignItems: 'center', justifyContent: 'center',
     marginBottom: 24,
   },
@@ -447,26 +422,44 @@ const styles = StyleSheet.create({
 
   // Recording active view
   recordingView: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24 },
+  recordingViewDesktop: { paddingHorizontal: 48 },
   recordSection: { alignItems: 'center', marginBottom: 48 },
-  recordButton: { borderRadius: 999, alignItems: 'center', justifyContent: 'center', elevation: 6 },
-  recordButtonActive: { width: 96, height: 96, backgroundColor: Colors.red[50] },
-  recordButtonPaused: { width: 96, height: 96, backgroundColor: Colors.gray[100] },
+  recordButton: {
+    borderRadius: 999, alignItems: 'center', justifyContent: 'center',
+    width: 96, height: 96,
+  },
+  recordButtonActive: { backgroundColor: Colors.red[50] },
+  recordButtonPaused: { backgroundColor: Colors.gray[100] },
+  pulseRing: {
+    position: 'absolute',
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 3,
+    borderColor: Colors.red[300],
+    opacity: 0.5,
+  },
   recordingBadge: {
-    marginTop: 12, backgroundColor: Colors.red[600],
-    paddingVertical: 4, paddingHorizontal: 14, borderRadius: 999,
+    marginTop: 16, backgroundColor: Colors.red[600],
+    paddingVertical: 6, paddingHorizontal: 16, borderRadius: 999,
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+  },
+  recordingDot: {
+    width: 6, height: 6, borderRadius: 3, backgroundColor: '#fff',
   },
   recordingBadgeText: { color: '#fff', fontSize: 12, fontWeight: '600' },
-  statusText: { marginTop: 12, fontSize: 15, color: Colors.gray[500], minHeight: 20 },
+  statusText: { marginTop: 12, fontSize: 15, color: Colors.mutedForeground, minHeight: 20 },
 
   // Controls
   controls: { width: '100%', maxWidth: 400, gap: 12 },
+  controlsDesktop: { maxWidth: 480 },
   controlButton: { borderRadius: 14, paddingVertical: 16, paddingHorizontal: 24, alignItems: 'center' },
   controlButtonPrimary: { backgroundColor: Colors.primary },
   controlButtonDone: { backgroundColor: Colors.green[500] },
-  controlButtonEnd: { backgroundColor: Colors.accent2 },
+  controlButtonEnd: { backgroundColor: Colors.warmDark },
   controlButtonText: { fontSize: 16, fontWeight: '600', color: '#fff' },
 
-  // Phone-specific responsive overrides (width < 600)
+  // Phone-specific responsive overrides
   headerTitlePhone: { fontSize: 16 },
   startTitlePhone: { fontSize: 20, marginBottom: 8 },
   startDescriptionPhone: { fontSize: 13, lineHeight: 19, marginBottom: 24 },

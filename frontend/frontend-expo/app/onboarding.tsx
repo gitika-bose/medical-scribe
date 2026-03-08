@@ -192,9 +192,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logoLarge: {
-    width: 256,
-    height: 256,
-    marginBottom: 32,
+    width: 180,
+    height: 180,
+    marginBottom: 28,
   },
   logoMedium: {
     width: 192,
@@ -232,7 +232,7 @@ const styles = StyleSheet.create({
   },
   continueButton: {
     width: '100%',
-    backgroundColor: '#6B5FD8',
+    backgroundColor: '#7C8B6B',
     borderRadius: 999,
     paddingVertical: 16,
     paddingHorizontal: 24,
@@ -267,7 +267,7 @@ const styles = StyleSheet.create({
   },
   indicatorActive: {
     width: 32,
-    backgroundColor: '#6B5FD8',
+    backgroundColor: '#7C8B6B',
   },
   indicatorInactive: {
     width: 8,

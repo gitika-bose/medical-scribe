@@ -75,7 +75,8 @@ body {
 .logo-text {
   font-size: 1.5rem;
   font-weight: 700;
-  color: var(--color-blue-700);
+  color: var(--primary-color);
+  font-family: var(--font-family-heading);
 }
 
 .header-nav {

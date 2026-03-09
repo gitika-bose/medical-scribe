@@ -144,18 +144,21 @@ const ExplainAppComponentV2 = forwardRef<HTMLDivElement>((_props, ref) => {
   // Submit
   const handleSubmit = async () => {
     setIsLoading(true); setError(null); setSoapNotes(null); setTitle(null); setQuestions(null);
+
     try {
       analyticsEvents.trySubmit(hasRecording, hasNotes);
       setLoadingStep('Creating appointment…');
       const appointmentId = await tryCreateAppointment();
-      if (hasRecording) { setLoadingStep('Uploading recording…'); await tryUploadRecording(appointmentId, recordingFile!); }
+      // Use appointmentId as session ID so all calls are grouped in Cloud Trace / Logging
+      console.log(`[Session] Starting submission with session_id=${appointmentId}`);
+      if (hasRecording) { setLoadingStep('Uploading recording…'); await tryUploadRecording(appointmentId, recordingFile!, appointmentId); }
       for (let i = 0; i < documentFiles.length; i++) {
         setLoadingStep(documentFiles.length === 1 ? 'Uploading file…' : `Uploading file ${i + 1} of ${documentFiles.length}…`);
-        await tryUploadDocument(appointmentId, documentFiles[i]);
+        await tryUploadDocument(appointmentId, documentFiles[i], appointmentId);
       }
-      if (hasNotes) { setLoadingStep('Uploading notes…'); await tryUploadNotes(appointmentId, notesText.trim()); }
+      if (hasNotes) { setLoadingStep('Uploading notes…'); await tryUploadNotes(appointmentId, notesText.trim(), appointmentId); }
       setLoadingStep('Juno is analyzing your visit…');
-      const processResult = await tryProcessAppointment(appointmentId);
+      const processResult = await tryProcessAppointment(appointmentId, appointmentId);
       const processedSoapNotes = processResult.soapNotes;
       const processedTitle = processResult.title ?? processResult.soapNotes?.title ?? null;
 
@@ -166,7 +169,7 @@ const ExplainAppComponentV2 = forwardRef<HTMLDivElement>((_props, ref) => {
       // Generate questions separately — non-fatal
       setLoadingStep('Generating questions…');
       try {
-        const questionsResult = await tryGenerateQuestions(appointmentId);
+        const questionsResult = await tryGenerateQuestions(appointmentId, appointmentId);
         const generatedQuestions = questionsResult?.questions;
         if (Array.isArray(generatedQuestions) && generatedQuestions.length > 0) {
           setQuestions(generatedQuestions);

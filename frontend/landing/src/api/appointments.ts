@@ -114,6 +114,28 @@ export interface SoapNotesV13 {
 }
 
 // =============================================================================
+// Session ID — groups all requests from a single user submission
+// =============================================================================
+
+/**
+ * Generate a new session ID (UUID v4).
+ * Call this once per user-initiated action (e.g. clicking "Generate Summary")
+ * and pass the returned value to every subsequent API call in that flow.
+ */
+export function generateSessionId(): string {
+  // crypto.randomUUID() is available in all modern browsers and Node 19+
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  // Fallback for older environments
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
+// =============================================================================
 // Internal helpers
 // =============================================================================
 
@@ -124,17 +146,33 @@ async function ensureHealthy(): Promise<void> {
   }
 }
 
-async function authHeaders(): Promise<Record<string, string>> {
+async function authHeaders(sessionId?: string): Promise<Record<string, string>> {
   const token = await getAuthToken();
-  return { Authorization: `Bearer ${token}` };
+  const headers: Record<string, string> = { Authorization: `Bearer ${token}` };
+  if (sessionId) {
+    headers['X-Session-Id'] = sessionId;
+  }
+  return headers;
 }
 
-async function authJsonHeaders(): Promise<Record<string, string>> {
+async function authJsonHeaders(sessionId?: string): Promise<Record<string, string>> {
   const token = await getAuthToken();
-  return {
+  const headers: Record<string, string> = {
     Authorization: `Bearer ${token}`,
     'Content-Type': 'application/json',
   };
+  if (sessionId) {
+    headers['X-Session-Id'] = sessionId;
+  }
+  return headers;
+}
+
+function sessionHeaders(sessionId?: string): Record<string, string> {
+  const headers: Record<string, string> = {};
+  if (sessionId) {
+    headers['X-Session-Id'] = sessionId;
+  }
+  return headers;
 }
 
 // =============================================================================
@@ -145,10 +183,10 @@ async function authJsonHeaders(): Promise<Record<string, string>> {
  * Step 1: Create a new appointment.
  * Calls POST /appointments (authenticated).
  */
-export async function tryCreateAppointment(): Promise<string> {
+export async function tryCreateAppointment(sessionId?: string): Promise<string> {
   await ensureHealthy();
 
-  const headers = await authJsonHeaders();
+  const headers = await authJsonHeaders(sessionId);
   const response = await fetch(`${API_URL_PROCESSING}/appointments`, {
     method: 'POST',
     headers,
@@ -170,8 +208,9 @@ export async function tryCreateAppointment(): Promise<string> {
 export async function tryUploadRecording(
   appointmentId: string,
   file: File,
+  sessionId?: string,
 ): Promise<{ recordingGcsUri: string }> {
-  const headers = await authHeaders();
+  const headers = await authHeaders(sessionId);
   const formData = new FormData();
   formData.append('recording', file, file.name);
 
@@ -208,8 +247,9 @@ export async function tryUploadRecording(
 export async function tryUploadDocument(
   appointmentId: string,
   file: File,
+  sessionId?: string,
 ): Promise<{ documentGcsUri: string }> {
-  const headers = await authHeaders();
+  const headers = await authHeaders(sessionId);
   const formData = new FormData();
   formData.append('document', file, file.name);
 
@@ -243,8 +283,9 @@ export async function tryUploadDocument(
 export async function tryUploadNotes(
   appointmentId: string,
   notes: string,
+  sessionId?: string,
 ): Promise<void> {
-  const headers = await authHeaders();
+  const headers = await authHeaders(sessionId);
   const formData = new FormData();
   formData.append('notes', notes);
 
@@ -276,14 +317,16 @@ export async function tryUploadNotes(
  */
 export async function tryProcessAppointment(
   appointmentId: string,
+  sessionId?: string,
 ): Promise<{ soapNotes: SoapNotesV13; title?: string }> {
-  const headers = await authJsonHeaders();
+  const headers = await authJsonHeaders(sessionId);
 
   const response = await fetch(
     `${API_URL_PROCESSING}/appointments/${appointmentId}/process`,
     {
       method: 'POST',
       headers,
+      body: JSON.stringify({ useBatchSTT: true }),
     },
   );
 
@@ -307,8 +350,9 @@ export async function tryProcessAppointment(
  */
 export async function tryGenerateQuestions(
   appointmentId: string,
+  sessionId?: string,
 ): Promise<{ questions: string[] }> {
-  const headers = await authJsonHeaders();
+  const headers = await authJsonHeaders(sessionId);
 
   const response = await fetch(
     `${API_URL_PROCESSING}/appointments/${appointmentId}/generate-questions`,
@@ -336,6 +380,7 @@ export async function tryGenerateQuestions(
  */
 export async function tryUploadRecordingLegacy(
   file: File,
+  sessionId?: string,
 ): Promise<{ soapNotes: SoapNotesV12; title: string; transcript: string }> {
   await ensureHealthy();
 
@@ -348,6 +393,7 @@ export async function tryUploadRecordingLegacy(
     `${API_URL_PROCESSING}/appointments/upload-recording-try`,
     {
       method: 'POST',
+      headers: sessionHeaders(sessionId),
       body: formData,
     },
   );
@@ -372,6 +418,7 @@ export async function tryUploadRecordingLegacy(
  */
 export async function tryUploadNotesAppointmentLegacy(
   notes: string,
+  sessionId?: string,
 ): Promise<{ soapNotes: SoapNotesV12; title: string }> {
   await ensureHealthy();
 
@@ -382,6 +429,7 @@ export async function tryUploadNotesAppointmentLegacy(
     `${API_URL_PROCESSING}/appointments/upload-notes-try`,
     {
       method: 'POST',
+      headers: sessionHeaders(sessionId),
       body: formData,
     },
   );
@@ -406,6 +454,7 @@ export async function tryUploadNotesAppointmentLegacy(
  */
 export async function tryGenerateQuestionsLegacy(
   transcript: string,
+  sessionId?: string,
 ): Promise<{ questions: string[] }> {
   const formData = new FormData();
   formData.append('notes', transcript);
@@ -414,6 +463,7 @@ export async function tryGenerateQuestionsLegacy(
     `${API_URL_PROCESSING}/appointments/generate-questions-try`,
     {
       method: 'POST',
+      headers: sessionHeaders(sessionId),
       body: formData,
     },
   );

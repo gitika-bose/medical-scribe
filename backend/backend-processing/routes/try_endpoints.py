@@ -11,6 +11,8 @@ Endpoints:
 - POST /appointments/upload-notes-try        — Process pasted notes into SOAP
 """
 
+import logging
+
 from flask import Blueprint, request, jsonify
 from utils.constants import Constants
 from routes.services import (
@@ -20,6 +22,8 @@ from routes.services import (
     transcribe_chunks,
     parse_notes_from_request,
 )
+
+logger = logging.getLogger(__name__)
 
 try_bp = Blueprint('try_endpoints', __name__)
 
@@ -67,18 +71,18 @@ def upload_recording_try():
             return jsonify({'error': 'No recording file provided', 'status': 'failed'}), 400
 
         audio_file = request.files['recording']
-        print(f"[Upload Recording Try] Starting processing")
+        logger.info("Upload recording try: starting processing")
 
         audio_content = audio_file.read()
         file_extension = detect_file_extension(audio_file.filename)
         audio_size_mb = len(audio_content) / (1024 * 1024)
-        print(f"[Upload Recording Try] Received audio file: {audio_size_mb:.2f} MB, format: {file_extension}")
+        logger.info("Received audio file: %.2f MB, format: %s", audio_size_mb, file_extension)
 
         # Split audio into webm chunks
         try:
             chunks = split_audio_to_webm_chunks(audio_content, file_extension)
         except Exception as e:
-            print(f"[Upload Recording Try] Error loading audio: {str(e)}")
+            logger.error("Error loading audio: %s", str(e), exc_info=True)
             return jsonify({'error': f'Failed to load audio file: {str(e)}', 'status': 'failed'}), 400
 
         # Transcribe all chunks (no GCS upload, no Firestore)
@@ -87,22 +91,22 @@ def upload_recording_try():
         try:
             current_transcript = transcribe_chunks(chunks, stt_service)
         except Exception as e:
-            print(f"[Upload Recording Try] Transcription error: {str(e)}")
+            logger.error("Transcription error: %s", str(e), exc_info=True)
             return jsonify({'error': f'Transcription failed: {str(e)}', 'status': 'failed'}), 500
 
-        print(f"[Upload Recording Try] All chunks processed successfully")
+        logger.info("All chunks processed successfully")
 
         if not current_transcript:
             return jsonify({'error': 'No transcript available to process', 'status': 'failed'}), 400
 
         # Generate SOAP notes
-        print(f"[Upload Recording Try] Generating SOAP notes...")
+        logger.info("Generating SOAP notes...")
         try:
             _, _, ai_service = get_services()
             soap_notes = ai_service.process_transcript_to_soap(current_transcript, schema_version=Constants.SUMMARY_SCHEMA_VERSION_1_2)
-            print(f"[Upload Recording Try] SOAP notes generated successfully")
+            logger.info("SOAP notes generated successfully")
         except Exception as e:
-            print(f"[Upload Recording Try] Error generating SOAP notes: {str(e)}")
+            logger.error("Error generating SOAP notes: %s", str(e), exc_info=True)
             return jsonify({'error': f'SOAP processing failed: {str(e)}', 'status': 'failed'}), 500
 
         soap_notes["version"] = Constants.SUMMARY_SCHEMA_VERSION_1_2
@@ -118,7 +122,7 @@ def upload_recording_try():
         }), 200
 
     except Exception as e:
-        print(f"[Upload Recording Try] Unexpected error: {str(e)}")
+        logger.error("Unexpected error in upload-recording-try: %s", str(e), exc_info=True)
         return jsonify({'error': str(e), 'status': 'failed'}), 500
 
 
@@ -134,15 +138,15 @@ def upload_notes_try():
             return jsonify({'error': 'No appointment notes provided', 'status': 'failed'}), 400
 
         appointment_notes = request.form['notes']
-        print(f"[Upload Notes Try] Starting processing")
+        logger.info("Upload notes try: starting processing")
 
         # Generate SOAP notes
         try:
             _, _, ai_service = get_services()
             soap_notes = ai_service.process_transcript_to_soap(appointment_notes, schema_version=Constants.SUMMARY_SCHEMA_VERSION_1_2)
-            print(f"[Upload Notes Try] SOAP notes generated successfully")
+            logger.info("SOAP notes generated successfully")
         except Exception as e:
-            print(f"[Upload Notes Try] Error generating SOAP notes: {str(e)}")
+            logger.error("Error generating SOAP notes: %s", str(e), exc_info=True)
             return jsonify({'error': f'SOAP processing failed: {str(e)}', 'status': 'failed'}), 500
 
         soap_notes["version"] = Constants.SUMMARY_SCHEMA_VERSION_1_2
@@ -156,5 +160,5 @@ def upload_notes_try():
         }), 200
 
     except Exception as e:
-        print(f"[Upload Notes Try] Unexpected error: {str(e)}")
+        logger.error("Unexpected error in upload-notes-try: %s", str(e), exc_info=True)
         return jsonify({'error': str(e), 'status': 'failed'}), 500

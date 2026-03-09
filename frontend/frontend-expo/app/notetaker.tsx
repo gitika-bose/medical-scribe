@@ -49,6 +49,7 @@ export default function NotetakerScreen() {
   const autoTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const durationTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const errorTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sessionIdRef = useRef<string | null>(null);
 
   // Cleanup
   useEffect(() => {
@@ -112,13 +113,18 @@ export default function NotetakerScreen() {
       setError(null);
 
       const { appointmentId: newAppointmentId } = await startAppointment();
+
+      // Use the appointmentId as the session ID so all API calls for this
+      // appointment are grouped under the same ID in Cloud Trace / Logging.
+      sessionIdRef.current = newAppointmentId;
+      console.log(`[Session] Starting notetaker with session_id=${newAppointmentId}`);
       analyticsEvents.startRecording(newAppointmentId);
       store.startRecording(newAppointmentId);
 
       await startRecording(async (chunkUri: string) => {
         try {
           console.log('Uploading audio chunk...');
-          await uploadAudioChunk(newAppointmentId, chunkUri);
+          await uploadAudioChunk(newAppointmentId, chunkUri, sessionIdRef.current ?? undefined);
           console.log('Audio chunk uploaded successfully');
           setFirstChunkUploaded(true);
         } catch (err) {
@@ -156,7 +162,7 @@ export default function NotetakerScreen() {
       }
 
       analyticsEvents.generateQuestions(appointmentId);
-      const { questions: generatedQuestions } = await generateQuestions(appointmentId);
+      const { questions: generatedQuestions } = await generateQuestions(appointmentId, sessionIdRef.current ?? undefined);
 
       if (!generatedQuestions || generatedQuestions.length === 0) {
         setError('No questions available.');
@@ -213,6 +219,10 @@ export default function NotetakerScreen() {
       setQuestions(null);
       setFirstChunkUploaded(false);
       setIsProcessing(false);
+
+      // Clear session ID as recording session is ending
+      const currentSessionId = sessionIdRef.current;
+      sessionIdRef.current = null;
 
       finalizeAppointment(appointmentId, lastChunkUri).catch((err) => {
         console.error('Background finalization error:', err);

@@ -8,10 +8,14 @@ Endpoints:
 - GET  /appointments/search     — Search appointments by processed summary
 """
 
+import logging
+
 from flask import Blueprint, request, jsonify
 from datetime import datetime
 from utils.auth import verify_firebase_token
 from routes.services import db, get_services
+
+logger = logging.getLogger(__name__)
 
 appointments_crud_bp = Blueprint('appointments_crud', __name__)
 
@@ -49,7 +53,7 @@ def create_appointment(user_id):
             'lastUpdated': datetime.utcnow().isoformat(),
         })
 
-        print(f"[Create Appointment] Created empty appointment {appointment_id} for user {user_id}")
+        logger.info("Created empty appointment %s for user %s", appointment_id, user_id)
 
         return jsonify({
             'message': 'Appointment created successfully',
@@ -58,7 +62,7 @@ def create_appointment(user_id):
         }), 201
 
     except Exception as e:
-        print(f"[Create Appointment] Error: {str(e)}")
+        logger.error("Create appointment error: %s", str(e), exc_info=True)
         return jsonify({'error': str(e), 'status': 'failed'}), 500
 
 
@@ -75,11 +79,11 @@ def delete_appointment(user_id, appointment_id):
 
         # Delete recordings folder
         recordings_deleted = storage_svc.delete_folder(f"recordings/{appointment_id}/")
-        print(f"[Delete Appointment] Deleted {recordings_deleted} files from recordings/{appointment_id}/")
+        logger.info("Deleted %d files from recordings/%s/", recordings_deleted, appointment_id)
 
         # Delete chunks folder
         chunks_deleted = storage_svc.delete_folder(f"chunks/{appointment_id}/")
-        print(f"[Delete Appointment] Deleted {chunks_deleted} files from chunks/{appointment_id}/")
+        logger.info("Deleted %d files from chunks/%s/", chunks_deleted, appointment_id)
 
         # Delete documents folder
         documents_deleted = storage_svc.delete_folder(f"documents/{appointment_id}/")

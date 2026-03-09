@@ -20,17 +20,57 @@ import { analyticsEvents } from './analytics';
 const API_URL_PROCESSING = process.env.EXPO_PUBLIC_API_PROCESSING_URL;
 
 // =============================================================================
+// Session ID — groups all requests from a single user-initiated flow
+// =============================================================================
+
+/**
+ * Generate a new session ID (UUID v4).
+ * Call this once per user-initiated action (e.g. starting a recording session,
+ * uploading a file, etc.) and pass the returned value to every subsequent API
+ * call in that flow so the backend can correlate them in Cloud Trace / Logging.
+ */
+export function generateSessionId(): string {
+  // crypto.randomUUID() is available in modern environments
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  // Fallback
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
+// =============================================================================
 // Auth helpers (internal)
 // =============================================================================
 
-async function getAuthHeaders(): Promise<Record<string, string>> {
+async function getAuthHeaders(sessionId?: string): Promise<Record<string, string>> {
   const user = auth.currentUser;
   if (!user) throw new Error('User not authenticated');
   const token = await user.getIdToken();
-  return {
+  const headers: Record<string, string> = {
     Authorization: `Bearer ${token}`,
     'Content-Type': 'application/json',
   };
+  if (sessionId) {
+    headers['X-Session-Id'] = sessionId;
+  }
+  return headers;
+}
+
+async function getAuthFormHeaders(sessionId?: string): Promise<Record<string, string>> {
+  const user = auth.currentUser;
+  if (!user) throw new Error('User not authenticated');
+  const token = await user.getIdToken();
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${token}`,
+  };
+  if (sessionId) {
+    headers['X-Session-Id'] = sessionId;
+  }
+  return headers;
 }
 
 // =============================================================================
@@ -231,6 +271,7 @@ async function appendAudioToFormData(
 export async function uploadAudioChunk(
   appointmentId: string,
   audioChunk: string | Blob,
+  sessionId?: string,
 ): Promise<void> {
   const user = auth.currentUser;
   if (!user) throw new Error('User not authenticated');
@@ -252,11 +293,14 @@ export async function uploadAudioChunk(
 
     await appendAudioToFormData(formData, 'audioChunk', audioChunk, chunkName, chunkMime);
 
+    const fetchHeaders: Record<string, string> = { Authorization: `Bearer ${token}` };
+    if (sessionId) fetchHeaders['X-Session-Id'] = sessionId;
+
     const response = await fetch(
       `${API_URL_PROCESSING}/appointments/${appointmentId}/audio-chunks`,
       {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+        headers: fetchHeaders,
         body: formData,
       },
     );
@@ -274,13 +318,14 @@ export async function uploadAudioChunk(
 
 export async function generateQuestions(
   appointmentId: string,
+  sessionId?: string,
 ): Promise<{ questions: string[] }> {
   const isHealthy = await checkProcessingServiceHealth();
   if (!isHealthy) {
     throw new Error('Service is currently unavailable. Please try again later.');
   }
 
-  const headers = await getAuthHeaders();
+  const headers = await getAuthHeaders(sessionId);
   const response = await fetch(
     `${API_URL_PROCESSING}/appointments/${appointmentId}/generate-questions`,
     { method: 'POST', headers },
@@ -562,6 +607,7 @@ export async function updateAppointmentMetadata(
 export async function uploadRecordingNew(
   appointmentId: string,
   file: { uri: string; name: string; mimeType?: string; size?: number },
+  sessionId?: string,
 ): Promise<{ recordingGcsUri: string }> {
   const user = auth.currentUser;
   if (!user) throw new Error('User not authenticated');
@@ -593,11 +639,14 @@ export async function uploadRecordingNew(
 
     analyticsEvents.uploadRecording(appointmentId, file.size);
 
+    const uploadHeaders: Record<string, string> = { Authorization: `Bearer ${token}` };
+    if (sessionId) uploadHeaders['X-Session-Id'] = sessionId;
+
     const response = await fetch(
       `${API_URL_PROCESSING}/appointments/${appointmentId}/upload-recording-new`,
       {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+        headers: uploadHeaders,
         body: formData,
       },
     );
@@ -731,6 +780,7 @@ export async function uploadRecording(
 export async function uploadDocument(
   appointmentId: string,
   file: { uri: string; name: string; mimeType?: string; size?: number },
+  sessionId?: string,
 ): Promise<{ documentGcsUri: string; documentCount: number }> {
   const user = auth.currentUser;
   if (!user) throw new Error('User not authenticated');
@@ -760,11 +810,14 @@ export async function uploadDocument(
       } as any);
     }
 
+    const docHeaders: Record<string, string> = { Authorization: `Bearer ${token}` };
+    if (sessionId) docHeaders['X-Session-Id'] = sessionId;
+
     const response = await fetch(
       `${API_URL_PROCESSING}/appointments/${appointmentId}/upload-document`,
       {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+        headers: docHeaders,
         body: formData,
       },
     );
@@ -786,6 +839,7 @@ export async function uploadDocument(
 export async function uploadNotes(
   appointmentId: string,
   notes: string,
+  sessionId?: string,
 ): Promise<void> {
   const user = auth.currentUser;
   if (!user) throw new Error('User not authenticated');
@@ -802,11 +856,14 @@ export async function uploadNotes(
     const formData = new FormData();
     formData.append('notes', notes.trim());
 
+    const notesHeaders: Record<string, string> = { Authorization: `Bearer ${token}` };
+    if (sessionId) notesHeaders['X-Session-Id'] = sessionId;
+
     const response = await fetch(
       `${API_URL_PROCESSING}/appointments/${appointmentId}/upload-notes`,
       {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+        headers: notesHeaders,
         body: formData,
       },
     );
@@ -825,6 +882,7 @@ export async function uploadNotes(
 /** Process an appointment (transcribe + extract + SOAP). */
 export async function processAppointment(
   appointmentId: string,
+  sessionId?: string,
 ): Promise<{ soapNotes: any; status: string }> {
   const user = auth.currentUser;
   if (!user) throw new Error('User not authenticated');
@@ -836,7 +894,7 @@ export async function processAppointment(
       throw new Error('Service is currently unavailable. Please try again later.');
     }
 
-    const headers = await getAuthHeaders();
+    const headers = await getAuthHeaders(sessionId);
     const response = await fetch(
       `${API_URL_PROCESSING}/appointments/${appointmentId}/process`,
       {

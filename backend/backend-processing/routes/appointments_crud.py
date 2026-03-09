@@ -99,6 +99,20 @@ def delete_appointment(user_id, appointment_id):
         except Exception as firestore_err:
             print(f"[Delete Appointment] Warning: Failed to delete Firestore document: {str(firestore_err)}")
 
+        # Delete documents folder
+        documents_deleted = storage_svc.delete_folder(f"documents/{appointment_id}/")
+        print(f"[Delete Appointment] Deleted {documents_deleted} files from documents/{appointment_id}/")
+
+        # Delete the Firestore appointment document
+        firestore_deleted = False
+        try:
+            appointment_ref = db.collection('users').document(user_id).collection('appointments').document(appointment_id)
+            appointment_ref.delete()
+            firestore_deleted = True
+            print(f"[Delete Appointment] Deleted Firestore document for appointment {appointment_id}")
+        except Exception as firestore_err:
+            print(f"[Delete Appointment] Warning: Failed to delete Firestore document: {str(firestore_err)}")
+
         return jsonify({
             'message': 'All appointment data deleted successfully',
             'appointmentId': appointment_id,

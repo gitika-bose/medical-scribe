@@ -8,6 +8,8 @@ Provides:
 - Audio processing utilities (chunking, transcription)
 """
 
+import logging
+
 from datetime import datetime
 from flask import jsonify
 from utils.speech_to_text import SpeechToTextService
@@ -17,6 +19,8 @@ from utils.constants import Constants
 from config import initialize_firebase, GCP_PROJECT_ID, GCP_BUCKET_NAME, GCP_LOCATION, VERTEX_AI_MODEL
 import io
 from pydub import AudioSegment
+
+logger = logging.getLogger(__name__)
 
 # Initialize Firestore
 db = initialize_firebase()
@@ -32,7 +36,11 @@ def get_services():
     global _speech_service, _storage_service, _vertex_ai_service
 
     if _speech_service is None:
-        _speech_service = SpeechToTextService()
+        _speech_service = SpeechToTextService(
+            project_id=GCP_PROJECT_ID,
+            location=GCP_LOCATION,
+            bucket_name=GCP_BUCKET_NAME,
+        )
     if _storage_service is None:
         _storage_service = StorageService(GCP_BUCKET_NAME, GCP_PROJECT_ID)
     if _vertex_ai_service is None:
@@ -86,7 +94,7 @@ def update_title_if_empty(appointment_ref, soap_notes):
     new_title = soap_notes.get('title')
     if new_title and not curr_title:
         appointment_ref.update({'title': new_title})
-    print(f"Current title: {str(curr_title)}, new title: {str(new_title)}")
+    logger.info("Current title: %s, new title: %s", str(curr_title), str(new_title))
 
 
 # ---------------------------------------------------------------------------
@@ -107,9 +115,9 @@ def generate_soap_and_finalize(appointment_ref, raw_transcript, ai_service, sche
 
     try:
         soap_notes = ai_service.process_transcript_to_soap(raw_transcript, schema_version=schema_version)
-        print(f"SOAP notes generated successfully")
+        logger.info("SOAP notes generated successfully")
     except Exception as e:
-        print(f"Error generating SOAP notes: {str(e)}")
+        logger.error("Error generating SOAP notes: %s", str(e), exc_info=True)
         set_appointment_error(appointment_ref)
         return None, (jsonify({'error': f'SOAP processing failed: {str(e)}', 'status': 'failed'}), 500)
 
@@ -153,7 +161,8 @@ def split_audio_to_webm_chunks(audio_content, file_extension, chunk_length_ms=30
         Exception if the audio cannot be loaded or converted.
     """
     audio = AudioSegment.from_file(io.BytesIO(audio_content), format=file_extension)
-    print(f"Audio loaded: duration={len(audio)}ms, channels={audio.channels}, frame_rate={audio.frame_rate}")
+    logger.info("Audio loaded: duration=%dms, channels=%d, frame_rate=%d",
+                len(audio), audio.channels, audio.frame_rate)
 
     chunks = []
     for i in range(0, len(audio), chunk_length_ms):
@@ -162,7 +171,7 @@ def split_audio_to_webm_chunks(audio_content, file_extension, chunk_length_ms=30
         chunk.export(chunk_buffer, format='webm')
         chunks.append(chunk_buffer.getvalue())
 
-    print(f"Split audio into {len(chunks)} chunks of ~{chunk_length_ms // 1000}s each")
+    logger.info("Split audio into %d chunks of ~%ds each", len(chunks), chunk_length_ms // 1000)
     return chunks
 
 
@@ -178,9 +187,9 @@ def transcribe_chunks(chunks, stt_service):
     """
     transcript_parts = []
     for idx, chunk_content in enumerate(chunks):
-        print(f"Transcribing chunk {idx + 1}/{len(chunks)}...")
+        logger.info("Transcribing chunk %d/%d...", idx + 1, len(chunks))
         text = stt_service.transcribe_audio_chunk(chunk_content, use_gcs=False, gcs_uri=None)
-        print(f"Chunk {idx + 1} transcription completed")
+        logger.info("Chunk %d transcription completed", idx + 1)
         if text:
             transcript_parts.append(text)
     return '\n'.join(transcript_parts)

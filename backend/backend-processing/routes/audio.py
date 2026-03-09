@@ -8,6 +8,8 @@ Endpoints:
 - POST /appointments/<id>/finalize               — Upload audio (if needed) + generate SOAP from transcript
 """
 
+import logging
+
 from flask import Blueprint, request, jsonify
 from datetime import datetime
 from utils.auth import verify_firebase_token
@@ -21,6 +23,8 @@ from routes.services import (
     generate_soap_and_finalize,
 )
 import uuid
+
+logger = logging.getLogger(__name__)
 
 audio_bp = Blueprint('audio', __name__)
 
@@ -39,7 +43,7 @@ def upload_audio_chunk(user_id, appointment_id):
         audio_file = request.files['audioChunk']
         audio_content = audio_file.read()
         audio_size_mb = len(audio_content) / (1024 * 1024)
-        print(f"[Audio Chunk] Received: {audio_size_mb:.2f} MB")
+        logger.info("Audio chunk received: %.2f MB", audio_size_mb)
 
         appointment_ref, appointment_data, error = get_appointment_or_404(user_id, appointment_id)
         if error:
@@ -51,33 +55,33 @@ def upload_audio_chunk(user_id, appointment_id):
 
             chunk_filename = f"chunks/{appointment_id}/{uuid.uuid4()}.webm"
             gcs_uri = storage_svc.upload_audio_file(audio_content, chunk_filename, content_type='audio/webm')
-            print(f"[Audio Chunk] Uploaded to GCS: {gcs_uri}")
+            logger.info("Audio chunk uploaded to GCS: %s", gcs_uri)
 
-            print(f"[Audio Chunk] Starting transcription with inline audio ({len(audio_content)} bytes)...")
+            logger.info("Starting transcription with inline audio (%d bytes)...", len(audio_content))
             new_transcript_text = stt_service.transcribe_audio_chunk(audio_content, use_gcs=False, gcs_uri=None)
-            print(f"[Audio Chunk] Transcription completed")
+            logger.info("Transcription completed")
         except Exception as e:
             set_appointment_error(appointment_ref)
-            print(f"[Audio Chunk] Transcription error: {str(e)}")
+            logger.error("Transcription error: %s", str(e), exc_info=True)
             return jsonify({'error': f'Transcription failed: {str(e)}', 'status': 'failed'}), 500
 
-        print(f"[Audio Chunk] New transcript text length: {len(new_transcript_text)}")
+        logger.info("New transcript text length: %d", len(new_transcript_text))
 
         # Re-fetch to avoid stale reads
         appointment_doc = appointment_ref.get()
         appointment_data = appointment_doc.to_dict()
         current_transcript = appointment_data.get('rawTranscript', '')
-        print(f"[Audio Chunk] Current transcript length: {len(current_transcript)}")
+        logger.info("Current transcript length: %d", len(current_transcript))
 
         updated_transcript = (current_transcript + '\n' + new_transcript_text) if current_transcript else new_transcript_text
-        print(f"[Audio Chunk] Updated transcript length: {len(updated_transcript)}")
+        logger.info("Updated transcript length: %d", len(updated_transcript))
 
         appointment_ref.update({
             'rawTranscript': updated_transcript,
             'lastUpdated': datetime.utcnow().isoformat()
         })
 
-        print(f"[Audio Chunk] Firestore updated successfully")
+        logger.info("Firestore updated successfully")
 
         return jsonify({
             'status': 'uploaded',
@@ -108,35 +112,35 @@ def upload_recording(user_id, appointment_id):
         if error:
             return error
 
-        print(f"[Upload Recording] Starting processing for appointment {appointment_id}")
+        logger.info("Starting recording processing for appointment %s", appointment_id)
 
         audio_content = audio_file.read()
         file_extension = detect_file_extension(audio_file.filename)
         audio_size_mb = len(audio_content) / (1024 * 1024)
-        print(f"[Upload Recording] Received audio file: {audio_size_mb:.2f} MB, format: {file_extension}")
+        logger.info("Received audio file: %.2f MB, format: %s", audio_size_mb, file_extension)
 
         # Split audio into webm chunks
         try:
             chunks = split_audio_to_webm_chunks(audio_content, file_extension)
         except Exception as e:
             set_appointment_error(appointment_ref)
-            print(f"[Upload Recording] Error loading audio: {str(e)}")
+            logger.error("Error loading audio: %s", str(e), exc_info=True)
             return jsonify({'error': f'Failed to load audio file: {str(e)}', 'status': 'failed'}), 400
 
         # Process each chunk: upload to GCS, transcribe, update Firestore
         stt_service, storage_svc, _ = get_services()
 
         for idx, chunk_content in enumerate(chunks):
-            print(f"[Upload Recording] Processing chunk {idx + 1}/{len(chunks)}")
+            logger.info("Processing chunk %d/%d", idx + 1, len(chunks))
 
             try:
                 chunk_filename = f"chunks/{appointment_id}/chunk_{idx:04d}.webm"
                 gcs_uri = storage_svc.upload_audio_file(chunk_content, chunk_filename, content_type='audio/webm')
-                print(f"[Upload Recording] Chunk {idx + 1} uploaded to GCS: {gcs_uri}")
+                logger.info("Chunk %d uploaded to GCS: %s", idx + 1, gcs_uri)
 
-                print(f"[Upload Recording] Transcribing chunk {idx + 1}...")
+                logger.info("Transcribing chunk %d...", idx + 1)
                 new_transcript_text = stt_service.transcribe_audio_chunk(chunk_content, use_gcs=False, gcs_uri=None)
-                print(f"[Upload Recording] Chunk {idx + 1} transcription completed")
+                logger.info("Chunk %d transcription completed", idx + 1)
 
                 # Re-fetch to avoid stale reads
                 appointment_doc = appointment_ref.get()
@@ -148,32 +152,32 @@ def upload_recording(user_id, appointment_id):
                     'lastUpdated': datetime.utcnow().isoformat()
                 })
 
-                print(f"[Upload Recording] Chunk {idx + 1} processed successfully")
+                logger.info("Chunk %d processed successfully", idx + 1)
 
             except Exception as e:
                 set_appointment_error(appointment_ref)
-                print(f"[Upload Recording] Error processing chunk {idx + 1}: {str(e)}")
+                logger.error("Error processing chunk %d: %s", idx + 1, str(e), exc_info=True)
                 return jsonify({
                     'error': f'Failed to process chunk {idx + 1}: {str(e)}',
                     'status': 'failed',
                     'chunksProcessed': idx
                 }), 500
 
-        print(f"[Upload Recording] All chunks processed successfully")
+        logger.info("All chunks processed successfully")
 
         # Upload full audio to GCS
         try:
             timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
             full_audio_filename = f"recordings/{appointment_id}/{timestamp}_full.{file_extension}"
             recording_url = storage_svc.upload_audio_file(audio_content, full_audio_filename, content_type=f'audio/{file_extension}')
-            print(f"[Upload Recording] Full audio uploaded: {recording_url}")
+            logger.info("Full audio uploaded: %s", recording_url)
             appointment_ref.update({
                 'recordingLink': recording_url,
                 'lastUpdated': datetime.utcnow().isoformat(),
             })
         except Exception as e:
             set_appointment_error(appointment_ref)
-            print(f"[Upload Recording] Error uploading full audio: {str(e)}")
+            logger.error("Error uploading full audio: %s", str(e), exc_info=True)
             return jsonify({'error': f'Failed to upload full audio: {str(e)}', 'status': 'failed'}), 500
 
         # Get fresh transcript and generate SOAP
@@ -185,7 +189,7 @@ def upload_recording(user_id, appointment_id):
         if soap_error:
             return soap_error
 
-        print(f"[Upload Recording] Appointment finalized successfully")
+        logger.info("Appointment finalized successfully")
 
         return jsonify({
             'message': 'Recording uploaded and processed successfully',
@@ -198,7 +202,7 @@ def upload_recording(user_id, appointment_id):
 
     except Exception as e:
         set_appointment_error(appointment_ref)
-        print(f"[Upload Recording] Unexpected error: {str(e)}")
+        logger.error("Unexpected error in upload-recording: %s", str(e), exc_info=True)
         return jsonify({'error': str(e), 'status': 'failed'}), 500
 
 
@@ -223,7 +227,7 @@ def upload_recording_new(user_id, appointment_id):
         audio_content = audio_file.read()
         file_extension = detect_file_extension(audio_file.filename)
         audio_size_mb = len(audio_content) / (1024 * 1024)
-        print(f"[Upload Recording New] Received {audio_size_mb:.2f} MB, format: {file_extension}")
+        logger.info("Received recording: %.2f MB, format: %s", audio_size_mb, file_extension)
 
         _, store_service, _ = get_services()
         timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
@@ -231,7 +235,7 @@ def upload_recording_new(user_id, appointment_id):
         recording_gcs_uri = store_service.upload_file(
             audio_content, full_audio_filename, content_type=f'audio/{file_extension}'
         )
-        print(f"[Upload Recording New] Uploaded to GCS: {recording_gcs_uri}")
+        logger.info("Recording uploaded to GCS: %s", recording_gcs_uri)
 
         appointment_ref.update({
             'recordingLink': recording_gcs_uri,
@@ -246,7 +250,7 @@ def upload_recording_new(user_id, appointment_id):
         }), 200
 
     except Exception as e:
-        print(f"[Upload Recording New] Error: {str(e)}")
+        logger.error("Upload recording (new) error: %s", str(e), exc_info=True)
         return jsonify({'error': str(e), 'status': 'failed'}), 500
 
 
@@ -270,7 +274,7 @@ def finalize_appointment(user_id, appointment_id):
         # PART 1: Upload full audio (only if not already uploaded)
         if existing_recording_url:
             recording_url = existing_recording_url
-            print(f"Recording already exists for appointment {appointment_id}, skipping upload")
+            logger.info("Recording already exists for appointment %s, skipping upload", appointment_id)
         else:
             if 'fullAudio' not in request.files:
                 return jsonify({'error': 'No audio file provided'}), 400

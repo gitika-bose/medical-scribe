@@ -8,10 +8,12 @@ Endpoints:
 - POST /appointments/<id>/upload-document     — Upload PDF document to GCS
 """
 
+import logging
+
 from flask import Blueprint, request, jsonify
 from datetime import datetime
 from utils.auth import verify_firebase_token
-from utils.processing import transcribe_full_recording, generate_soap_from_text, extract_text_from_pdf_gcs
+from utils.processing import transcribe_full_recording, transcribe_recording_batch, generate_soap_from_text, extract_text_from_pdf_gcs
 from utils.constants import Constants
 from routes.services import (
     get_services,
@@ -20,6 +22,8 @@ from routes.services import (
     update_title_if_empty,
     parse_notes_from_request,
 )
+
+logger = logging.getLogger(__name__)
 
 processing_bp = Blueprint('processing', __name__)
 
@@ -82,7 +86,7 @@ def upload_notes(user_id, appointment_id):
         if not notes_text:
             return jsonify({'error': 'No notes provided', 'status': 'failed'}), 400
 
-        print(f"[Upload Notes] Storing {len(notes_text)} characters of notes for appointment {appointment_id}")
+        logger.info("Storing %d characters of notes for appointment %s", len(notes_text), appointment_id)
 
         appointment_ref.update({
             'notes': notes_text,
@@ -97,7 +101,7 @@ def upload_notes(user_id, appointment_id):
         }), 200
 
     except Exception as e:
-        print(f"[Upload Notes] Error: {str(e)}")
+        logger.error("Upload notes error: %s", str(e), exc_info=True)
         return jsonify({'error': str(e), 'status': 'failed'}), 500
 
 
@@ -122,7 +126,7 @@ def upload_document(user_id, appointment_id):
         doc_content = doc_file.read()
         original_filename = doc_file.filename or 'document.pdf'
         doc_size_mb = len(doc_content) / (1024 * 1024)
-        print(f"[Upload Document] Received {original_filename}: {doc_size_mb:.2f} MB")
+        logger.info("Received document %s: %.2f MB", original_filename, doc_size_mb)
 
         _, store_service, _ = get_services()
         timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
@@ -130,7 +134,7 @@ def upload_document(user_id, appointment_id):
         document_gcs_uri = store_service.upload_file(
             doc_content, gcs_filename, content_type='application/pdf'
         )
-        print(f"[Upload Document] Uploaded to GCS: {document_gcs_uri}")
+        logger.info("Document uploaded to GCS: %s", document_gcs_uri)
 
         # Append to documentLinks array (supports multiple documents)
         existing_links = appointment_data.get('documentLinks', [])
@@ -154,7 +158,7 @@ def upload_document(user_id, appointment_id):
         }), 200
 
     except Exception as e:
-        print(f"[Upload Document] Error: {str(e)}")
+        logger.error("Upload document error: %s", str(e), exc_info=True)
         return jsonify({'error': str(e), 'status': 'failed'}), 500
 
 
@@ -175,7 +179,13 @@ def process_appointment(user_id, appointment_id):
         "documentGcsUri": "gs://..."      // optional
     }
     At least one of the above must be provided.
+
+    Additionally accepts:
+    {
+        "useBatchSTT": true  // optional — use V2 BatchRecognize instead of streaming chunked STT
+    }
     """
+    logger.info("Received process request for appointment %s", appointment_id)
     try:
         appointment_ref, appointment_data, error = get_appointment_or_404(user_id, appointment_id)
         if error:
@@ -186,6 +196,7 @@ def process_appointment(user_id, appointment_id):
         recording_gcs_uri = json_data.get('recordingGcsUri', '') or request.form.get('recordingGcsUri', '')
         notes_text = json_data.get('notes', '') or request.form.get('notes', '')
         document_gcs_uri = json_data.get('documentGcsUri', '') or request.form.get('documentGcsUri', '')
+        use_batch_stt = json_data.get('useBatchSTT', False)
 
         # Fall back to values already stored on the appointment
         if not recording_gcs_uri:
@@ -211,9 +222,11 @@ def process_appointment(user_id, appointment_id):
                 'status': 'failed'
             }), 400
 
-        print(f"[Process] Starting processing for appointment {appointment_id}")
-        print(f"[Process] Inputs - recording: {'yes' if recording_gcs_uri else 'no'}, "
-              f"notes: {'yes' if notes_text else 'no'}, documents: {len(document_gcs_uris)}")
+        logger.info("Starting processing for appointment %s", appointment_id)
+        logger.info("Inputs — recording: %s, notes: %s, documents: %d",
+                     'yes' if recording_gcs_uri else 'no',
+                     'yes' if notes_text else 'no',
+                     len(document_gcs_uris))
 
         # Store all references in Firebase
         update_fields = {
@@ -236,18 +249,28 @@ def process_appointment(user_id, appointment_id):
         # 1. Transcribe recording if provided
         if recording_gcs_uri:
             try:
-                print(f"[Process] Downloading recording from GCS...")
-                audio_content = store_service.download_file(recording_gcs_uri)
-                file_extension = recording_gcs_uri.split('.')[-1].lower() if '.' in recording_gcs_uri else 'webm'
-                print(f"[Process] Transcribing recording ({len(audio_content)} bytes, format: {file_extension})...")
+                if use_batch_stt:
+                    # Batch STT: process directly from GCS — no download, no chunking.
+                    # Unsupported formats (e.g. m4a) are auto-converted to FLAC via ffmpeg.
+                    logger.info("Using Batch STT for recording: %s", recording_gcs_uri)
+                    transcript = transcribe_recording_batch(
+                        recording_gcs_uri=recording_gcs_uri,
+                        stt_service=stt_service,
+                        storage_service=store_service,
+                    )
+                else:
+                    # Streaming: download, chunk with pydub/ffmpeg, stream to V1 STT
+                    logger.info("Using Streaming STT for recording...")
+                    logger.info("Downloading recording from GCS...")
+                    audio_content = store_service.download_file(recording_gcs_uri)
+                    file_extension = recording_gcs_uri.rsplit('.', 1)[-1].lower() if '.' in recording_gcs_uri else 'webm'
+                    logger.info("Transcribing recording (%d bytes, format: %s)...", len(audio_content), file_extension)
 
-                transcript = transcribe_full_recording(
-                    audio_content=audio_content,
-                    file_extension=file_extension,
-                    stt_service=stt_service,
-                    storage_service=store_service,
-                    appointment_id=appointment_id,
-                )
+                    transcript = transcribe_full_recording(
+                        audio_content=audio_content,
+                        file_extension=file_extension,
+                        stt_service=stt_service,
+                    )
 
                 if transcript:
                     text_parts.append(f"=== Audio Transcript ===\n{transcript}")
@@ -255,38 +278,38 @@ def process_appointment(user_id, appointment_id):
                         'rawTranscript': transcript,
                         'lastUpdated': datetime.utcnow().isoformat(),
                     })
-                    print(f"[Process] Transcription complete: {len(transcript)} characters")
+                    logger.info("Transcription complete: %d characters", len(transcript))
                 else:
-                    print(f"[Process] Warning: Transcription returned empty result")
+                    logger.warning("Transcription returned empty result")
             except Exception as e:
-                print(f"[Process] Error transcribing recording: {str(e)}")
+                logger.error("Error transcribing recording: %s", str(e), exc_info=True)
                 set_appointment_error(appointment_ref)
                 return jsonify({'error': f'Recording transcription failed: {str(e)}', 'status': 'failed'}), 500
 
         # 2. Add notes if provided
         if notes_text:
             text_parts.append(f"=== Patient Notes ===\n{notes_text}")
-            print(f"[Process] Notes included: {len(notes_text)} characters")
+            logger.info("Notes included: %d characters", len(notes_text))
 
         # 3. Extract text from PDF documents (supports multiple)
         for doc_idx, doc_uri in enumerate(document_gcs_uris):
             try:
-                print(f"[Process] Extracting text from document {doc_idx + 1}/{len(document_gcs_uris)}...")
+                logger.info("Extracting text from document %d/%d...", doc_idx + 1, len(document_gcs_uris))
                 pdf_text = extract_text_from_pdf_gcs(doc_uri, store_service)
                 if pdf_text:
                     label = f"=== Document Content ({doc_idx + 1}) ===" if len(document_gcs_uris) > 1 else "=== Document Content ==="
                     text_parts.append(f"{label}\n{pdf_text}")
-                    print(f"[Process] Document {doc_idx + 1} text extracted: {len(pdf_text)} characters")
+                    logger.info("Document %d text extracted: %d characters", doc_idx + 1, len(pdf_text))
                 else:
-                    print(f"[Process] Warning: Document {doc_idx + 1} text extraction returned empty result")
+                    logger.warning("Document %d text extraction returned empty result", doc_idx + 1)
             except Exception as e:
-                print(f"[Process] Error extracting text from document {doc_idx + 1}: {str(e)}")
+                logger.error("Error extracting text from document %d: %s", doc_idx + 1, str(e), exc_info=True)
                 set_appointment_error(appointment_ref)
                 return jsonify({'error': f'PDF text extraction failed for document {doc_idx + 1}: {str(e)}', 'status': 'failed'}), 500
 
         # Combine all text
         combined_text = "\n\n".join(text_parts)
-        print(f"[Process] Combined text length: {len(combined_text)} characters")
+        logger.info("Combined text length: %d characters", len(combined_text))
 
         if not combined_text.strip():
             set_appointment_error(appointment_ref)
@@ -294,11 +317,11 @@ def process_appointment(user_id, appointment_id):
 
         # Generate SOAP summary from combined text
         try:
-            print(f"[Process] Generating SOAP summary...")
+            logger.info("Generating SOAP summary...")
             soap_notes = generate_soap_from_text(combined_text, ai_service, schema_version=Constants.SUMMARY_SCHEMA_VERSION_1_3)
-            print(f"[Process] SOAP summary generated successfully")
+            logger.info("SOAP summary generated successfully")
         except Exception as e:
-            print(f"[Process] Error generating SOAP summary: {str(e)}")
+            logger.error("Error generating SOAP summary: %s", str(e), exc_info=True)
             set_appointment_error(appointment_ref)
             return jsonify({'error': f'SOAP processing failed: {str(e)}', 'status': 'failed'}), 500
 
@@ -311,7 +334,7 @@ def process_appointment(user_id, appointment_id):
 
         # Set title if not already set
         update_title_if_empty(appointment_ref, soap_notes)
-        print(f"[Process] Appointment {appointment_id} processed successfully")
+        logger.info("Appointment %s processed successfully", appointment_id)
 
         return jsonify({
             'message': 'Appointment processed successfully',
@@ -326,7 +349,7 @@ def process_appointment(user_id, appointment_id):
         }), 200
 
     except Exception as e:
-        print(f"[Process] Unexpected error: {str(e)}")
+        logger.error("Unexpected error processing appointment: %s", str(e), exc_info=True)
         try:
             set_appointment_error(appointment_ref)
         except Exception:

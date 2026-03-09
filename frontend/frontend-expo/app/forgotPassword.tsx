@@ -7,6 +7,9 @@ import {
   StyleSheet,
   ActivityIndicator,
   TextInput,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -46,80 +49,92 @@ export default function ForgotPasswordScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        {/* Logo and Header */}
-        <View style={styles.header}>
-          <Image
-            source={require('../assets/images/icon.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-          <Text style={styles.title}>Forget Password</Text>
-          <Text style={styles.subtitle}>
-            Don't worry it happens. Please enter the address{'\n'}associate with your account
-          </Text>
-        </View>
-
-        {/* Error Message */}
-        {error && (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{error}</Text>
+    <KeyboardAvoidingView
+      style={styles.keyboardAvoid}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.content}>
+          {/* Logo and Header */}
+          <View style={styles.header}>
+            <Image
+              source={require('../assets/images/icon.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+            <Text style={styles.title}>Forget Password</Text>
+            <Text style={styles.subtitle}>
+              Don't worry it happens. Please enter the address{'\n'}associate with your account
+            </Text>
           </View>
-        )}
 
-        {/* Success Message */}
-        {success && (
-          <View style={styles.successContainer}>
-            <Text style={styles.successText}>{success}</Text>
-          </View>
-        )}
-
-        {/* Email Input */}
-        <View style={styles.inputContainer}>
-          <Ionicons name="mail-outline" size={20} color="#6B7280" style={styles.inputIcon} />
-          <TextInput
-            style={styles.input}
-            placeholder="Email address"
-            placeholderTextColor="#9CA3AF"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            autoCorrect={false}
-            keyboardType="email-address"
-          />
-        </View>
-
-        {/* Send Reset Email Button */}
-        <TouchableOpacity
-          style={[styles.sendOTPButton, loading && styles.buttonDisabled]}
-          onPress={handleSendResetEmail}
-          disabled={loading}
-          activeOpacity={0.7}
-        >
-          {loading ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Text style={styles.sendOTPButtonText}>Send Reset Email</Text>
+          {/* Error Message */}
+          {error && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
           )}
-        </TouchableOpacity>
 
-        {/* Sign In Link */}
-        <View style={styles.signInContainer}>
-          <Text style={styles.signInText}>You remember you password? </Text>
-          <TouchableOpacity onPress={() => router.push('/login')} activeOpacity={0.7}>
-            <Text style={styles.signInLink}>Sign in</Text>
+          {/* Success Message */}
+          {success && (
+            <View style={styles.successContainer}>
+              <Text style={styles.successText}>{success}</Text>
+            </View>
+          )}
+
+          {/* Email Input */}
+          <View style={styles.inputContainer}>
+            <Ionicons name="mail-outline" size={20} color="#6B7280" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Email address"
+              placeholderTextColor="#9CA3AF"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="email-address"
+            />
+          </View>
+
+          {/* Send Reset Email Button */}
+          <TouchableOpacity
+            style={[styles.sendOTPButton, loading && styles.buttonDisabled]}
+            onPress={handleSendResetEmail}
+            disabled={loading}
+            activeOpacity={0.7}
+          >
+            {loading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.sendOTPButtonText}>Send Reset Email</Text>
+            )}
           </TouchableOpacity>
+
+          {/* Sign In Link */}
+          <View style={styles.signInContainer}>
+            <Text style={styles.signInText}>You remember you password? </Text>
+            <TouchableOpacity onPress={() => router.push('/login')} activeOpacity={0.7}>
+              <Text style={styles.signInLink}>Sign in</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
-    </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  keyboardAvoid: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,

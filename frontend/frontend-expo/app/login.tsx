@@ -7,6 +7,9 @@ import {
   StyleSheet,
   ActivityIndicator,
   TextInput,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
@@ -85,127 +88,136 @@ export default function LoginScreen() {
   const isAnyLoading = loading || emailLoading || guestLoading;
 
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        {/* Logo and Header */}
-        <View style={styles.header}>
-          <Image
-            source={require('../assets/images/icon.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-          <Text style={styles.title}>Welcome to Juno</Text>
-          <Text style={styles.subtitle}>
-            Sign in to get started or try it out as a guest
-          </Text>
-        </View>
-
-        {/* Error Message */}
-        {error && (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{error}</Text>
+    <KeyboardAvoidingView
+      style={styles.keyboardAvoid}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.content}>
+          {/* Logo and Header */}
+          <View style={styles.header}>
+            <Image
+              source={require('../assets/images/icon.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+            <Text style={styles.title}>Welcome to Juno</Text>
+            <Text style={styles.subtitle}>
+              Sign in to get started or try it out as a guest
+            </Text>
           </View>
-        )}
 
-        {/* Email Input */}
-        <View style={styles.inputContainer}>
-          <Ionicons name="mail-outline" size={20} color={Colors.mutedForeground} style={styles.inputIcon} />
-          <TextInput
-            style={styles.input}
-            placeholder="Email"
-            placeholderTextColor={Colors.gray[400]}
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            autoCorrect={false}
-            keyboardType="email-address"
-          />
-        </View>
-
-        {/* Password Input */}
-        <View style={styles.inputContainer}>
-          <Ionicons name="lock-closed-outline" size={20} color={Colors.mutedForeground} style={styles.inputIcon} />
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            placeholderTextColor={Colors.gray[400]}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-        </View>
-
-        {/* Forgot Password Link */}
-        <TouchableOpacity
-          style={styles.forgotPasswordContainer}
-          onPress={() => router.push('/forgotPassword')}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.forgotPasswordText}>Forget password?</Text>
-        </TouchableOpacity>
-
-        {/* Login Button */}
-        <TouchableOpacity
-          style={[styles.loginButton, isAnyLoading && styles.buttonDisabled]}
-          onPress={handleEmailLogin}
-          disabled={isAnyLoading}
-          activeOpacity={0.7}
-        >
-          {emailLoading ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Text style={styles.loginButtonText}>Login</Text>
+          {/* Error Message */}
+          {error && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
           )}
-        </TouchableOpacity>
 
-        {/* Register Link */}
-        <View style={styles.registerAccountContainer}>
-          <Text style={styles.registerAccountText}>Don't have an account? </Text>
-          <TouchableOpacity onPress={() => router.push('/register')} activeOpacity={0.7}>
-            <Text style={styles.registerAccountLink}>Sign up.</Text>
-          </TouchableOpacity>
-        </View>
+          {/* Email Input */}
+          <View style={styles.inputContainer}>
+            <Ionicons name="mail-outline" size={20} color={Colors.mutedForeground} style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              placeholderTextColor={Colors.gray[400]}
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="email-address"
+            />
+          </View>
 
-        {/* Divider */}
-        <View style={styles.divider}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>Or Continue with</Text>
-          <View style={styles.dividerLine} />
-        </View>
+          {/* Password Input */}
+          <View style={styles.inputContainer}>
+            <Ionicons name="lock-closed-outline" size={20} color={Colors.mutedForeground} style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Password"
+              placeholderTextColor={Colors.gray[400]}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          </View>
 
-        {/* Social Login Buttons */}
-        <View style={styles.socialButtonsContainer}>
+          {/* Forgot Password Link */}
           <TouchableOpacity
-            style={[styles.socialButton, (isAnyLoading || !isGoogleSignInReady) && styles.buttonDisabled]}
-            onPress={handleGmailLogin}
-            disabled={isAnyLoading || !isGoogleSignInReady}
+            style={styles.forgotPasswordContainer}
+            onPress={() => router.push('/forgotPassword')}
             activeOpacity={0.7}
           >
-            {loading ? (
-              <ActivityIndicator size="small" color={Colors.foreground} />
-            ) : (
-              <Ionicons name="logo-google" size={20} color="#DB4437" />
-            )}
-            <Text style={styles.socialButtonText}>Google</Text>
+            <Text style={styles.forgotPasswordText}>Forget password?</Text>
           </TouchableOpacity>
 
+          {/* Login Button */}
           <TouchableOpacity
-            style={[styles.socialButton, isAnyLoading && styles.buttonDisabled]}
-            onPress={handleGuestClick}
+            style={[styles.loginButton, isAnyLoading && styles.buttonDisabled]}
+            onPress={handleEmailLogin}
             disabled={isAnyLoading}
             activeOpacity={0.7}
           >
-            {guestLoading ? (
-              <ActivityIndicator size="small" color={Colors.foreground} />
+            {emailLoading ? (
+              <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <Ionicons name="person-outline" size={20} color={Colors.primary} />
+              <Text style={styles.loginButtonText}>Login</Text>
             )}
-            <Text style={styles.socialButtonText}>Try it as a guest</Text>
           </TouchableOpacity>
+
+          {/* Register Link */}
+          <View style={styles.registerAccountContainer}>
+            <Text style={styles.registerAccountText}>Don't have an account? </Text>
+            <TouchableOpacity onPress={() => router.push('/register')} activeOpacity={0.7}>
+              <Text style={styles.registerAccountLink}>Sign up.</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Divider */}
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>Or Continue with</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          {/* Social Login Buttons */}
+          <View style={styles.socialButtonsContainer}>
+            <TouchableOpacity
+              style={[styles.socialButton, (isAnyLoading || !isGoogleSignInReady) && styles.buttonDisabled]}
+              onPress={handleGmailLogin}
+              disabled={isAnyLoading || !isGoogleSignInReady}
+              activeOpacity={0.7}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color={Colors.foreground} />
+              ) : (
+                <Ionicons name="logo-google" size={20} color="#DB4437" />
+              )}
+              <Text style={styles.socialButtonText}>Google</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.socialButton, isAnyLoading && styles.buttonDisabled]}
+              onPress={handleGuestClick}
+              disabled={isAnyLoading}
+              activeOpacity={0.7}
+            >
+              {guestLoading ? (
+                <ActivityIndicator size="small" color={Colors.foreground} />
+              ) : (
+                <Ionicons name="person-outline" size={20} color={Colors.primary} />
+              )}
+              <Text style={styles.socialButtonText}>Try it as a guest</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
+      </ScrollView>
 
       <AlertModal
         visible={showGuestConsent}
@@ -216,14 +228,17 @@ export default function LoginScreen() {
         onConfirm={handleGuestConsentAgree}
         onCancel={handleGuestConsentCancel}
       />
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  keyboardAvoid: {
     flex: 1,
     backgroundColor: Colors.lightBackground,
+  },
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,

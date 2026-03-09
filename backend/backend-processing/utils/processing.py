@@ -15,27 +15,19 @@ def transcribe_full_recording(
     audio_content: bytes,
     file_extension: str,
     stt_service: SpeechToTextService,
-    storage_service: StorageService = None,
-    appointment_id: str = None,
 ) -> str:
     """
     Split a full recording into 30-second chunks, transcribe each chunk,
     and return the combined transcript.
 
-    Optionally uploads each chunk to GCS for backup if storage_service 
-    and appointment_id are provided.
-
     Args:
         audio_content: Raw audio file bytes
         file_extension: Audio format extension (e.g. 'webm', 'mp3', 'm4a')
         stt_service: Initialized SpeechToTextService instance
-        storage_service: (Optional) Initialized StorageService for chunk backup
-        appointment_id: (Optional) Appointment ID for organizing GCS paths
 
     Returns:
         Combined transcript string
     """
-    import uuid as uuid_lib
 
     # Load audio using pydub
     audio = AudioSegment.from_file(io.BytesIO(audio_content), format=file_extension)
@@ -59,12 +51,6 @@ def transcribe_full_recording(
         chunk.export(chunk_buffer, format='webm')
         chunk_content = chunk_buffer.getvalue()
 
-        # Optionally upload chunk to GCS for backup
-        if storage_service and appointment_id:
-            chunk_filename = f"chunks/{appointment_id}/chunk_{idx:04d}.webm"
-            gcs_uri = storage_service.upload_audio_file(chunk_content, chunk_filename, content_type='audio/webm')
-            print(f"[Transcribe] Chunk {idx + 1} uploaded to GCS: {gcs_uri}")
-
         # Transcribe using inline audio
         new_text = stt_service.transcribe_audio_chunk(chunk_content, use_gcs=False, gcs_uri=None)
         print(f"[Transcribe] Chunk {idx + 1} transcription completed")
@@ -75,6 +61,36 @@ def transcribe_full_recording(
     full_transcript = "\n".join(transcript_parts)
     print(f"[Transcribe] Full transcript length: {len(full_transcript)} characters")
     return full_transcript
+
+
+def transcribe_recording_batch(
+    recording_gcs_uri: str,
+    stt_service: SpeechToTextService,
+    storage_service: StorageService = None,
+) -> str:
+    """
+    Transcribe a full recording using V1 LongRunningRecognize.
+    The audio stays in GCS — no chunking needed.
+
+    If the audio format is not natively supported by Speech-to-Text (e.g. m4a),
+    it will be downloaded, converted to FLAC via ffmpeg, re-uploaded, and then
+    transcribed.  A ``storage_service`` must be provided for this conversion.
+
+    Args:
+        recording_gcs_uri: GCS URI of the full recording (e.g. gs://bucket/recordings/id/full.webm)
+        stt_service: Initialized SpeechToTextService instance
+        storage_service: Initialized StorageService instance (required for m4a/mp4 conversion)
+
+    Returns:
+        Combined transcript string
+    """
+    print(f"[Transcribe Batch] Starting batch transcription for: {recording_gcs_uri}")
+    transcript = stt_service.batch_transcribe(
+        recording_gcs_uri,
+        storage_service=storage_service,
+    )
+    print(f"[Transcribe Batch] Full transcript length: {len(transcript)} characters")
+    return transcript
 
 
 def generate_soap_from_text(text: str, ai_service: VertexAIService, schema_version: str = Constants.SUMMARY_SCHEMA_VERSION_1_3) -> dict:

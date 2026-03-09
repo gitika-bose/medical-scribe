@@ -8,10 +8,14 @@ Endpoints:
 - GET  /appointments/search     — Search appointments by processed summary
 """
 
+import logging
+
 from flask import Blueprint, request, jsonify
 from datetime import datetime
 from utils.auth import verify_firebase_token
 from routes.services import db, get_services
+
+logger = logging.getLogger(__name__)
 
 appointments_crud_bp = Blueprint('appointments_crud', __name__)
 
@@ -49,7 +53,7 @@ def create_appointment(user_id):
             'lastUpdated': datetime.utcnow().isoformat(),
         })
 
-        print(f"[Create Appointment] Created empty appointment {appointment_id} for user {user_id}")
+        logger.info("Created empty appointment %s for user %s", appointment_id, user_id)
 
         return jsonify({
             'message': 'Appointment created successfully',
@@ -58,7 +62,7 @@ def create_appointment(user_id):
         }), 201
 
     except Exception as e:
-        print(f"[Create Appointment] Error: {str(e)}")
+        logger.error("Create appointment error: %s", str(e), exc_info=True)
         return jsonify({'error': str(e), 'status': 'failed'}), 500
 
 
@@ -67,26 +71,57 @@ def create_appointment(user_id):
 def delete_appointment(user_id, appointment_id):
     """
     DELETE /appointments/{appointmentId}
-    Deletes all associated storage files (recordings + chunks) for the appointment.
+    Deletes all associated storage files (recordings, chunks, documents)
+    AND the Firebase/Firestore appointment document for the appointment.
     """
     try:
         _, storage_svc, _ = get_services()
 
         # Delete recordings folder
         recordings_deleted = storage_svc.delete_folder(f"recordings/{appointment_id}/")
-        print(f"[Delete Appointment] Deleted {recordings_deleted} files from recordings/{appointment_id}/")
+        logger.info("Deleted %d files from recordings/%s/", recordings_deleted, appointment_id)
 
         # Delete chunks folder
         chunks_deleted = storage_svc.delete_folder(f"chunks/{appointment_id}/")
-        print(f"[Delete Appointment] Deleted {chunks_deleted} files from chunks/{appointment_id}/")
+        logger.info("Deleted %d files from chunks/%s/", chunks_deleted, appointment_id)
+
+        # Delete documents folder
+        documents_deleted = storage_svc.delete_folder(f"documents/{appointment_id}/")
+        print(f"[Delete Appointment] Deleted {documents_deleted} files from documents/{appointment_id}/")
+
+        # Delete the Firestore appointment document
+        firestore_deleted = False
+        try:
+            appointment_ref = db.collection('users').document(user_id).collection('appointments').document(appointment_id)
+            appointment_ref.delete()
+            firestore_deleted = True
+            print(f"[Delete Appointment] Deleted Firestore document for appointment {appointment_id}")
+        except Exception as firestore_err:
+            print(f"[Delete Appointment] Warning: Failed to delete Firestore document: {str(firestore_err)}")
+
+        # Delete documents folder
+        documents_deleted = storage_svc.delete_folder(f"documents/{appointment_id}/")
+        print(f"[Delete Appointment] Deleted {documents_deleted} files from documents/{appointment_id}/")
+
+        # Delete the Firestore appointment document
+        firestore_deleted = False
+        try:
+            appointment_ref = db.collection('users').document(user_id).collection('appointments').document(appointment_id)
+            appointment_ref.delete()
+            firestore_deleted = True
+            print(f"[Delete Appointment] Deleted Firestore document for appointment {appointment_id}")
+        except Exception as firestore_err:
+            print(f"[Delete Appointment] Warning: Failed to delete Firestore document: {str(firestore_err)}")
 
         return jsonify({
-            'message': 'Storage files deleted successfully',
+            'message': 'All appointment data deleted successfully',
             'appointmentId': appointment_id,
             'filesDeleted': {
                 'recordings': recordings_deleted,
-                'chunks': chunks_deleted
-            }
+                'chunks': chunks_deleted,
+                'documents': documents_deleted
+            },
+            'firestoreDeleted': firestore_deleted
         }), 200
 
     except Exception as e:

@@ -7,6 +7,9 @@ import {
   StyleSheet,
   ActivityIndicator,
   TextInput,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -62,112 +65,124 @@ export default function RegisterScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        {/* Logo and Header */}
-        <View style={styles.header}>
-          <Image
-            source={require('../assets/images/icon.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-          <Text style={styles.title}>Sign Up</Text>
-          <Text style={styles.subtitle}>
-            Use proper information to continue
-          </Text>
-        </View>
-
-        {/* Error Message */}
-        {error && (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{error}</Text>
+    <KeyboardAvoidingView
+      style={styles.keyboardAvoid}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.content}>
+          {/* Logo and Header */}
+          <View style={styles.header}>
+            <Image
+              source={require('../assets/images/icon.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+            <Text style={styles.title}>Sign Up</Text>
+            <Text style={styles.subtitle}>
+              Use proper information to continue
+            </Text>
           </View>
-        )}
 
-        {/* Full Name Input */}
-        <View style={styles.inputContainer}>
-          <Ionicons name="person-outline" size={20} color="#6B7280" style={styles.inputIcon} />
-          <TextInput
-            style={styles.input}
-            placeholder="Full name"
-            placeholderTextColor="#9CA3AF"
-            value={fullName}
-            onChangeText={setFullName}
-            autoCapitalize="words"
-            autoCorrect={false}
-          />
-        </View>
-
-        {/* Email Input */}
-        <View style={styles.inputContainer}>
-          <Ionicons name="mail-outline" size={20} color="#6B7280" style={styles.inputIcon} />
-          <TextInput
-            style={styles.input}
-            placeholder="Email address"
-            placeholderTextColor="#9CA3AF"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            autoCorrect={false}
-            keyboardType="email-address"
-          />
-        </View>
-
-        {/* Password Input */}
-        <View style={styles.inputContainer}>
-          <Ionicons name="lock-closed-outline" size={20} color="#6B7280" style={styles.inputIcon} />
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            placeholderTextColor="#9CA3AF"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-        </View>
-
-        {/* Terms and Conditions */}
-        <View style={styles.termsContainer}>
-          <Text style={styles.termsText}>
-            By signing up, you are agree to our{' '}
-            <Text style={styles.termsLink}>Terms & Conditions</Text>
-            {' '}and{' '}
-            <Text style={styles.termsLink}>Privacy Policy</Text>
-          </Text>
-        </View>
-
-        {/* Create Account Button */}
-        <TouchableOpacity
-          style={[styles.createAccountButton, loading && styles.buttonDisabled]}
-          onPress={handleRegister}
-          disabled={loading}
-          activeOpacity={0.7}
-        >
-          {loading ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Text style={styles.createAccountButtonText}>Create Account</Text>
+          {/* Error Message */}
+          {error && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
           )}
-        </TouchableOpacity>
 
-        {/* Sign In Link */}
-        <View style={styles.signInContainer}>
-          <Text style={styles.signInText}>Already have an Account? </Text>
-          <TouchableOpacity onPress={() => router.push('/login')} activeOpacity={0.7}>
-            <Text style={styles.signInLink}>Sign in</Text>
+          {/* Full Name Input */}
+          <View style={styles.inputContainer}>
+            <Ionicons name="person-outline" size={20} color="#6B7280" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Full name"
+              placeholderTextColor="#9CA3AF"
+              value={fullName}
+              onChangeText={setFullName}
+              autoCapitalize="words"
+              autoCorrect={false}
+            />
+          </View>
+
+          {/* Email Input */}
+          <View style={styles.inputContainer}>
+            <Ionicons name="mail-outline" size={20} color="#6B7280" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Email address"
+              placeholderTextColor="#9CA3AF"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="email-address"
+            />
+          </View>
+
+          {/* Password Input */}
+          <View style={styles.inputContainer}>
+            <Ionicons name="lock-closed-outline" size={20} color="#6B7280" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Password"
+              placeholderTextColor="#9CA3AF"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          </View>
+
+          {/* Terms and Conditions */}
+          <View style={styles.termsContainer}>
+            <Text style={styles.termsText}>
+              By signing up, you are agree to our{' '}
+              <Text style={styles.termsLink}>Terms & Conditions</Text>
+              {' '}and{' '}
+              <Text style={styles.termsLink}>Privacy Policy</Text>
+            </Text>
+          </View>
+
+          {/* Create Account Button */}
+          <TouchableOpacity
+            style={[styles.createAccountButton, loading && styles.buttonDisabled]}
+            onPress={handleRegister}
+            disabled={loading}
+            activeOpacity={0.7}
+          >
+            {loading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.createAccountButtonText}>Create Account</Text>
+            )}
           </TouchableOpacity>
+
+          {/* Sign In Link */}
+          <View style={styles.signInContainer}>
+            <Text style={styles.signInText}>Already have an Account? </Text>
+            <TouchableOpacity onPress={() => router.push('/login')} activeOpacity={0.7}>
+              <Text style={styles.signInLink}>Sign in</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
-    </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  keyboardAvoid: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 24,

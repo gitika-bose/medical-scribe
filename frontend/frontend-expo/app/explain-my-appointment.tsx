@@ -55,8 +55,11 @@ export default function ExplainMyAppointmentScreen() {
   const handleSubmit = async () => {
     setIsLoading(true);
     setError(null);
+
     try {
       const { appointmentId } = await startAppointment();
+      // Use appointmentId as session ID so all calls are grouped in Cloud Trace / Logging
+      console.log(`[Session] Starting explain-appointment with session_id=${appointmentId}`);
       store.setLastCompletedAppointmentId(appointmentId);
 
       router.replace('/(tabs)/appointments' as any);
@@ -64,15 +67,15 @@ export default function ExplainMyAppointmentScreen() {
       (async () => {
         try {
           if (hasRecording) {
-            await uploadRecordingNew(appointmentId, recordingFile!);
+            await uploadRecordingNew(appointmentId, recordingFile!, appointmentId);
           }
           for (let i = 0; i < documentFiles.length; i++) {
-            await uploadDocument(appointmentId, documentFiles[i]);
+            await uploadDocument(appointmentId, documentFiles[i], appointmentId);
           }
           if (hasNotes) {
-            await uploadNotes(appointmentId, notesText.trim());
+            await uploadNotes(appointmentId, notesText.trim(), appointmentId);
           }
-          processAppointment(appointmentId).catch((err) => {
+          processAppointment(appointmentId, appointmentId).catch((err) => {
             console.error('Background processing error:', err);
           });
         } catch (err) {

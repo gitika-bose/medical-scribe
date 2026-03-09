@@ -8,6 +8,8 @@ import BetaPage from './BetaPage.tsx'
 import DementiaPage from './pages/DementiaPage.tsx'
 import AboutUsPage from './pages/AboutUsPage.tsx'
 import ContactPage from './pages/ContactPage.tsx'
+import PrivacyPage from './pages/PrivacyPage.tsx'
+import TermsPage from './pages/TermsPage.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -19,6 +21,8 @@ createRoot(document.getElementById('root')!).render(
         <Route path="/dementia" element={<DementiaPage />} />
         <Route path="/aboutus" element={<AboutUsPage />} />
         <Route path="/contact" element={<ContactPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,

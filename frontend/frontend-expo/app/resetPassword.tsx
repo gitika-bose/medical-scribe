@@ -7,6 +7,9 @@ import {
   StyleSheet,
   ActivityIndicator,
   TextInput,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -95,7 +98,7 @@ export default function ResetPasswordScreen() {
 
   if (verifying) {
     return (
-      <View style={styles.container}>
+      <View style={styles.centered}>
         <ActivityIndicator size="large" color={Colors.blue[700]} />
         <Text style={styles.verifyingText}>Verifying reset link...</Text>
       </View>
@@ -103,93 +106,112 @@ export default function ResetPasswordScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        {/* Logo and Header */}
-        <View style={styles.header}>
-          <Image
-            source={require('../assets/images/icon.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-          <Text style={styles.title}>Reset Password</Text>
-          <Text style={styles.subtitle}>
-            Enter your new password for{'\n'}{email}
-          </Text>
-        </View>
-
-        {/* Error Message */}
-        {error && (
-          <View style={styles.errorContainer}>
-            <Text style={styles.errorText}>{error}</Text>
+    <KeyboardAvoidingView
+      style={styles.keyboardAvoid}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.content}>
+          {/* Logo and Header */}
+          <View style={styles.header}>
+            <Image
+              source={require('../assets/images/icon.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+            <Text style={styles.title}>Reset Password</Text>
+            <Text style={styles.subtitle}>
+              Enter your new password for{'\n'}{email}
+            </Text>
           </View>
-        )}
 
-        {/* Success Message */}
-        {success && (
-          <View style={styles.successContainer}>
-            <Text style={styles.successText}>{success}</Text>
-          </View>
-        )}
-
-        {/* New Password Input */}
-        <View style={styles.inputContainer}>
-          <Ionicons name="lock-closed-outline" size={20} color="#6B7280" style={styles.inputIcon} />
-          <TextInput
-            style={styles.input}
-            placeholder="New password"
-            placeholderTextColor="#9CA3AF"
-            value={newPassword}
-            onChangeText={setNewPassword}
-            secureTextEntry
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-        </View>
-
-        {/* Confirm Password Input */}
-        <View style={styles.inputContainer}>
-          <Ionicons name="lock-closed-outline" size={20} color="#6B7280" style={styles.inputIcon} />
-          <TextInput
-            style={styles.input}
-            placeholder="Confirm new password"
-            placeholderTextColor="#9CA3AF"
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
-            secureTextEntry
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-        </View>
-
-        {/* Reset Password Button */}
-        <TouchableOpacity
-          style={[styles.resetButton, (loading || success) && styles.buttonDisabled]}
-          onPress={handleResetPassword}
-          disabled={loading || !!success}
-          activeOpacity={0.7}
-        >
-          {loading ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Text style={styles.resetButtonText}>Reset Password</Text>
+          {/* Error Message */}
+          {error && (
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+            </View>
           )}
-        </TouchableOpacity>
 
-        {/* Sign In Link */}
-        <View style={styles.signInContainer}>
-          <Text style={styles.signInText}>Remember your password? </Text>
-          <TouchableOpacity onPress={() => router.push('/login')} activeOpacity={0.7}>
-            <Text style={styles.signInLink}>Sign in</Text>
+          {/* Success Message */}
+          {success && (
+            <View style={styles.successContainer}>
+              <Text style={styles.successText}>{success}</Text>
+            </View>
+          )}
+
+          {/* New Password Input */}
+          <View style={styles.inputContainer}>
+            <Ionicons name="lock-closed-outline" size={20} color="#6B7280" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="New password"
+              placeholderTextColor="#9CA3AF"
+              value={newPassword}
+              onChangeText={setNewPassword}
+              secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          </View>
+
+          {/* Confirm Password Input */}
+          <View style={styles.inputContainer}>
+            <Ionicons name="lock-closed-outline" size={20} color="#6B7280" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Confirm new password"
+              placeholderTextColor="#9CA3AF"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          </View>
+
+          {/* Reset Password Button */}
+          <TouchableOpacity
+            style={[styles.resetButton, (loading || success) && styles.buttonDisabled]}
+            onPress={handleResetPassword}
+            disabled={loading || !!success}
+            activeOpacity={0.7}
+          >
+            {loading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Text style={styles.resetButtonText}>Reset Password</Text>
+            )}
           </TouchableOpacity>
+
+          {/* Sign In Link */}
+          <View style={styles.signInContainer}>
+            <Text style={styles.signInText}>Remember your password? </Text>
+            <TouchableOpacity onPress={() => router.push('/login')} activeOpacity={0.7}>
+              <Text style={styles.signInLink}>Sign in</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
-    </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  keyboardAvoid: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  centered: {
     flex: 1,
     backgroundColor: '#fff',
     justifyContent: 'center',

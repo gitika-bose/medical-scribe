@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
-import './CopyOfNewLandingPage.css'
+import './LandingPageOld3.css'
 import Header from '../components/shared/Header'
 import Footer from '../components/shared/Footer'
 import {

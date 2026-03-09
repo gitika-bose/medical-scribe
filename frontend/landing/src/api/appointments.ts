@@ -345,6 +345,35 @@ export async function tryProcessAppointment(
 }
 
 /**
+ * Step 7: Delete appointment — removes all uploaded files + Firebase entries.
+ * Calls DELETE /appointments/{id} (authenticated).
+ */
+export async function tryDeleteAppointment(
+  appointmentId: string,
+): Promise<void> {
+  const headers = await authHeaders();
+
+  const response = await fetch(
+    `${API_URL_PROCESSING}/appointments/${appointmentId}`,
+    {
+      method: 'DELETE',
+      headers,
+    },
+  );
+
+  if (!response.ok) {
+    let errorMessage = 'Failed to delete appointment data';
+    try {
+      const errorBody = await response.json();
+      if (errorBody?.error) errorMessage = errorBody.error;
+    } catch {
+      // fall back to default message
+    }
+    throw new Error(errorMessage);
+  }
+}
+
+/**
  * Step 6: Generate questions based on the appointment transcript/notes.
  * Calls POST /appointments/{id}/generate-questions (authenticated).
  */

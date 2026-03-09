@@ -1,0 +1,201 @@
+<svg width="460" height="440" viewBox="0 0 460 440" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Darker, richer connector lines -->
+    <linearGradient id="lineGradient" x1="70" y1="60" x2="390" y2="360" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#6E7E60" stop-opacity="0.52"/>
+      <stop offset="45%" stop-color="#9B8158" stop-opacity="0.62"/>
+      <stop offset="100%" stop-color="#8A6F4D" stop-opacity="0.72"/>
+    </linearGradient>
+
+    <!-- Center -->
+    <linearGradient id="centerGradient" x1="195" y1="176" x2="255" y2="236" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#7F936A"/>
+      <stop offset="100%" stop-color="#A9B994"/>
+    </linearGradient>
+
+    <!-- Shadows -->
+    <filter id="shadow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#2D2D2D" flood-opacity="0.10"/>
+    </filter>
+
+    <filter id="softShadow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="5" stdDeviation="8" flood-color="#2D2D2D" flood-opacity="0.08"/>
+    </filter>
+
+    <filter id="pillShadow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#2D2D2D" flood-opacity="0.06"/>
+    </filter>
+
+    <style>
+      .line { fill: none; stroke: url(#lineGradient); stroke-width: 2.4; stroke-linecap: round; }
+      .labelText {
+        fill: white;
+        font-size: 9px;
+        font-family: 'Nunito Sans', Arial, sans-serif;
+        font-weight: 700;
+        text-anchor: middle;
+        dominant-baseline: middle;
+      }
+      .pillText {
+        font-size: 9px;
+        font-family: 'Nunito Sans', Arial, sans-serif;
+        font-weight: 700;
+        text-anchor: middle;
+        dominant-baseline: middle;
+      }
+      .miniText {
+        font-size: 8px;
+        font-family: 'Nunito Sans', Arial, sans-serif;
+        font-weight: 700;
+        text-anchor: middle;
+        dominant-baseline: middle;
+      }
+    </style>
+  </defs>
+
+  <!-- Connector lines -->
+  <path d="M230 86 Q230 222 230 150" class="line">
+    <animate attributeName="opacity" values="0.35;0.95;0.35" dur="2.6s" repeatCount="indefinite"/>
+  </path>
+  <path d="M112 132 Q170 172 206 194" class="line">
+    <animate attributeName="opacity" values="0.35;0.95;0.35" dur="2.1s" repeatCount="indefinite"/>
+  </path>
+  <path d="M84 288 Q160 248 206 222" class="line">
+    <animate attributeName="opacity" values="0.35;0.95;0.35" dur="2.8s" repeatCount="indefinite"/>
+  </path>
+  <path d="M348 132 Q290 172 254 194" class="line">
+    <animate attributeName="opacity" values="0.35;0.95;0.35" dur="2.25s" repeatCount="indefinite"/>
+  </path>
+  <path d="M376 288 Q300 248 254 222" class="line">
+    <animate attributeName="opacity" values="0.35;0.95;0.35" dur="2.7s" repeatCount="indefinite"/>
+  </path>
+
+  <!-- Top: Recordings -->
+  <g transform="translate(173 28)" filter="url(#softShadow)">
+    <rect x="0" y="0" width="114" height="58" rx="18" fill="#F7F2EA" stroke="#E8E4DE"/>
+    <rect x="12" y="12" width="70" height="9" rx="4.5" fill="#E3EBDD"/>
+    <rect x="12" y="27" width="46" height="4" rx="2" fill="#CFC8BE"/>
+    <rect x="12" y="35" width="60" height="4" rx="2" fill="#CFC8BE"/>
+    <circle cx="93" cy="29" r="12" fill="#F6E7E1"/>
+    <circle cx="93" cy="29" r="4.8" fill="#C76666"/>
+  </g>
+  <g transform="translate(246 19)">
+    <rect x="0" y="0" width="78" height="18" rx="9" fill="#697859"/>
+    <text x="39" y="10" class="labelText">Recordings</text>
+  </g>
+
+  <!-- Left top: Records -->
+  <g transform="translate(52 104) rotate(-5 40 50)" filter="url(#softShadow)">
+    <rect x="0" y="0" width="80" height="102" rx="14" fill="#FBF8F2" stroke="#E8E4DE"/>
+    <rect x="10" y="10" width="60" height="10" rx="5" fill="#EFE1CF"/>
+    <rect x="10" y="28" width="60" height="4" rx="2" fill="#D1CAC0"/>
+    <rect x="10" y="36" width="44" height="4" rx="2" fill="#D1CAC0"/>
+    <rect x="10" y="44" width="60" height="4" rx="2" fill="#D1CAC0"/>
+    <rect x="10" y="52" width="48" height="4" rx="2" fill="#D1CAC0"/>
+    <circle cx="59" cy="78" r="10.5" fill="#F4E9DB"/>
+    <rect x="55.3" y="73.2" width="7.4" height="9.4" rx="1.2" fill="#A8845A"/>
+    <line x1="56.7" y1="76.0" x2="61.2" y2="76.0" stroke="white" stroke-width="0.9" stroke-linecap="round"/>
+    <line x1="56.7" y1="78.6" x2="61.2" y2="78.6" stroke="white" stroke-width="0.9" stroke-linecap="round"/>
+  </g>
+  <g transform="translate(99 95)">
+    <rect x="0" y="0" width="50" height="18" rx="9" fill="#A8845A"/>
+    <text x="25" y="10" class="labelText">Records</text>
+  </g>
+
+  <!-- Left bottom: Lab moved further left -->
+  <g transform="translate(24 246) rotate(4 40 50)" filter="url(#softShadow)">
+    <rect x="0" y="0" width="80" height="102" rx="14" fill="#F8FBF5" stroke="#E8E4DE"/>
+    <rect x="10" y="10" width="60" height="10" rx="5" fill="#D8E5CC"/>
+    <rect x="10" y="28" width="60" height="4" rx="2" fill="#D4D2CE"/>
+    <rect x="10" y="36" width="60" height="4" rx="2" fill="#D4D2CE"/>
+    <rect x="10" y="44" width="46" height="4" rx="2" fill="#D4D2CE"/>
+    <circle cx="59" cy="78" r="10.5" fill="#EAF2E2"/>
+    <path d="M59 72V79" stroke="#6E8B63" stroke-width="1.6" stroke-linecap="round"/>
+    <circle cx="59" cy="82" r="3.4" fill="#9EB48D"/>
+  </g>
+  <g transform="translate(72 237)">
+    <rect x="0" y="0" width="34" height="18" rx="9" fill="#8EA77C"/>
+    <text x="17" y="10" class="labelText">Lab</text>
+  </g>
+
+  <!-- Right top: Appointment -->
+  <g transform="translate(328 104) rotate(5 40 50)" filter="url(#softShadow)">
+    <rect x="0" y="0" width="80" height="102" rx="14" fill="#F7F8F3" stroke="#E8E4DE"/>
+    <rect x="10" y="10" width="60" height="10" rx="5" fill="#E1EAD9"/>
+    <rect x="10" y="28" width="60" height="4" rx="2" fill="#D4D2CE"/>
+    <rect x="10" y="36" width="44" height="4" rx="2" fill="#D4D2CE"/>
+    <rect x="10" y="44" width="60" height="4" rx="2" fill="#D4D2CE"/>
+    <circle cx="59" cy="78" r="10.5" fill="#EDF1E8"/>
+    <circle cx="59" cy="75" r="2.9" fill="#5D7350"/>
+    <path d="M53 83c0-3.3 12-3.3 12 0" stroke="#5D7350" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+  </g>
+  <g transform="translate(374 95)">
+    <rect x="0" y="0" width="70" height="18" rx="9" fill="#7A9067"/>
+    <text x="35" y="10" class="labelText">Appointment</text>
+  </g>
+
+  <!-- Right bottom: Rx moved further right -->
+  <g transform="translate(352 246) rotate(-4 40 50)" filter="url(#softShadow)">
+    <rect x="0" y="0" width="80" height="102" rx="14" fill="#FCF8F2" stroke="#E8E4DE"/>
+    <rect x="10" y="10" width="60" height="10" rx="5" fill="#F0DFC0"/>
+    <rect x="10" y="28" width="60" height="4" rx="2" fill="#D4D2CE"/>
+    <rect x="10" y="36" width="60" height="4" rx="2" fill="#D4D2CE"/>
+    <rect x="10" y="44" width="44" height="4" rx="2" fill="#D4D2CE"/>
+    <circle cx="59" cy="78" r="10.5" fill="#F7ECDD"/>
+    <path d="M55 78H63M59 74V82" stroke="#C69A5A" stroke-width="1.8" stroke-linecap="round"/>
+  </g>
+  <g transform="translate(400 237)">
+    <rect x="0" y="0" width="30" height="18" rx="9" fill="#C69A5A"/>
+    <text x="15" y="10" class="labelText">Rx</text>
+  </g>
+
+  <!-- Center person made smaller -->
+  <g transform="translate(230 206)" filter="url(#shadow)">
+    <circle cx="0" cy="0" r="34" fill="url(#centerGradient)"/>
+    <circle cx="0" cy="-8.5" r="8.5" fill="#FAFAF7"/>
+    <path d="M-16 15c0-8.5 32-8.5 32 0v5h-32z" fill="#FAFAF7"/>
+
+    <g transform="translate(23 23)">
+      <circle cx="0" cy="0" r="10" fill="#C7A26A"/>
+      <path d="M-3.8 0l2.5 2.5 5.1-6" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+    </g>
+  </g>
+
+  <!-- Output pills row 1 -->
+  <g transform="translate(146 298)" filter="url(#pillShadow)">
+    <g>
+      <rect x="0" y="0" width="74" height="24" rx="12" fill="#FAFAF7" stroke="#7A9067" stroke-width="1.4"/>
+      <circle cx="14" cy="12" r="7" fill="#7A9067"/>
+      <rect x="11" y="8.5" width="6" height="7" rx="1" fill="white"/>
+      <line x1="12.2" y1="10.7" x2="15.8" y2="10.7" stroke="#7A9067" stroke-width="0.9" stroke-linecap="round"/>
+      <line x1="12.2" y1="13.1" x2="15.8" y2="13.1" stroke="#7A9067" stroke-width="0.9" stroke-linecap="round"/>
+      <text x="46" y="12.5" class="pillText" fill="#627554">Summary</text>
+    </g>
+
+    <g transform="translate(86 0)">
+      <rect x="0" y="0" width="82" height="24" rx="12" fill="#FCF7F0" stroke="#A8845A" stroke-width="1.4"/>
+      <circle cx="14" cy="12" r="7" fill="#A8845A"/>
+      <text x="14" y="12.5" class="miniText" fill="white">?</text>
+      <text x="49" y="12.5" class="pillText" fill="#8F704A">Questions</text>
+    </g>
+  </g>
+
+  <!-- Output pills row 2 -->
+  <g transform="translate(159 332)" filter="url(#pillShadow)">
+    <g>
+      <rect x="0" y="0" width="64" height="24" rx="12" fill="#F7FBF3" stroke="#8EA77C" stroke-width="1.4"/>
+      <circle cx="14" cy="12" r="7" fill="#8EA77C"/>
+      <rect x="11" y="8.5" width="6" height="7" rx="1" fill="white"/>
+      <line x1="12.2" y1="10.7" x2="15.8" y2="10.7" stroke="#8EA77C" stroke-width="0.9" stroke-linecap="round"/>
+      <line x1="12.2" y1="13.1" x2="15.8" y2="13.1" stroke="#8EA77C" stroke-width="0.9" stroke-linecap="round"/>
+      <text x="41" y="12.5" class="pillText" fill="#627554">Prep</text>
+    </g>
+
+    <g transform="translate(76 0)">
+      <rect x="0" y="0" width="76" height="24" rx="12" fill="#FDF8EF" stroke="#C69A5A" stroke-width="1.4"/>
+      <circle cx="14" cy="12" r="7" fill="#C69A5A"/>
+      <path d="M12 15l4-5h-3l1.6-4-4 5h3z" fill="white"/>
+      <text x="47" y="12.5" class="pillText" fill="#9E7741">Timeline</text>
+    </g>
+  </g>
+</svg>

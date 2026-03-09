@@ -60,6 +60,94 @@
   margin-bottom: 2rem;
 }
 
+/* ===== TRUST CARDS ===== */
+.v2-trust-cards {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.v2-trust-card {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: #fff;
+  border: 1px solid var(--light-border-color);
+  border-radius: 2rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.v2-trust-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  color: #22C55E;
+}
+
+.v2-trust-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.v2-trust-text {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--dark-text-color);
+  white-space: nowrap;
+}
+
+/* ===== DELETE SUCCESS BANNER ===== */
+.v2-delete-success-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  background-color: #F0FDF4;
+  border: 1px solid #BBF7D0;
+  border-radius: 1rem;
+  margin-bottom: 1rem;
+}
+
+.v2-delete-success-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  color: #16A34A;
+  margin-top: 1px;
+}
+
+.v2-delete-success-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.v2-delete-success-content {
+  flex: 1;
+}
+
+.v2-delete-success-title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: #15803D;
+  margin: 0 0 0.25rem;
+}
+
+.v2-delete-success-text {
+  font-size: 0.8125rem;
+  color: #166534;
+  line-height: 1.5;
+  margin: 0;
+}
+
 /* Input groups */
 .v2-input-group { margin-bottom: 1.5rem; }
 
@@ -147,12 +235,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.5rem;
   padding: 0.5rem 0.75rem;
   background-color: var(--primary-color-muted);
   border: 1px solid var(--primary-color-light);
   border-radius: 0.625rem;
   font-size: 0.875rem;
   margin-top: 0.5rem;
+  min-width: 0;
 }
 
 .v2-file-chip-name {
@@ -161,6 +251,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  min-width: 0;
+  flex: 1;
 }
 
 .v2-file-remove {
@@ -555,6 +647,21 @@
 .v2-placeholder-icon { font-size: 2.5rem; margin-bottom: 0.75rem; opacity: 0.4; }
 .v2-placeholder-text { color: var(--muted-text-color); }
 
+/* Diagnosis collapse */
+.v2-diagnosis-collapse-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.v2-diagnosis-collapsed {
+  max-height: 280px;
+  overflow: hidden;
+  position: relative;
+  -webkit-mask-image: linear-gradient(to bottom, black 65%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 65%, transparent 100%);
+}
+
 /* ReadMore */
 .v2-read-more-list { display: flex; flex-direction: column; gap: 0.625rem; }
 .v2-read-more-row { display: flex; justify-content: center; margin-top: 0.75rem; }
@@ -642,8 +749,16 @@
 }
 .v2-feedback-textarea::placeholder { color: var(--muted-text-color); }
 .v2-feedback-textarea:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(124,139,107,0.12); }
+.v2-feedback-email {
+  width: 100%; padding: 0.75rem 1rem;
+  border: 1px solid var(--dark-border-color); border-radius: 0.75rem;
+  font-size: 0.9375rem; font-family: inherit; background: #fff;
+  color: var(--dark-text-color); transition: border-color 0.2s, box-shadow 0.2s;
+}
+.v2-feedback-email::placeholder { color: var(--muted-text-color); }
+.v2-feedback-email:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(124,139,107,0.12); }
 .v2-feedback-submit {
-  display: block; width: 100%; padding: 0.875rem; margin-top: 1rem;
+  display: block; width: 40%; padding: 0.875rem; margin-top: 1rem; justify-self: center;
   background-color: var(--primary-color-muted); color: var(--dark-text-color);
   border: none; border-radius: 0.75rem; font-size: 1rem; font-weight: 600;
   cursor: pointer; font-family: inherit; transition: all 0.2s;
@@ -689,7 +804,7 @@
 .v2-waitlist-input::placeholder { color: var(--muted-text-color); }
 .v2-waitlist-input:focus { outline: none; border-color: var(--primary-color); }
 .v2-waitlist-btn {
-  width: 100%; padding: 0.875rem; background-color: var(--primary-color);
+  width: 40%; padding: 0.875rem; background-color: var(--primary-color);
   color: #fff; border: none; border-radius: 2rem; font-size: 1rem;
   font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.2s;
 }

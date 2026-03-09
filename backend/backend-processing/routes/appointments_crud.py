@@ -71,7 +71,8 @@ def create_appointment(user_id):
 def delete_appointment(user_id, appointment_id):
     """
     DELETE /appointments/{appointmentId}
-    Deletes all associated storage files (recordings + chunks) for the appointment.
+    Deletes all associated storage files (recordings, chunks, documents)
+    AND the Firebase/Firestore appointment document for the appointment.
     """
     try:
         _, storage_svc, _ = get_services()
@@ -84,13 +85,29 @@ def delete_appointment(user_id, appointment_id):
         chunks_deleted = storage_svc.delete_folder(f"chunks/{appointment_id}/")
         logger.info("Deleted %d files from chunks/%s/", chunks_deleted, appointment_id)
 
+        # Delete documents folder
+        documents_deleted = storage_svc.delete_folder(f"documents/{appointment_id}/")
+        print(f"[Delete Appointment] Deleted {documents_deleted} files from documents/{appointment_id}/")
+
+        # Delete the Firestore appointment document
+        firestore_deleted = False
+        try:
+            appointment_ref = db.collection('users').document(user_id).collection('appointments').document(appointment_id)
+            appointment_ref.delete()
+            firestore_deleted = True
+            print(f"[Delete Appointment] Deleted Firestore document for appointment {appointment_id}")
+        except Exception as firestore_err:
+            print(f"[Delete Appointment] Warning: Failed to delete Firestore document: {str(firestore_err)}")
+
         return jsonify({
-            'message': 'Storage files deleted successfully',
+            'message': 'All appointment data deleted successfully',
             'appointmentId': appointment_id,
             'filesDeleted': {
                 'recordings': recordings_deleted,
-                'chunks': chunks_deleted
-            }
+                'chunks': chunks_deleted,
+                'documents': documents_deleted
+            },
+            'firestoreDeleted': firestore_deleted
         }), 200
 
     except Exception as e:

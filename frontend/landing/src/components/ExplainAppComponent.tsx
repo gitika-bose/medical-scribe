@@ -6,7 +6,6 @@ import {
   tryUploadDocument,
   tryUploadNotes,
   tryProcessAppointment,
-  tryGenerateQuestions,
 } from '../api/appointments'
 import type { SoapNotesV13 } from '../api/appointments'
 import { analyticsEvents } from '../api/analytics'
@@ -204,20 +203,16 @@ const ExplainAppComponent = forwardRef<HTMLDivElement>((_props, ref) => {
       const processedSoapNotes = processResult.soapNotes;
       const processedTitle = processResult.title ?? processResult.soapNotes?.title ?? null;
 
-      // Set summary results immediately so they display even if questions fail
+      // Set summary results immediately
       setSoapNotes(processedSoapNotes);
       setTitle(processedTitle);
 
-      // Generate questions separately — non-fatal
-      setLoadingStep('Generating questions…');
-      try {
-        const questionsResult = await tryGenerateQuestions(appointmentId);
-        const generatedQuestions = questionsResult?.questions;
-        if (Array.isArray(generatedQuestions) && generatedQuestions.length > 0) {
-          setQuestions(generatedQuestions);
-        }
-      } catch (questionsErr) {
-        console.warn('Question generation failed (non-fatal):', questionsErr);
+      // Extract questions from schema 1.4 response (inline in processedSoapNotes)
+      const schemaQuestions = processedSoapNotes?.questions;
+      if (Array.isArray(schemaQuestions) && schemaQuestions.length > 0) {
+        const questionObj = schemaQuestions[0];
+        const extracted = [questionObj.question1, questionObj.question2, questionObj.question3].filter(Boolean) as string[];
+        if (extracted.length > 0) setQuestions(extracted);
       }
 
       analyticsEvents.trySubmitSuccess(hasRecording, hasNotes);

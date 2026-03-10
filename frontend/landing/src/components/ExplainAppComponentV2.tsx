@@ -6,7 +6,6 @@ import {
   tryUploadDocument,
   tryUploadNotes,
   tryProcessAppointment,
-  tryGenerateQuestions,
   tryDeleteAppointment,
 } from '../api/appointments'
 import type { SoapNotesV13 } from '../api/appointments'
@@ -202,20 +201,16 @@ const ExplainAppComponentV2 = forwardRef<HTMLDivElement>((_props, ref) => {
       const processedSoapNotes = processResult.soapNotes;
       const processedTitle = processResult.title ?? processResult.soapNotes?.title ?? null;
 
-      // Set summary results immediately so they display even if questions fail
+      // Set summary results immediately
       setSoapNotes(processedSoapNotes);
       setTitle(processedTitle);
 
-      // Generate questions separately — non-fatal
-      setLoadingStep('Generating questions…');
-      try {
-        const questionsResult = await tryGenerateQuestions(appointmentId, appointmentId);
-        const generatedQuestions = questionsResult?.questions;
-        if (Array.isArray(generatedQuestions) && generatedQuestions.length > 0) {
-          setQuestions(generatedQuestions);
-        }
-      } catch (questionsErr) {
-        console.warn('Question generation failed (non-fatal):', questionsErr);
+      // Extract questions from schema 1.4 response (inline in processedSoapNotes)
+      const schemaQuestions = processedSoapNotes?.questions;
+      if (Array.isArray(schemaQuestions) && schemaQuestions.length > 0) {
+        const questionObj = schemaQuestions[0];
+        const extracted = [questionObj.question1, questionObj.question2, questionObj.question3].filter(Boolean) as string[];
+        if (extracted.length > 0) setQuestions(extracted);
       }
 
       // Delete all uploaded data from server (non-fatal — results are already saved locally)
@@ -562,14 +557,14 @@ const ExplainAppComponentV2 = forwardRef<HTMLDivElement>((_props, ref) => {
       </section>
 
       {/* Coming Soon */}
-      <section className="v2-coming-soon">
+      <section id="coming-soon" className="v2-coming-soon">
         <h2 className="v2-coming-soon-title">Coming Soon</h2>
         <p className="v2-coming-soon-subtitle">We're building more features to make healthcare easier to understand and manage</p>
         <div className="v2-features-grid">
           <div className="v2-feature-card">
             <div className="v2-feature-icon-circle"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg></div>
-            <h3>Live Recording</h3>
-            <p>Capture key points during your visit with live transcription and automatic summaries.</p>
+            <h3>Live Note-taking</h3>
+            <p>Capture key points during your visit with live note-taking and detailed summaries.</p>
           </div>
           <div className="v2-feature-card">
             <div className="v2-feature-icon-circle"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg></div>

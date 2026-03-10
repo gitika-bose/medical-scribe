@@ -111,6 +111,11 @@ export interface SoapNotesV13 {
     importance: 'high' | 'low';
     source?: string;
   }>;
+  questions?: Array<{
+    question1?: string;
+    question2?: string;
+    question3?: string;
+  }>;
 }
 
 // =============================================================================

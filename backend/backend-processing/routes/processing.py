@@ -318,7 +318,7 @@ def process_appointment(user_id, appointment_id):
         # Generate SOAP summary from combined text
         try:
             logger.info("Generating SOAP summary...")
-            soap_notes = generate_soap_from_text(combined_text, ai_service, schema_version=Constants.SUMMARY_SCHEMA_VERSION_1_3)
+            soap_notes = generate_soap_from_text(combined_text, ai_service, schema_version=Constants.SUMMARY_SCHEMA_VERSION_1_4)
             logger.info("SOAP summary generated successfully")
         except Exception as e:
             logger.error("Error generating SOAP summary: %s", str(e), exc_info=True)

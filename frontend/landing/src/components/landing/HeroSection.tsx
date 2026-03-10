@@ -40,7 +40,7 @@ function HeroSection() {
                 </svg>
               </a>
               <a
-                href="#waitlist"
+                href="#coming-soon"
                 className="inline-flex items-center justify-center px-8 py-4 font-semibold text-lg transition-all transform hover:scale-105 shadow-md hover:shadow-lg"
                 style={{
                   backgroundColor: 'var(--secondary-button-bg-color)',

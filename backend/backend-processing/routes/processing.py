@@ -13,7 +13,7 @@ import logging
 from flask import Blueprint, request, jsonify
 from datetime import datetime
 from utils.auth import verify_firebase_token
-from utils.processing import transcribe_full_recording, transcribe_recording_batch, generate_soap_from_text, extract_text_from_pdf_gcs
+from utils.processing import transcribe_full_recording, transcribe_recording_batch, generate_soap_from_text, extract_text_from_document_gcs
 from utils.constants import Constants
 from routes.services import (
     get_services,
@@ -105,12 +105,22 @@ def upload_notes(user_id, appointment_id):
         return jsonify({'error': str(e), 'status': 'failed'}), 500
 
 
+# Mapping of file extensions to MIME content types for document uploads
+_DOC_CONTENT_TYPES: dict[str, str] = {
+    '.pdf': 'application/pdf',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+}
+
+
 @processing_bp.route('/appointments/<appointment_id>/upload-document', methods=['POST'])
 @verify_firebase_token
 def upload_document(user_id, appointment_id):
     """
     POST /appointments/{appointmentId}/upload-document
-    Uploads a PDF document to Google Cloud Storage and returns the GCS URI.
+    Uploads a PDF or image document to Google Cloud Storage and returns the GCS URI.
+    Accepts PDF, PNG, JPG, and JPEG files.
     Does NOT extract text — that is handled by the /process endpoint.
     """
     try:
@@ -128,11 +138,18 @@ def upload_document(user_id, appointment_id):
         doc_size_mb = len(doc_content) / (1024 * 1024)
         logger.info("Received document %s: %.2f MB", original_filename, doc_size_mb)
 
+        # Detect content type from file extension
+        ext = ''
+        if '.' in original_filename:
+            ext = '.' + original_filename.rsplit('.', 1)[-1].lower()
+        content_type = _DOC_CONTENT_TYPES.get(ext, 'application/pdf')
+        logger.info("Detected content type: %s (ext=%s)", content_type, ext)
+
         _, store_service, _ = get_services()
         timestamp = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
         gcs_filename = f"documents/{appointment_id}/{timestamp}_{original_filename}"
         document_gcs_uri = store_service.upload_file(
-            doc_content, gcs_filename, content_type='application/pdf'
+            doc_content, gcs_filename, content_type=content_type
         )
         logger.info("Document uploaded to GCS: %s", document_gcs_uri)
 
@@ -291,21 +308,21 @@ def process_appointment(user_id, appointment_id):
             text_parts.append(f"=== Patient Notes ===\n{notes_text}")
             logger.info("Notes included: %d characters", len(notes_text))
 
-        # 3. Extract text from PDF documents (supports multiple)
+        # 3. Extract text from documents — PDFs (with OCR fallback) and images (supports multiple)
         for doc_idx, doc_uri in enumerate(document_gcs_uris):
             try:
                 logger.info("Extracting text from document %d/%d...", doc_idx + 1, len(document_gcs_uris))
-                pdf_text = extract_text_from_pdf_gcs(doc_uri, store_service)
-                if pdf_text:
+                doc_text = extract_text_from_document_gcs(doc_uri, store_service)
+                if doc_text:
                     label = f"=== Document Content ({doc_idx + 1}) ===" if len(document_gcs_uris) > 1 else "=== Document Content ==="
-                    text_parts.append(f"{label}\n{pdf_text}")
-                    logger.info("Document %d text extracted: %d characters", doc_idx + 1, len(pdf_text))
+                    text_parts.append(f"{label}\n{doc_text}")
+                    logger.info("Document %d text extracted: %d characters", doc_idx + 1, len(doc_text))
                 else:
                     logger.warning("Document %d text extraction returned empty result", doc_idx + 1)
             except Exception as e:
                 logger.error("Error extracting text from document %d: %s", doc_idx + 1, str(e), exc_info=True)
                 set_appointment_error(appointment_ref)
-                return jsonify({'error': f'PDF text extraction failed for document {doc_idx + 1}: {str(e)}', 'status': 'failed'}), 500
+                return jsonify({'error': f'Document text extraction failed for document {doc_idx + 1}: {str(e)}', 'status': 'failed'}), 500
 
         # Combine all text
         combined_text = "\n\n".join(text_parts)
@@ -318,7 +335,7 @@ def process_appointment(user_id, appointment_id):
         # Generate SOAP summary from combined text
         try:
             logger.info("Generating SOAP summary...")
-            soap_notes = generate_soap_from_text(combined_text, ai_service, schema_version=Constants.SUMMARY_SCHEMA_VERSION_1_3)
+            soap_notes = generate_soap_from_text(combined_text, ai_service, schema_version=Constants.SUMMARY_SCHEMA_VERSION_1_4)
             logger.info("SOAP summary generated successfully")
         except Exception as e:
             logger.error("Error generating SOAP summary: %s", str(e), exc_info=True)

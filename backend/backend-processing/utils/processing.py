@@ -1,14 +1,22 @@
 """
 Reusable processing helper functions extracted from appointment routes.
-These functions handle audio transcription, SOAP generation, and PDF text extraction.
+These functions handle audio transcription, SOAP generation, PDF text extraction,
+and OCR for image-based documents.
 """
 import io
+import logging
 from pydub import AudioSegment
 from utils.speech_to_text import SpeechToTextService
 from utils.storage import StorageService
 from utils.vertex_ai import VertexAIService
 from utils.pdf_extract import extract_text_from_pdf
+from utils.ocr import ocr_image, ocr_pdf, ocr_pdf_gcs
 from utils.constants import Constants
+
+logger = logging.getLogger(__name__)
+
+# File extensions recognised as direct images (not PDFs)
+_IMAGE_EXTENSIONS = {'.png', '.jpg', '.jpeg'}
 
 
 def transcribe_full_recording(
@@ -110,9 +118,17 @@ def generate_soap_from_text(text: str, ai_service: VertexAIService, schema_versi
     return soap_notes
 
 
+def _get_file_extension(gcs_uri: str) -> str:
+    """Extract the lowercase file extension (including dot) from a GCS URI."""
+    if '.' in gcs_uri.rsplit('/', 1)[-1]:
+        return '.' + gcs_uri.rsplit('.', 1)[-1].lower()
+    return ''
+
+
 def extract_text_from_pdf_gcs(gcs_uri: str, storage_service: StorageService) -> str:
     """
     Download a PDF from GCS and extract its text content.
+    Falls back to OCR if the PDF has no embedded text layer.
 
     Args:
         gcs_uri: GCS URI of the PDF file (gs://bucket/path)
@@ -121,8 +137,53 @@ def extract_text_from_pdf_gcs(gcs_uri: str, storage_service: StorageService) -> 
     Returns:
         Extracted text from the PDF
     """
-    print(f"[PDF] Downloading PDF from GCS: {gcs_uri}")
+    logger.info("[PDF] Downloading PDF from GCS: %s", gcs_uri)
     pdf_bytes = storage_service.download_file(gcs_uri)
-    print(f"[PDF] Downloaded {len(pdf_bytes)} bytes")
+    logger.info("[PDF] Downloaded %d bytes", len(pdf_bytes))
+
+    # 1. Try normal text extraction (embedded text layer)
     text = extract_text_from_pdf(pdf_bytes)
+
+    # 2. If no text found, fall back to OCR
+    if not text.strip():
+        logger.info("[PDF] No embedded text found — falling back to OCR")
+        try:
+            text = ocr_pdf(pdf_bytes)
+        except Exception as ocr_err:
+            logger.warning("[PDF] Sync OCR failed (%s), trying async GCS OCR...", str(ocr_err))
+            # Fall back to async GCS-based OCR for large PDFs
+            import uuid
+            bucket_name = gcs_uri.split('/')[2]  # gs://bucket-name/...
+            output_prefix = f"gs://{bucket_name}/ocr-output/{uuid.uuid4()}/"
+            text = ocr_pdf_gcs(gcs_uri, output_prefix)
+
     return text
+
+
+def extract_text_from_document_gcs(gcs_uri: str, storage_service: StorageService) -> str:
+    """
+    Download a document (PDF or image) from GCS and extract its text content.
+
+    For PDFs:  Tries PyPDF2 first, falls back to Vision OCR if no embedded text.
+    For images: Uses Vision OCR directly.
+
+    Args:
+        gcs_uri: GCS URI of the document (gs://bucket/path)
+        storage_service: Initialized StorageService instance
+
+    Returns:
+        Extracted text from the document
+    """
+    ext = _get_file_extension(gcs_uri)
+
+    if ext in _IMAGE_EXTENSIONS:
+        # Direct image upload — OCR it
+        logger.info("[Document] Image detected (%s), downloading for OCR: %s", ext, gcs_uri)
+        image_bytes = storage_service.download_file(gcs_uri)
+        logger.info("[Document] Downloaded %d bytes", len(image_bytes))
+        text = ocr_image(image_bytes)
+        logger.info("[Document] Image OCR extracted %d characters", len(text))
+        return text
+
+    # Default: treat as PDF (handles .pdf and any unknown extensions)
+    return extract_text_from_pdf_gcs(gcs_uri, storage_service)

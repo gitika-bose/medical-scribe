@@ -45,7 +45,7 @@ export default function ExplainMyAppointmentScreen() {
   };
 
   const handlePickDocument = async () => {
-    const result = await DocumentPicker.getDocumentAsync({ type: ['application/pdf'], copyToCacheDirectory: true, multiple: true });
+    const result = await DocumentPicker.getDocumentAsync({ type: ['application/pdf', 'image/png', 'image/jpeg'], copyToCacheDirectory: true, multiple: true });
     if (result.canceled || !result.assets) return;
     const remaining = MAX_DOCS - documentFiles.length;
     const toAdd = result.assets.slice(0, remaining).map(f => ({ uri: f.uri, name: f.name, mimeType: f.mimeType || undefined, size: f.size || undefined }));
@@ -151,7 +151,7 @@ export default function ExplainMyAppointmentScreen() {
             {documentFiles.length < MAX_DOCS && (
               <TouchableOpacity style={styles.docUploadArea} onPress={handlePickDocument} disabled={isLoading}>
                 <Ionicons name="add-circle-outline" size={22} color={Colors.accent4} />
-                <Text style={styles.docUploadText}>{documentFiles.length === 0 ? 'Upload PDF files' : 'Add more files'}</Text>
+                <Text style={styles.docUploadText}>{documentFiles.length === 0 ? 'Upload files (PDF, PNG, JPG)' : 'Add more files'}</Text>
               </TouchableOpacity>
             )}
           </View>

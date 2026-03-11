@@ -14,7 +14,7 @@ import { analyticsEvents } from '../api/analytics'
 const MAX_CHARS = 10000;
 const MAX_FILES = 5;
 const ACCEPTED_AUDIO_TYPES = '.webm,.m4a';
-const ACCEPTED_DOC_TYPES = '.pdf';
+const ACCEPTED_DOC_TYPES = '.pdf,.png,.jpg,.jpeg';
 
 /* ── Helper: ReadMore ── */
 function V2ReadMore({ items, initialCount = 3 }: { items: ReactNode[]; initialCount?: number }) {
@@ -508,7 +508,7 @@ const ExplainAppComponentV2 = forwardRef<HTMLDivElement>((_props, ref) => {
               <input ref={documentInputRef} type="file" accept={ACCEPTED_DOC_TYPES} onChange={handleDocumentChange} disabled={isLoading} multiple />
               <div className="v2-drop-icon"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg></div>
               <div className="v2-drop-text">Drop documents here or click to browse</div>
-              <div className="v2-drop-hint">PDF, DOC, DOCX, or images</div>
+              <div className="v2-drop-hint">PDF, PNG, JPG &bull; Scanned docs &amp; screenshots supported</div>
             </div>
           )}
 

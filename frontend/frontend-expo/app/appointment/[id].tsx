@@ -14,14 +14,14 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { useAuth } from '@/hooks/useAuth';
 import { useResponsiveLayout } from '@/hooks/useResponsiveLayout';
 import { auth, db } from '@/api/firebase';
-import { isV13Summary, type AppointmentWithId, type ProcessedSummaryV12, type ProcessedSummaryV13 } from '@/api/appointments';
+import { isV13Summary, isV14Summary, type AppointmentWithId, type ProcessedSummaryV12, type ProcessedSummaryV13, type ProcessedSummaryV14 } from '@/api/appointments';
 import { analyticsEvents } from '@/api/analytics';
 import { formatAppointmentDate, formatAppointmentDateLong } from '@/utils/formatDate';
 import { DeleteAppointmentButton } from '@/components/shared/DeleteAppointmentButton';
 import { GuestDisclaimer } from '@/components/shared/GuestDisclaimer';
 import { Colors } from '@/constants/Colors';
 import { AppointmentSummaryV12 } from '@/components/pages/summary1-2';
-import { AppointmentSummaryV13 } from '@/components/pages/summary1-3';
+import { AppointmentSummaryV13, AppointmentSummaryV14 } from '@/components/pages/summary1-3';
 
 export default function AppointmentDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -239,11 +239,15 @@ export default function AppointmentDetailScreen() {
 
   // Completed state — version-based rendering
   const ps = appointment.processedSummary;
-  const isV13 = isV13Summary(ps);
+  const isV14 = isV14Summary(ps);
+  const isV13 = !isV14 && isV13Summary(ps);
 
   const hasSummaryContent = (() => {
     if (!ps) return false;
-    if (isV13) {
+    if (isV14) {
+      const v14 = ps as ProcessedSummaryV14;
+      return !!(v14.summary || v14.reason_for_visit?.length || v14.diagnosis?.details?.length || v14.action_todo?.length || v14.tests?.length || v14.medications?.length || v14.procedures?.length || v14.other?.length || v14.follow_up?.length || v14.why_recommended);
+    } else if (isV13) {
       const v13 = ps as ProcessedSummaryV13;
       return !!(v13.summary || v13.reason_for_visit?.length || v13.diagnosis?.details?.length || v13.action_todo?.length || v13.tests?.length || v13.medications?.length || v13.procedures?.length || v13.other?.length || v13.follow_up?.length || v13.why_recommended);
     } else {
@@ -273,7 +277,9 @@ export default function AppointmentDetailScreen() {
       >
         <View style={[styles.innerContent, isDesktop && styles.innerContentDesktop]}>
           {hasSummaryContent ? (
-            isV13 ? (
+            isV14 ? (
+              <AppointmentSummaryV14 summary={ps as ProcessedSummaryV14} />
+            ) : isV13 ? (
               <AppointmentSummaryV13 summary={ps as ProcessedSummaryV13} />
             ) : (
               <AppointmentSummaryV12 summary={ps as ProcessedSummaryV12} />

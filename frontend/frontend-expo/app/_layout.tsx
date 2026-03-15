@@ -110,6 +110,8 @@ function RootLayoutNav() {
           <Stack.Screen name="appointment-metadata" />
           <Stack.Screen name="notetaker" />
           <Stack.Screen name="explain-my-appointment" />
+          <Stack.Screen name="privacy-policy" />
+          <Stack.Screen name="terms-of-service" />
           <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
         </Stack>
 

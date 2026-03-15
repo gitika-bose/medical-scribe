@@ -138,7 +138,7 @@ export default function AccountScreen() {
           {/* Settings Section */}
           <View style={styles.section}>
             <View style={styles.menuGroup}>
-              <TouchableOpacity style={styles.menuItem}>
+              <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/privacy-policy' as any)}>
                 <View style={styles.menuItemLeft}>
                   <View style={[styles.menuIconBg, { backgroundColor: Colors.green[100] }]}>
                     <Ionicons name="shield-checkmark-outline" size={18} color={Colors.green[600]} />
@@ -150,7 +150,7 @@ export default function AccountScreen() {
 
               <View style={styles.menuDivider} />
 
-              <TouchableOpacity style={styles.menuItem}>
+              <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/terms-of-service' as any)}>
                 <View style={styles.menuItemLeft}>
                   <View style={[styles.menuIconBg, { backgroundColor: Colors.blue[50] }]}>
                     <Ionicons name="document-text-outline" size={18} color={Colors.blue[600]} />

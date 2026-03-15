@@ -5,6 +5,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  Modal,
+  Pressable,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -39,9 +41,11 @@ export default function NotetakerScreen() {
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [firstChunkUploaded, setFirstChunkUploaded] = useState(false);
 
-  // Dialogs
+  // Show expanded provider info modal
+  const [showProviderInfoModal, setShowProviderInfoModal] = useState(false);
+
+  // End appointment dialog
   const [showEndDialog, setShowEndDialog] = useState(false);
-  const [showConsentDialog, setShowConsentDialog] = useState(false);
 
   const { isRecording, startRecording, stopRecording, flushChunk, error: recordingError } =
     useAudioRecorder();
@@ -103,19 +107,12 @@ export default function NotetakerScreen() {
   }, [isRecordingActive, isRecording]);
 
   // Handlers
-  const handleStartRecording = () => {
-    setShowConsentDialog(true);
-  };
-
-  const handleConsentApproved = async () => {
-    setShowConsentDialog(false);
+  const handleStartNotetaking = async () => {
     try {
       setError(null);
 
       const { appointmentId: newAppointmentId } = await startAppointment();
 
-      // Use the appointmentId as the session ID so all API calls for this
-      // appointment are grouped under the same ID in Cloud Trace / Logging.
       sessionIdRef.current = newAppointmentId;
       console.log(`[Session] Starting notetaker with session_id=${newAppointmentId}`);
       analyticsEvents.startRecording(newAppointmentId);
@@ -139,10 +136,6 @@ export default function NotetakerScreen() {
       console.error('Failed to start appointment:', err);
       setError('Failed to start appointment. Please try again.');
     }
-  };
-
-  const handleConsentDeclined = () => {
-    setShowConsentDialog(false);
   };
 
   const handleGenerateQuestions = async () => {
@@ -220,7 +213,6 @@ export default function NotetakerScreen() {
       setFirstChunkUploaded(false);
       setIsProcessing(false);
 
-      // Clear session ID as recording session is ending
       const currentSessionId = sessionIdRef.current;
       sessionIdRef.current = null;
 
@@ -293,7 +285,6 @@ export default function NotetakerScreen() {
         <View style={[styles.recordingView, isDesktop && styles.recordingViewDesktop]}>
           <View style={styles.recordSection}>
             <View style={[styles.recordButton, isRecording ? styles.recordButtonActive : styles.recordButtonPaused]}>
-              {/* Pulsing ring for active recording */}
               {isRecording && <View style={styles.pulseRing} />}
               <Ionicons name="mic" size={48} color={isRecording ? Colors.red[600] : Colors.gray[400]} />
             </View>
@@ -337,38 +328,112 @@ export default function NotetakerScreen() {
           </View>
         </View>
       ) : (
-        /* Start recording view */
-        <View style={[styles.startView, isDesktop && styles.startViewDesktop]}>
-          <View style={styles.startSection}>
-            <View style={styles.startIconContainer}>
-              <Ionicons name="mic" size={56} color={Colors.primary} />
+        /* ── Inform Your Provider screen ── */
+        <ScrollView
+          contentContainerStyle={[
+            styles.informScrollContent,
+            isDesktop && styles.informScrollContentDesktop,
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={[styles.informSection, isDesktop && styles.informSectionDesktop]}>
+
+            {/* Icon */}
+            <View style={styles.informIconContainer}>
+              <Ionicons name="ear-outline" size={isPhone ? 40 : 48} color={Colors.primary} />
             </View>
-            <Text style={[styles.startTitle, isPhone && styles.startTitlePhone]}>Start Notetaking</Text>
-            <Text style={[styles.startDescription, isPhone && styles.startDescriptionPhone]}>
-              Juno will listen, take notes, and generate smart questions.
+
+            {/* Title */}
+            <Text style={[styles.informTitle, isPhone && styles.informTitlePhone]}>
+              Inform Your Provider
             </Text>
+
+            {/* Short description — for the patient to read/share */}
+            <View style={[styles.quoteBox, isPhone && styles.quoteBoxPhone]}>
+              {/* Top-right L-corner bracket */}
+              <View style={styles.cornerTopRight} />
+              {/* Bottom-left L-corner bracket */}
+              <View style={styles.cornerBottomLeft} />
+              {/* Opening quote mark — top left */}
+              <Text style={[styles.quoteMark, isPhone && styles.quoteMarkPhone]}>{'\u201C'}</Text>
+              {/* Body text */}
+              <Text style={[styles.informBody, isPhone && styles.informBodyPhone, styles.informBodyQuote]}>
+                I am using a medical note taker. It listens in real time to take notes but no audio recordings or transcripts are stored.
+              </Text>
+              {/* Closing quote mark — bottom right */}
+              <Text style={[styles.quoteMarkClose, isPhone && styles.quoteMarkPhone]}>{'\u201D'}</Text>
+            </View>
+
+            {/* Hyperlink to expanded provider info */}
+            <TouchableOpacity
+              style={styles.providerLinkRow}
+              onPress={() => setShowProviderInfoModal(true)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.providerLinkText, , isPhone && styles.providerLinkTextPhone]}>
+                Or,{' '}
+                <Text style={styles.providerLinkUnderline}>show this to your provider</Text>
+              </Text>
+            </TouchableOpacity>
+
+            {/* Start Notetaking button */}
             <TouchableOpacity
               style={[styles.startButton, isPhone && styles.startButtonPhone]}
-              onPress={handleStartRecording}
+              onPress={handleStartNotetaking}
               activeOpacity={0.8}
             >
               <Ionicons name="mic" size={isPhone ? 18 : 22} color="#fff" />
-              <Text style={[styles.startButtonText, isPhone && styles.startButtonTextPhone]}>Start Notetaking</Text>
+              <Text style={[styles.startButtonText, isPhone && styles.startButtonTextPhone]}>
+                Start Notetaking
+              </Text>
             </TouchableOpacity>
+
+            {/* No button — soft/outlined, not alarming */}
+            <TouchableOpacity
+              style={[styles.noButton, isPhone && styles.noButtonPhone]}
+              onPress={handleGoBack}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.noButtonText, isPhone && styles.noButtonTextPhone]}>
+                No, go back
+              </Text>
+            </TouchableOpacity>
+
           </View>
-        </View>
+        </ScrollView>
       )}
 
-      {/* Modals */}
-      <AlertModal
-        visible={showConsentDialog}
-        title="Notetaking Consent"
-        description="Juno will listen to your conversation and take notes. Does the doctor agree to this?"
-        confirmLabel="Yes, Start Notetaking"
-        cancelLabel="No"
-        onConfirm={handleConsentApproved}
-        onCancel={handleConsentDeclined}
-      />
+      {/* ── Provider Info Modal ── */}
+      <Modal
+        visible={showProviderInfoModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowProviderInfoModal(false)}
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setShowProviderInfoModal(false)}
+        >
+          <Pressable style={styles.modalContainer} onPress={() => {}}>
+            <Text style={styles.modalTitle}>About This Tool</Text>
+            <Text style={styles.modalBody}>
+              This medical note taker helps the patient follow their visit by listening in real time, taking notes, suggesting helpful questions, and generating a visit summary.
+            </Text>
+            <Text style={styles.modalBody}>
+              No appointment audio or verbatim transcript is stored, so it cannot provide playback or exact quotes of what was said during the visit.
+            </Text>
+            <TouchableOpacity
+              style={styles.modalOkButton}
+              onPress={() => setShowProviderInfoModal(false)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.modalOkButtonText}>OK</Text>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
+      {/* End appointment dialog */}
       <AlertModal
         visible={showEndDialog}
         title="Stop Notetaking?"
@@ -402,6 +467,7 @@ const styles = StyleSheet.create({
   },
   backButton: { padding: 8, borderRadius: 999 },
   headerTitle: { fontSize: 20, fontWeight: '700', color: Colors.primary },
+  headerTitlePhone: { fontSize: 16 },
 
   // Error
   errorBanner: {
@@ -411,24 +477,240 @@ const styles = StyleSheet.create({
   },
   errorText: { fontSize: 14, color: Colors.red[700] },
 
-  // Start view
-  startView: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
-  startViewDesktop: { paddingHorizontal: 48 },
-  startSection: { alignItems: 'center', maxWidth: 400 },
-  startIconContainer: {
-    width: 100, height: 100, borderRadius: 50,
+  // ── Inform Your Provider screen ───────────────────────────────────────
+  informScrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 28,
+    paddingVertical: 48,
+  },
+  informScrollContentDesktop: {
+    paddingHorizontal: 48,
+  },
+  informSection: {
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 420,
+  },
+  informSectionDesktop: {
+    maxWidth: 480,
+  },
+  informIconContainer: {
+    width: 88,
+    height: 88,
+    borderRadius: 44,
     backgroundColor: Colors.primaryMuted,
-    alignItems: 'center', justifyContent: 'center',
-    marginBottom: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
   },
-  startTitle: { fontSize: 24, fontWeight: '700', color: Colors.foreground, marginBottom: 12, textAlign: 'center' },
-  startDescription: { fontSize: 15, color: Colors.mutedForeground, lineHeight: 22, textAlign: 'center', marginBottom: 32 },
+  informTitle: {
+    fontSize: 26,
+    fontWeight: '700',
+    color: Colors.foreground,
+    marginBottom: 14,
+    textAlign: 'center',
+  },
+  informTitlePhone: {
+    fontSize: 22,
+    marginBottom: 12,
+  },
+  informBody: {
+    fontSize: 20,
+    color: Colors.mutedForeground,
+    lineHeight: 24,
+    textAlign: 'center',
+    marginBottom: 18,
+  },
+  informBodyPhone: {
+    fontSize: 16,
+    lineHeight: 21,
+    marginBottom: 14,
+  },
+
+  // ── Quote / corner-bracket box ────────────────────────────────────────
+  quoteBox: {
+    width: '100%',
+    backgroundColor: Colors.primaryForeground,
+    borderRadius: 6,
+    paddingTop: 8,
+    paddingBottom: 8,
+    paddingHorizontal: 22,
+    marginBottom: 20,
+    // no full border — corners are drawn separately
+  },
+  quoteBoxPhone: {
+    paddingHorizontal: 16,
+    //paddingBottom: 10,
+    marginBottom: 16,
+  },
+  // Top-right L-corner: border on top + right sides
+  cornerTopRight: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 38,
+    height: 38,
+    borderTopWidth: 2.5,
+    borderRightWidth: 2.5,
+    borderColor: Colors.primary,
+    borderTopRightRadius: 6,
+    opacity: 0.75,
+  },
+  // Bottom-left L-corner: border on bottom + left sides
+  cornerBottomLeft: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    width: 38,
+    height: 38,
+    borderBottomWidth: 2.5,
+    borderLeftWidth: 2.5,
+    borderColor: Colors.primary,
+    borderBottomLeftRadius: 6,
+    opacity: 0.75,
+  },
+  quoteMark: {
+    fontSize: 48,
+    lineHeight: 50,
+    color: Colors.primary,
+    fontWeight: '700',
+    marginBottom: -6,
+    opacity: 0.75,
+    textAlign: 'left',
+  },
+  quoteMarkPhone: {
+    fontSize: 36,
+    lineHeight: 38,
+  },
+  quoteMarkClose: {
+    fontSize: 48,
+    lineHeight: 50,
+    color: Colors.primary,
+    fontWeight: '700',
+    marginTop: -6,
+    marginBottom: -8,
+    opacity: 0.75,
+    textAlign: 'right',
+  },
+  informBodyQuote: {
+    marginBottom: 0,
+    textAlign: 'left',
+  },
+
+  providerLinkRow: {
+    marginBottom: 32,
+    paddingHorizontal: 4,
+  },
+  providerLinkText: {
+    fontSize: 18,
+    color: Colors.mutedForeground,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  providerLinkUnderline: {
+    color: Colors.primary,
+    textDecorationLine: 'underline',
+  },
+  providerLinkTextPhone: {
+    fontSize: 14,
+    color: Colors.mutedForeground,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+
+  // Start button
   startButton: {
-    flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: Colors.primary, paddingVertical: 16, paddingHorizontal: 32,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: Colors.primary,
+    paddingVertical: 16,
+    paddingHorizontal: 36,
     borderRadius: 14,
+    width: '100%',
+    justifyContent: 'center',
+    marginBottom: 14,
   },
-  startButtonText: { fontSize: 17, fontWeight: '600', color: '#fff' },
+  startButtonPhone: {
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+  },
+  startButtonText: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#fff',
+  },
+  startButtonTextPhone: {
+    fontSize: 15,
+  },
+
+  // No / go back button — soft, white background
+  noButton: {
+    paddingVertical: 14,
+    paddingHorizontal: 36,
+    borderRadius: 14,
+    width: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: Colors.background,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  noButtonPhone: {
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+  },
+  noButtonText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: Colors.mutedForeground,
+  },
+  noButtonTextPhone: {
+    fontSize: 14,
+  },
+
+  // ── Provider Info Modal ───────────────────────────────────────────────
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  modalContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 28,
+    width: '100%',
+    maxWidth: 440,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: Colors.foreground,
+    marginBottom: 16,
+  },
+  modalBody: {
+    fontSize: 17,
+    color: Colors.mutedForeground,
+    lineHeight: 26,
+    marginBottom: 14,
+  },
+  modalOkButton: {
+    marginTop: 8,
+    backgroundColor: Colors.primary,
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  modalOkButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
+  },
 
   // Recording active view
   recordingView: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24 },
@@ -468,11 +750,4 @@ const styles = StyleSheet.create({
   controlButtonDone: { backgroundColor: Colors.green[500] },
   controlButtonEnd: { backgroundColor: Colors.warmDark },
   controlButtonText: { fontSize: 16, fontWeight: '600', color: '#fff' },
-
-  // Phone-specific responsive overrides
-  headerTitlePhone: { fontSize: 16 },
-  startTitlePhone: { fontSize: 20, marginBottom: 8 },
-  startDescriptionPhone: { fontSize: 13, lineHeight: 19, marginBottom: 24 },
-  startButtonPhone: { paddingVertical: 14, paddingHorizontal: 24 },
-  startButtonTextPhone: { fontSize: 15 },
 });

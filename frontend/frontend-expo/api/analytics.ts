@@ -34,7 +34,7 @@ export const logAnalyticsEvent = (
 ) => {
   if (analytics) {
     try {
-      firebaseLogEvent(analytics, eventName, eventParams);
+      firebaseLogEvent(analytics, `app_${eventName}`, eventParams);
     } catch (error) {
       console.warn('⚠️ Failed to log analytics event:', error);
     }
@@ -47,7 +47,6 @@ export const analyticsEvents = {
   finalizeAppointment: (appointmentId: string) =>
     logAnalyticsEvent('finalize_appointment', { appointment_id: appointmentId }),
   userLogin: (method: string) => logAnalyticsEvent('login', { method }),
-  appOpen: () => logAnalyticsEvent('app_open'),
   viewAppointmentDetail: (appointmentId: string) =>
     logAnalyticsEvent('view_appointment_detail', { appointment_id: appointmentId }),
   generateQuestions: (appointmentId: string) =>
@@ -57,5 +56,4 @@ export const analyticsEvents = {
       appointment_id: appointmentId,
       file_size: fileSize,
     }),
-  tryAsGuest: () => logAnalyticsEvent('try_as_guest'),
 };

@@ -131,12 +131,11 @@ const ExplainAppComponent = forwardRef<HTMLDivElement>((_props, ref) => {
   // Handlers – Recording
   const handleRecordingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
-    if (file) analyticsEvents.tryUploadFile(file.size, file.type);
+    if (file) analyticsEvents.tryUploadFile(file.size, file.type, 'recording');
     setRecordingFile(file);
   };
 
   const handleRemoveRecording = () => {
-    analyticsEvents.tryRemoveFile();
     setRecordingFile(null);
     if (recordingInputRef.current) recordingInputRef.current.value = '';
   };
@@ -149,14 +148,13 @@ const ExplainAppComponent = forwardRef<HTMLDivElement>((_props, ref) => {
     const remaining = MAX_FILES - documentFiles.length;
     const toAdd = newFiles.slice(0, remaining);
     if (toAdd.length > 0) {
-      toAdd.forEach((f) => analyticsEvents.tryUploadFile(f.size, f.type));
+      toAdd.forEach((f) => analyticsEvents.tryUploadFile(f.size, f.type, 'document'));
       setDocumentFiles((prev) => [...prev, ...toAdd]);
     }
     if (documentInputRef.current) documentInputRef.current.value = '';
   };
 
   const handleRemoveDocument = (index: number) => {
-    analyticsEvents.tryRemoveFile();
     setDocumentFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
@@ -175,7 +173,7 @@ const ExplainAppComponent = forwardRef<HTMLDivElement>((_props, ref) => {
     setQuestions(null);
 
     try {
-      analyticsEvents.trySubmit(hasRecording, hasNotes);
+      analyticsEvents.trySubmit(hasRecording, hasNotes, hasDocuments, documentFiles.length);
       setLoadingStep('Creating appointment…');
       const appointmentId = await tryCreateAppointment();
 
@@ -215,7 +213,7 @@ const ExplainAppComponent = forwardRef<HTMLDivElement>((_props, ref) => {
         if (extracted.length > 0) setQuestions(extracted);
       }
 
-      analyticsEvents.trySubmitSuccess(hasRecording, hasNotes);
+      analyticsEvents.trySubmitSuccess(hasRecording, hasNotes, hasDocuments);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
       setError(message);

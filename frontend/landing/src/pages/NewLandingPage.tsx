@@ -1,11 +1,16 @@
-import { useRef } from 'react'
+import { useRef, useEffect } from 'react'
 import './NewLandingPage.css'
 import ExplainAppComponentV2 from '../components/ExplainAppComponentV2'
 import { HeroSection } from '../components/landing'
 import Footer from '../components/shared/Footer'
+import { analyticsEvents } from '../api/analytics'
 
 function NewLandingPage() {
   const tryRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    analyticsEvents.landingPageOpen();
+  }, []);
 
   return (
     <div className="new-landing-page min-h-screen w-full" style={{ fontFamily: 'var(--font-family-body)' }}>

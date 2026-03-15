@@ -14,7 +14,6 @@ function ExplainAppPage() {
   const tryComponentRef = useRef<HTMLDivElement>(null);
 
   const scrollToTry = () => {
-    analyticsEvents.landingClickTryNow('hero');
     tryComponentRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 

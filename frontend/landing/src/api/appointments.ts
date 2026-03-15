@@ -1,5 +1,4 @@
 import { checkProcessingServiceHealth, getAuthToken } from './firebase';
-import { analyticsEvents } from './analytics';
 
 const API_URL_PROCESSING = import.meta.env.VITE_API_PROCESSING_URL;
 
@@ -219,8 +218,6 @@ export async function tryUploadRecording(
   const formData = new FormData();
   formData.append('recording', file, file.name);
 
-  analyticsEvents.uploadRecording(file.size);
-
   const response = await fetch(
     `${API_URL_PROCESSING}/appointments/${appointmentId}/upload-recording-new`,
     {
@@ -420,8 +417,6 @@ export async function tryUploadRecordingLegacy(
 
   const formData = new FormData();
   formData.append('recording', file, file.name);
-
-  analyticsEvents.uploadRecording(file.size);
 
   const response = await fetch(
     `${API_URL_PROCESSING}/appointments/upload-recording-try`,

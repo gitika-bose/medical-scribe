@@ -140,7 +140,7 @@ export default function HomeScreen() {
             >
               <View style={styles.recordButtonContent}>
                 <Text style={[styles.recordTitle, isPhone && styles.recordTitlePhone]}>
-                  Start Note Taking
+                  Start Note-Taking
                 </Text>
                 <Text style={[styles.recordSubtitle, isPhone && styles.recordSubtitlePhone]}>
                   Listen & take notes

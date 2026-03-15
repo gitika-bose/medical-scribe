@@ -33,7 +33,7 @@ export const logAnalyticsEvent = (
 ) => {
   if (analytics) {
     try {
-      firebaseLogEvent(analytics, eventName, eventParams);
+      firebaseLogEvent(analytics, `landing_${eventName}`, eventParams);
     } catch {
       // Silently ignore analytics failures
     }
@@ -41,41 +41,42 @@ export const logAnalyticsEvent = (
 };
 
 export const analyticsEvents = {
-  finalizeAppointment: () => logAnalyticsEvent('finalize_appointment'),
-  uploadRecording: (fileSize?: number) =>
-    logAnalyticsEvent('upload_recording', { file_size: fileSize }),
-
   // ---------------------------------------------------------------------------
   // Landing Page
   // ---------------------------------------------------------------------------
-  landingPageOpen: () => logAnalyticsEvent('landing_page_open'),
-  landingClickTryNow: (location: string) =>
-    logAnalyticsEvent('landing_click_try_now', { location }),
-  landingClickJoinBeta: (location: string) =>
-    logAnalyticsEvent('landing_click_join_beta', { location }),
-  landingClickGetStarted: () => logAnalyticsEvent('landing_click_get_started'),
-  landingClickNavLink: (target: string) =>
-    logAnalyticsEvent('landing_click_nav_link', { target }),
+  landingPageOpen: () => logAnalyticsEvent('page_open'),
+  heroClickGetStarted: () => logAnalyticsEvent('hero_click_get_started'),
+  heroClickJoinWaitlist: () => logAnalyticsEvent('hero_click_join_waitlist'),
 
   // ---------------------------------------------------------------------------
-  // Try Page
+  // Upload / Submit Flow  (ExplainAppComponentV2, embedded in NewLandingPage)
   // ---------------------------------------------------------------------------
-  tryPageOpen: () => logAnalyticsEvent('try_page_open'),
-  tryUploadFile: (fileSize: number, fileType: string) =>
-    logAnalyticsEvent('try_upload_file', { file_size: fileSize, file_type: fileType }),
-  tryRemoveFile: () => logAnalyticsEvent('try_remove_file'),
-  trySubmit: (hasRecording: boolean, hasNotes: boolean) =>
-    logAnalyticsEvent('try_submit', { has_recording: hasRecording, has_notes: hasNotes }),
-  trySubmitSuccess: (hasRecording: boolean, hasNotes: boolean) =>
-    logAnalyticsEvent('try_submit_success', {
+  tryPageOpen: () => logAnalyticsEvent('page_open'),
+  tryUploadFile: (fileSize: number, fileType: string, inputType: 'recording' | 'document') =>
+    logAnalyticsEvent('upload_file', { file_size: fileSize, file_type: fileType, input_type: inputType }),
+  trySubmit: (hasRecording: boolean, hasNotes: boolean, hasDocuments: boolean, documentCount: number) =>
+    logAnalyticsEvent('submit', {
       has_recording: hasRecording,
       has_notes: hasNotes,
+      has_documents: hasDocuments,
+      document_count: documentCount,
+    }),
+  trySubmitSuccess: (hasRecording: boolean, hasNotes: boolean, hasDocuments: boolean) =>
+    logAnalyticsEvent('submit_success', {
+      has_recording: hasRecording,
+      has_notes: hasNotes,
+      has_documents: hasDocuments,
     }),
   trySubmitError: (errorMessage: string) =>
-    logAnalyticsEvent('try_submit_error', { error_message: errorMessage }),
+    logAnalyticsEvent('submit_error', { error_message: errorMessage }),
+
+  // ---------------------------------------------------------------------------
+  // Engagement
+  // ---------------------------------------------------------------------------
+  notesStarted: () => logAnalyticsEvent('notes_started'),
   tryFeedbackSubmit: (rating: number) =>
-    logAnalyticsEvent('try_feedback_submit', { rating }),
-  tryClickBackHome: () => logAnalyticsEvent('try_click_back_home'),
-  tryToggleLearnings: (expanded: boolean) =>
-    logAnalyticsEvent('try_toggle_learnings', { expanded }),
+    logAnalyticsEvent('feedback_submit', { rating }),
+  waitlistSubmit: () => logAnalyticsEvent('waitlist_submit'),
+  waitlistSubmitSuccess: () => logAnalyticsEvent('waitlist_submit_success'),
+  waitlistSubmitError: () => logAnalyticsEvent('waitlist_submit_error'),
 };

@@ -50,13 +50,12 @@ function ExplainAppRecPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
     if (file) {
-      analyticsEvents.tryUploadFile(file.size, file.type);
+      analyticsEvents.tryUploadFile(file.size, file.type, 'recording');
     }
     setUploadedFile(file);
   };
 
   const handleRemoveFile = () => {
-    analyticsEvents.tryRemoveFile();
     setUploadedFile(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -77,7 +76,7 @@ function ExplainAppRecPage() {
 
       if (!hasRecording && !hasNotes) return;
 
-      analyticsEvents.trySubmit(hasRecording, hasNotes);
+      analyticsEvents.trySubmit(hasRecording, hasNotes, false, 0);
 
       // Set loading text
       if (hasRecording) {
@@ -119,7 +118,7 @@ function ExplainAppRecPage() {
       setQuestions(
         questionsResult.questions.length > 0 ? questionsResult.questions : null,
       );
-      analyticsEvents.trySubmitSuccess(hasRecording, hasNotes);
+      analyticsEvents.trySubmitSuccess(hasRecording, hasNotes, false);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Something went wrong. Please try again.';
@@ -346,9 +345,7 @@ function ExplainAppRecPage() {
             <button
               className="result-heading-toggle"
               onClick={() => {
-                const newExpanded = !learningsExpanded;
-                analyticsEvents.tryToggleLearnings(newExpanded);
-                setLearningsExpanded(newExpanded);
+                setLearningsExpanded(!learningsExpanded);
               }}
             >
               <h3 className="result-heading" style={{ marginBottom: 0 }}>Key Learnings</h3>
@@ -384,7 +381,7 @@ function ExplainAppRecPage() {
           <span className="logo-text">Juno</span>
         </Link>
         <div className="header-actions">
-          <Link to="/" className="nav-link" onClick={() => analyticsEvents.tryClickBackHome()}>← Back to Home</Link>
+          <Link to="/" className="nav-link">← Back to Home</Link>
         </div>
       </header>
 

@@ -19,12 +19,12 @@ function LandingPage() {
           <span className="logo-text">Juno</span>
         </Link>
         <div className="header-nav">
-          <a href="#features" className="nav-link" onClick={() => analyticsEvents.landingClickNavLink('features')}>The Problem</a>
-          <Link to="/aboutus" className="nav-link" onClick={() => analyticsEvents.landingClickNavLink('about-us')}>About Us</Link>
+          <a href="#features" className="nav-link">The Problem</a>
+          <Link to="/aboutus" className="nav-link">About Us</Link>
         </div>
         <div className="header-actions">
-          <a href={APP_URL} className="login-button" onClick={() => analyticsEvents.landingClickJoinBeta('header')}>Login</a>
-          <Link to="/explain-my-appointment" className="cta-button-small" onClick={() => analyticsEvents.landingClickTryNow('header')}>Try it now</Link>
+          <a href={APP_URL} className="login-button">Login</a>
+          <Link to="/explain-my-appointment" className="cta-button-small">Try it now</Link>
         </div>
       </header>
 
@@ -39,7 +39,7 @@ function LandingPage() {
              Juno explains what matters in plain language so you don’t miss anything.
             </p>
             <div className="hero-cta">
-              <Link to="/explain-my-appointment" className="cta-button" onClick={() => analyticsEvents.landingClickTryNow('hero')}>Try it now</Link>
+              <Link to="/explain-my-appointment" className="cta-button">Try it now</Link>
               {/* <Link to="/beta" className="cta-button-outline" onClick={() => analyticsEvents.landingClickJoinBeta('hero')}>Join the Beta</Link> */}
             </div>
             <div className="trust-badges">
@@ -204,8 +204,8 @@ function LandingPage() {
           <h2>Ready to take control of your healthcare?</h2>
           <p>Join thousands of users who never miss important medical information.</p>
           <div className="cta-buttons">
-            <a href={APP_URL} className="cta-button-large" onClick={() => analyticsEvents.landingClickGetStarted()}>Get Started</a>
-            <Link to="/beta" className="cta-button-secondary" onClick={() => analyticsEvents.landingClickJoinBeta('cta')}>Join the Beta List</Link>
+            <a href={APP_URL} className="cta-button-large" onClick={() => analyticsEvents.heroClickGetStarted()}>Get Started</a>
+            <Link to="/beta" className="cta-button-secondary" onClick={() => analyticsEvents.heroClickJoinWaitlist()}>Join the Beta List</Link>
           </div>
         </div>
       </section>

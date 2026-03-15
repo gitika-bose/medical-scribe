@@ -275,10 +275,7 @@ def finalize_appointment(user_id, appointment_id):
         if existing_recording_url:
             recording_url = existing_recording_url
             logger.info("Recording already exists for appointment %s, skipping upload", appointment_id)
-        else:
-            if 'fullAudio' not in request.files:
-                return jsonify({'error': 'No audio file provided'}), 400
-
+        elif 'fullAudio' in request.files:
             audio_file = request.files['fullAudio']
             audio_content = audio_file.read()
 
@@ -293,11 +290,17 @@ def finalize_appointment(user_id, appointment_id):
             except Exception as e:
                 set_appointment_error(appointment_ref)
                 return jsonify({'error': f'Audio upload failed: {str(e)}'}), 500
+        else:
+            # No audio provided and no existing recording link — this is expected for the
+            # live notetaking flow where audio is already uploaded chunk-by-chunk via
+            # /audio-chunks and the rawTranscript is fully built before /finalize is called.
+            recording_url = ''
+            logger.info("No audio file provided for appointment %s; proceeding with existing transcript", appointment_id)
 
         # PART 2: Generate SOAP from transcript
         raw_transcript = appointment_data.get('rawTranscript', '')
 
-        soap_notes, soap_error = generate_soap_and_finalize(appointment_ref, raw_transcript, ai_service, schema_version=Constants.SUMMARY_SCHEMA_VERSION_1_2)
+        soap_notes, soap_error = generate_soap_and_finalize(appointment_ref, raw_transcript, ai_service, schema_version=Constants.SUMMARY_SCHEMA_VERSION_1_4)
         if soap_error:
             return soap_error
 

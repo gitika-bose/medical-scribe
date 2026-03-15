@@ -183,14 +183,94 @@ export interface ProcessedSummaryV13 {
 }
 
 // =============================================================================
+// Types — Schema v1.4
+// =============================================================================
+
+export interface ProcessedSummaryV14 {
+  version: '1.4';
+  summary?: string;
+  reason_for_visit?: Array<{
+    reason: string;
+    description: string;
+  }>;
+  diagnosis?: {
+    details: Array<{
+      title: string;
+      description: string;
+      severity?: 'high' | 'medium' | 'low';
+    }>;
+  };
+  tests?: Array<{
+    title: string;
+    description: string;
+    importance: 'high' | 'low';
+    source?: string;
+  }>;
+  medications?: Array<{
+    title: string;
+    dosage?: string;
+    frequency?: string;
+    timing?: string;
+    duration?: string;
+    instructions?: string;
+    importance: 'high' | 'low';
+    source?: string;
+    change?: boolean;
+  }>;
+  procedures?: Array<{
+    title: string;
+    description: string;
+    timeframe?: string;
+    importance: 'high' | 'low';
+    source?: string;
+  }>;
+  other?: Array<{
+    title: string;
+    description: string;
+    dosage?: string;
+    frequency?: string;
+    timing?: string;
+    duration?: string;
+    importance: 'high' | 'low';
+    source?: string;
+  }>;
+  follow_up?: Array<{
+    description: string;
+    time_frame: string;
+  }>;
+  why_recommended?: string;
+  risks_side_effects?: Array<{
+    title: string;
+    description: string;
+    source?: string;
+    importance: 'high' | 'low';
+  }>;
+  action_todo?: Array<{
+    title: string;
+    importance: 'high' | 'low';
+    source?: string;
+  }>;
+  questions?: Array<{
+    question1?: string;
+    question2?: string;
+    question3?: string;
+  }>;
+}
+
+// =============================================================================
 // Combined types
 // =============================================================================
 
-export type ProcessedSummary = ProcessedSummaryV12 | ProcessedSummaryV13;
+export type ProcessedSummary = ProcessedSummaryV12 | ProcessedSummaryV13 | ProcessedSummaryV14;
 
 /** Type guard: returns true when the summary follows the v1.3 schema. */
 export function isV13Summary(ps: ProcessedSummary | undefined | null): ps is ProcessedSummaryV13 {
   return !!ps && (ps as ProcessedSummaryV13).version === '1.3';
+}
+
+/** Type guard: returns true when the summary follows the v1.4 schema. */
+export function isV14Summary(ps: ProcessedSummary | undefined | null): ps is ProcessedSummaryV14 {
+  return !!ps && (ps as ProcessedSummaryV14).version === '1.4';
 }
 
 export interface Appointment {

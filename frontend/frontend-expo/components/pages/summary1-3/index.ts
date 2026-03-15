@@ -1,4 +1,5 @@
 export { AppointmentSummaryV13 } from './AppointmentSummaryV13';
+export { AppointmentSummaryV14 } from './AppointmentSummaryV14';
 export { CollapsibleCard } from './CollapsibleCard';
 export { SummarySection } from './SummarySection';
 export { DiagnosisSection } from './DiagnosisSection';
@@ -10,3 +11,4 @@ export { ProceduresSection } from './ProceduresSection';
 export { OtherInstructionsSection } from './OtherInstructionsSection';
 export { FollowUpSection } from './FollowUpSection';
 export { WhyRecommendedSection } from './WhyRecommendedSection';
+export { QuestionsSection } from './QuestionsSection';

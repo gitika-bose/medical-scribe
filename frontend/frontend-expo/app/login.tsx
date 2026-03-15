@@ -15,17 +15,14 @@ import { useRouter } from 'expo-router';
 import { useAuth } from '@/hooks/useAuth';
 import { analyticsEvents } from '@/api/analytics';
 import { Ionicons } from '@expo/vector-icons';
-import { AlertModal } from '@/components/shared/AlertModal';
 import { Colors } from '@/constants/Colors';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { signInWithGoogle, signInWithEmail, signInAsGuest, user, isGoogleSignInReady } = useAuth();
+  const { signInWithGoogle, signInWithEmail, user, isGoogleSignInReady } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [emailLoading, setEmailLoading] = useState(false);
-  const [guestLoading, setGuestLoading] = useState(false);
-  const [showGuestConsent, setShowGuestConsent] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -66,26 +63,7 @@ export default function LoginScreen() {
     }
   };
 
-  const handleGuestClick = () => { setShowGuestConsent(true); };
-
-  const handleGuestConsentAgree = async () => {
-    setShowGuestConsent(false);
-    try {
-      setGuestLoading(true);
-      setError(null);
-      await signInAsGuest();
-      analyticsEvents.tryAsGuest();
-    } catch (err) {
-      console.error('Guest login error:', err);
-      setError('Failed to sign in as guest. Please try again.');
-    } finally {
-      setGuestLoading(false);
-    }
-  };
-
-  const handleGuestConsentCancel = () => { setShowGuestConsent(false); };
-
-  const isAnyLoading = loading || emailLoading || guestLoading;
+  const isAnyLoading = loading || emailLoading;
 
   return (
     <KeyboardAvoidingView
@@ -107,7 +85,7 @@ export default function LoginScreen() {
             />
             <Text style={styles.title}>Welcome to Juno</Text>
             <Text style={styles.subtitle}>
-              Sign in to get started or try it out as a guest
+              Sign in to get started
             </Text>
           </View>
 
@@ -201,33 +179,9 @@ export default function LoginScreen() {
               )}
               <Text style={styles.socialButtonText}>Google</Text>
             </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.socialButton, isAnyLoading && styles.buttonDisabled]}
-              onPress={handleGuestClick}
-              disabled={isAnyLoading}
-              activeOpacity={0.7}
-            >
-              {guestLoading ? (
-                <ActivityIndicator size="small" color={Colors.foreground} />
-              ) : (
-                <Ionicons name="person-outline" size={20} color={Colors.primary} />
-              )}
-              <Text style={styles.socialButtonText}>Try it as a guest</Text>
-            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
-
-      <AlertModal
-        visible={showGuestConsent}
-        title="Guest Account Notice"
-        description={'Guest account data is shared and public.\nPlease delete your data after use.'}
-        confirmLabel="I Agree"
-        cancelLabel="Cancel"
-        onConfirm={handleGuestConsentAgree}
-        onCancel={handleGuestConsentCancel}
-      />
     </KeyboardAvoidingView>
   );
 }

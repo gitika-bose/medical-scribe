@@ -14,9 +14,10 @@ interface DiagnosisSectionProps {
   diagnosis: {
     details: DiagnosisDetail[];
   };
+  headingOverride?: string;
 }
 
-export function DiagnosisSection({ diagnosis }: DiagnosisSectionProps) {
+export function DiagnosisSection({ diagnosis, headingOverride }: DiagnosisSectionProps) {
   if (!diagnosis?.details || diagnosis.details.length === 0) return null;
 
   const severityOrder: Record<string, number> = { high: 0, medium: 1, low: 2 };
@@ -40,7 +41,7 @@ export function DiagnosisSection({ diagnosis }: DiagnosisSectionProps) {
     <View style={styles.card}>
       <View style={styles.header}>
         <Ionicons name="search-outline" size={20} color={Colors.accent2} />
-        <Text style={styles.heading}>Diagnosis</Text>
+        <Text style={styles.heading}>{headingOverride ?? 'Diagnosis'}</Text>
       </View>
       <ReadMore items={items} initialCount={3} />
     </View>

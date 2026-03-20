@@ -45,7 +45,8 @@
         {
           "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone."
         }
-      ]
+      ],
+      "./plugins/withModularHeaders"
     ],
     "experiments": {
       "typedRoutes": true

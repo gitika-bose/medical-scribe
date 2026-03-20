@@ -100,6 +100,13 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
     [recorder],
   );
 
+  // Keep a stable ref to rotateSegment so setInterval callbacks always call the
+  // latest version, preventing stale-closure bugs on web where the recorder
+  // object reference can change across re-renders (triggering a new rotateSegment
+  // identity even though recording is still active).
+  const rotateSegmentRef = useRef(rotateSegment);
+  rotateSegmentRef.current = rotateSegment;
+
   // -------------------------------------------------------------------------
   // Public API
   // -------------------------------------------------------------------------
@@ -130,9 +137,12 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
         setIsRecording(true);
         console.log('[AudioRecorder] Recording started');
 
-        // Rotate every CHUNK_INTERVAL_MS
+        // Rotate every CHUNK_INTERVAL_MS.
+        // Use rotateSegmentRef.current (not rotateSegment directly) so the
+        // interval always calls the latest closure — avoids stale-closure bugs
+        // on web where the recorder reference can change across re-renders.
         chunkIntervalRef.current = setInterval(() => {
-          rotateSegment(true);
+          rotateSegmentRef.current(true);
         }, CHUNK_INTERVAL_MS);
       } catch (err) {
         const msg = err instanceof Error ? err.message : 'Failed to start note taking';
@@ -157,11 +167,12 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
       clearInterval(chunkIntervalRef.current);
     }
 
-    const uri = await rotateSegment(true);
+    const uri = await rotateSegmentRef.current(true);
 
-    // Restart the interval
+    // Restart the interval — use rotateSegmentRef.current for the same
+    // stale-closure reason as in startRecording.
     chunkIntervalRef.current = setInterval(() => {
-      rotateSegment(true);
+      rotateSegmentRef.current(true);
     }, CHUNK_INTERVAL_MS);
 
     return uri;

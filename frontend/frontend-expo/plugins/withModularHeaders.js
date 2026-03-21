@@ -30,11 +30,21 @@ const path = require('path');
  * the post_install closing `end` regardless of how deeply the block is nested.
  *
  *   A. CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES
- *      Fixes: @react-native-firebase (RNFBApp) and @react-native-google-signin
- *      both include React-Core Objective-C headers (RCTConvert.h, RCTBridgeModule.h,
- *      RCTEventEmitter.h) inside their Swift framework modules. With
- *      use_frameworks! active, Clang rejects these as non-modular includes
- *      under -Werror, causing the Xcode archive to fail.
+ *      Belt-and-suspenders for Xcode ≤ 16.2. Deprecated and ignored in
+ *      Xcode 16.3+ / Clang 26 (iPhoneOS 26.0 SDK) — covered by section D.
+ *
+ *   D. DEFINES_MODULE = NO  (RNFB* and RNGoogleSignin pods only)
+ *      Fixes: @react-native-firebase (RNFBFirestore, RNFBAnalytics, …) and
+ *      @react-native-google-signin Objective-C bridge files include React-Core
+ *      headers (RCTBridgeModule.h, RCTConvert.h, …) with `#import <React/…>`.
+ *      With use_frameworks! each pod is compiled as a framework module, and
+ *      in Xcode 16.3+ / Clang 26 the compiler hard-errors on non-modular includes
+ *      inside a framework module even when CLANG_ALLOW_NON_MODULAR_INCLUDES…=YES.
+ *      Setting DEFINES_MODULE=NO removes those pods from the framework-module
+ *      system (no module map is generated), so their ObjC files are free to
+ *      include React headers the traditional way without any restriction.
+ *      Confirmed root cause: RNFBFirestoreTransactionModule.m / RNFBFirestoreCommon.h
+ *      failing to resolve RCTPromiseRejectBlock on iPhoneOS26.0.sdk (EAS build).
  *
  *   B. SWIFT_COMPILATION_MODE = wholemodule (Release only)
  *      Fixes: react-native-reanimated v4 and react-native-worklets use Swift for
@@ -54,9 +64,17 @@ const PODFILE_INJECTION = `
   installer.pods_project.targets.each do |target|
     target.build_configurations.each do |config|
 
-      # A. Allow React-Core non-modular headers inside @react-native-firebase
-      #    and @react-native-google-signin framework modules.
+      # A. Belt-and-suspenders for Xcode <= 16.2 (deprecated/ignored in 16.3+).
       config.build_settings['CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES'] = 'YES'
+
+      # D. For React Native Firebase and Google Sign-In bridge pods: disable
+      #    module map generation so their Objective-C files can freely include
+      #    React Native headers (RCTBridgeModule.h etc.) without the hard
+      #    "non-modular include within framework module" error in Xcode 16.3+
+      #    / Clang 26 where CLANG_ALLOW_NON_MODULAR_INCLUDES is deprecated.
+      if target.name.start_with?('RNFB') || target.name == 'RNGoogleSignin'
+        config.build_settings['DEFINES_MODULE'] = 'NO'
+      end
 
       # B. react-native-reanimated v4 + react-native-worklets require whole-module
       #    Swift compilation in Release to avoid type-access errors with New Architecture.

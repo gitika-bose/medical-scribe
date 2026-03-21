@@ -19,7 +19,7 @@ import { Colors } from '@/constants/Colors';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { signInWithGoogle, signInWithEmail, user, isGoogleSignInReady } = useAuth();
+  const { signInWithGoogle, signInWithEmail, user, isGoogleSignInReady, googleRedirectUri } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [emailLoading, setEmailLoading] = useState(false);
@@ -55,9 +55,9 @@ export default function LoginScreen() {
       setError(null);
       await signInWithGoogle();
       analyticsEvents.userLogin('google');
-    } catch (err) {
+    } catch (err: any) {
       console.error('Login error:', err);
-      setError('Failed to sign in. Please try again.');
+      setError(`Failed to sign in with Google. Please try again.\n\nRedirect URI: ${googleRedirectUri}`);
     } finally {
       setLoading(false);
     }

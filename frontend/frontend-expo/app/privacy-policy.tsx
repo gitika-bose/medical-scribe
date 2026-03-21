@@ -100,14 +100,7 @@ export default function PrivacyPolicyScreen() {
           <Text style={styles.bold}>do not maintain long-term records of your submissions</Text>.
         </Text>
 
-        <Text style={styles.sectionTitle}>4. No User Accounts</Text>
-        <Text style={styles.body}>
-          Juno currently allows users to try the service{' '}
-          <Text style={styles.bold}>without creating an account</Text>. We do not collect user
-          profiles or maintain personal user databases for this version of the product.
-        </Text>
-
-        <Text style={styles.sectionTitle}>5. Infrastructure and Service Providers</Text>
+        <Text style={styles.sectionTitle}>4. Infrastructure and Service Providers</Text>
         <Text style={styles.body}>
           Juno uses trusted cloud infrastructure and services to operate the platform, including:
         </Text>
@@ -124,13 +117,13 @@ export default function PrivacyPolicyScreen() {
           subject to their own security and privacy practices.
         </Text>
 
-        <Text style={styles.sectionTitle}>6. Security</Text>
+        <Text style={styles.sectionTitle}>5. Security</Text>
         <Text style={styles.body}>
           We take reasonable measures to protect information during transmission and processing,
           including secure infrastructure and encrypted connections.
         </Text>
 
-        <Text style={styles.sectionTitle}>7. Cookies and Technical Data</Text>
+        <Text style={styles.sectionTitle}>6. Cookies and Technical Data</Text>
         <Text style={styles.body}>
           Like most websites, we may collect limited technical information automatically, such as:
         </Text>
@@ -144,13 +137,13 @@ export default function PrivacyPolicyScreen() {
           This information is used only to maintain service reliability and improve the product.
         </Text>
 
-        <Text style={styles.sectionTitle}>8. Changes to This Policy</Text>
+        <Text style={styles.sectionTitle}>7. Changes to This Policy</Text>
         <Text style={styles.body}>
           We may update this Privacy Policy from time to time as the product evolves. Updates will
           be posted on this page with a revised date.
         </Text>
 
-        <Text style={styles.sectionTitle}>9. Contact</Text>
+        <Text style={styles.sectionTitle}>8. Contact</Text>
         <Text style={styles.body}>
           If you have questions about this Privacy Policy, you may contact us at:{' '}
           <Text

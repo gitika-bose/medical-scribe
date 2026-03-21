@@ -22,6 +22,7 @@ import {
   type User,
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
+import * as AuthSession from 'expo-auth-session';
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
 
@@ -38,7 +39,11 @@ WebBrowser.maybeCompleteAuthSession();
 // (Firebase Console → Authentication → Sign-in method → Google)
 // ---------------------------------------------------------------------------
 const GOOGLE_WEB_CLIENT_ID = '798703978932-0ovpaoc9kjvh4c9gia3ehh2apksn2ftb.apps.googleusercontent.com';
-const GOOGLE_IOS_CLIENT_ID = '798703978932-p4si3epr4e91r4ecno285h45rl6q0ij0.apps.googleusercontent.com';
+const GOOGLE_IOS_CLIENT_ID = '798703978932-eche7dcd3e53mtmo88of7284q108ohrl.apps.googleusercontent.com';
+
+// Redirect URI used for the native Google OAuth flow.
+// Must match the URI registered in Google Cloud Console for the iOS OAuth client.
+const GOOGLE_REDIRECT_URI = AuthSession.makeRedirectUri({ native: 'juno://redirect' });
 
 // ---------------------------------------------------------------------------
 // Guest / test-user credentials from environment
@@ -54,6 +59,8 @@ interface AuthContextType {
   isGuestUser: boolean;
   /** Whether the Google Sign-In request is ready to be triggered */
   isGoogleSignInReady: boolean;
+  /** The redirect URI used for Google OAuth — useful for debugging */
+  googleRedirectUri: string;
   signInWithGoogle: () => Promise<void>;
   /** Sign up with email and password, creating a new user account */
   signUpWithEmail: (name: string, email: string, password: string) => Promise<void>;
@@ -93,10 +100,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [isGuestUser, setIsGuestUser] = useState(false);
 
-  // Set up the Google ID-token auth request
+  // Set up the Google ID-token auth request.
+  // redirectUri is pinned to juno://redirect on native so it matches the
+  // iOS OAuth client configured in Google Cloud Console.
   const [request, _response, promptAsync] = Google.useIdTokenAuthRequest({
     clientId: GOOGLE_WEB_CLIENT_ID,
     iosClientId: GOOGLE_IOS_CLIENT_ID,
+    redirectUri: GOOGLE_REDIRECT_URI,
   });
 
   // Listen for Firebase auth state changes
@@ -137,6 +147,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    */
   const signInWithGoogle = async () => {
     try {
+      console.log('[Google Sign-In] Using redirect URI:', GOOGLE_REDIRECT_URI);
       const result = await promptAsync();
 
       if (result?.type === 'success') {
@@ -160,7 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // User intentionally cancelled – don't treat as an error
         return;
       } else {
-        throw new Error('Sign-in failed');
+        throw new Error(`Sign-in failed (redirect URI: ${GOOGLE_REDIRECT_URI})`);
       }
     } catch (error) {
       console.error('Error signing in with Google:', error);
@@ -421,6 +432,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loading,
     isGuestUser,
     isGoogleSignInReady: !!request,
+    googleRedirectUri: GOOGLE_REDIRECT_URI,
     signInWithGoogle,
     signUpWithEmail,
     signInWithEmail,

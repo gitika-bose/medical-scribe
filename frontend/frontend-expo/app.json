@@ -15,6 +15,7 @@
     },
     "ios": {
       "supportsTablet": true,
+      "buildNumber": "2",
       "bundleIdentifier": "app.meetjuno.com",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false

@@ -1,6 +1,7 @@
 {
   "build": {
     "development": {
+      "autoIncrement": true,
       "developmentClient": true,
       "distribution": "internal",
       "cache": {
@@ -8,12 +9,14 @@
       }
     },
     "preview": {
+      "autoIncrement": true,
       "distribution": "internal",
       "cache": {
         "disabled": true
       }
     },
     "production": {
+      "autoIncrement": true,
       "cache": {
         "disabled": true
       },
@@ -27,5 +30,8 @@
         "EXPO_PUBLIC_API_PROCESSING_URL": "https://patient-scribe-backend-798703978932.us-central1.run.app"
       }
     }
+  },
+  "cli": {
+    "appVersionSource": "remote"
   }
 }

@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
+import { Platform } from 'react-native';
 import {
   useAudioRecorder as useExpoAudioRecorder,
   requestRecordingPermissionsAsync,
@@ -7,6 +8,7 @@ import {
   AudioQuality,
 } from 'expo-audio';
 import type { RecordingOptions } from 'expo-audio';
+import * as Sentry from '@sentry/react-native';
 
 interface UseAudioRecorderReturn {
   isRecording: boolean;
@@ -94,6 +96,13 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
         return uri;
       } catch (err) {
         console.error('[AudioRecorder] Error rotating segment:', err);
+        if (Platform.OS !== 'web') {
+          Sentry.withScope((scope) => {
+            scope.setTag('flow', 'audio_recording');
+            scope.setContext('recorder', { phase: 'rotate_segment', startNew });
+            Sentry.captureException(err);
+          });
+        }
         return null;
       }
     },
@@ -148,6 +157,13 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
         const msg = err instanceof Error ? err.message : 'Failed to start note taking';
         setError(msg);
         console.error('Recording error:', err);
+        if (Platform.OS !== 'web') {
+          Sentry.withScope((scope) => {
+            scope.setTag('flow', 'audio_recording');
+            scope.setContext('recorder', { phase: 'start' });
+            Sentry.captureException(err);
+          });
+        }
         throw err;
       }
     },

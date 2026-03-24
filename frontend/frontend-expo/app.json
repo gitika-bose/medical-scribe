@@ -47,7 +47,15 @@
           "microphonePermission": "Allow $(PRODUCT_NAME) to access your microphone."
         }
       ],
-      "./plugins/withModularHeaders"
+      "./plugins/withModularHeaders",
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "juno-app",
+          "organization": "juno-7f"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

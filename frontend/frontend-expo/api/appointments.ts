@@ -13,6 +13,7 @@ import {
   type Unsubscribe,
 } from 'firebase/firestore';
 import { Platform } from 'react-native';
+import * as Sentry from '@sentry/react-native';
 
 import { auth, db, checkProcessingServiceHealth } from './firebase';
 import { analyticsEvents } from './analytics';
@@ -311,6 +312,9 @@ export async function startAppointment(): Promise<{ appointmentId: string }> {
     return { appointmentId };
   } catch (error) {
     console.error('Failed to create appointment:', error);
+    if (Platform.OS !== 'web') {
+      Sentry.captureException(error);
+    }
     throw new Error('Failed to start appointment');
   }
 }
@@ -392,6 +396,13 @@ export async function uploadAudioChunk(
     }
   } catch (err) {
     console.error('❌ Failed to upload audio chunk:', err);
+    if (Platform.OS !== 'web') {
+      Sentry.withScope((scope) => {
+        scope.setTag('appointment_id', appointmentId);
+        scope.setContext('api', { function: 'uploadAudioChunk', appointmentId });
+        Sentry.captureException(err);
+      });
+    }
     throw new Error(err instanceof Error ? err.message : 'Failed to upload audio chunk');
   }
 }
@@ -421,6 +432,15 @@ export async function generateQuestions(
       }
     } catch (_) {
       // Ignore JSON parse errors; fall back to statusText
+    }
+    // Capture HTTP status only — backend error body may contain session details
+    if (Platform.OS !== 'web') {
+      Sentry.withScope((scope) => {
+        scope.setTag('appointment_id', appointmentId);
+        scope.setTag('http_status', String(response.status));
+        scope.setContext('api', { function: 'generateQuestions', appointmentId, status: response.status });
+        Sentry.captureException(new Error(`generateQuestions failed: HTTP ${response.status}`));
+      });
     }
     throw new Error(errorMessage);
   }
@@ -478,6 +498,13 @@ export async function finalizeAppointment(
     return response.json();
   } catch (err) {
     console.error('❌ Failed to finalize appointment:', err);
+    if (Platform.OS !== 'web') {
+      Sentry.withScope((scope) => {
+        scope.setTag('appointment_id', appointmentId);
+        scope.setContext('api', { function: 'finalizeAppointment', appointmentId });
+        Sentry.captureException(err);
+      });
+    }
     const errorMsg = err instanceof Error ? err.message : 'Failed to finalize recording';
 
     try {
@@ -571,6 +598,9 @@ export async function fetchAppointments(): Promise<AppointmentWithId[]> {
     return appointments;
   } catch (err) {
     console.error('❌ Failed to fetch appointments:', err);
+    if (Platform.OS !== 'web') {
+      Sentry.captureException(err);
+    }
     throw new Error(err instanceof Error ? err.message : 'Failed to load appointments');
   }
 }
@@ -612,6 +642,13 @@ export async function getSingleAppointment(
     };
   } catch (err) {
     console.error('❌ Failed to fetch appointment:', err);
+    if (Platform.OS !== 'web') {
+      Sentry.withScope((scope) => {
+        scope.setTag('appointment_id', appointmentId);
+        scope.setContext('api', { function: 'getSingleAppointment', appointmentId });
+        Sentry.captureException(err);
+      });
+    }
     throw new Error(err instanceof Error ? err.message : 'Failed to load appointment');
   }
 }
@@ -643,6 +680,13 @@ export async function deleteAppointment(appointmentId: string): Promise<void> {
     }
   } catch (error) {
     console.error('Failed to delete appointment:', error);
+    if (Platform.OS !== 'web') {
+      Sentry.withScope((scope) => {
+        scope.setTag('appointment_id', appointmentId);
+        scope.setContext('api', { function: 'deleteAppointment', appointmentId });
+        Sentry.captureException(error);
+      });
+    }
     throw new Error('Failed to delete appointment');
   }
 }
@@ -679,6 +723,13 @@ export async function updateAppointmentMetadata(
     await updateDoc(appointmentRef, updates);
   } catch (error) {
     console.error('Failed to update appointment metadata:', error);
+    if (Platform.OS !== 'web') {
+      Sentry.withScope((scope) => {
+        scope.setTag('appointment_id', appointmentId);
+        scope.setContext('api', { function: 'updateAppointmentMetadata', appointmentId });
+        Sentry.captureException(error);
+      });
+    }
     throw new Error('Failed to update appointment metadata');
   }
 }
@@ -740,6 +791,13 @@ export async function uploadRecordingNew(
     return response.json();
   } catch (err) {
     console.error('❌ Failed to upload recording (new):', err);
+    if (Platform.OS !== 'web') {
+      Sentry.withScope((scope) => {
+        scope.setTag('appointment_id', appointmentId);
+        scope.setContext('api', { function: 'uploadRecordingNew', appointmentId });
+        Sentry.captureException(err);
+      });
+    }
     throw new Error(err instanceof Error ? err.message : 'Failed to upload recording');
   }
 }
@@ -834,6 +892,13 @@ export async function uploadRecording(
     return response.json();
   } catch (err) {
     console.error('❌ Failed to upload recording:', err);
+    if (Platform.OS !== 'web') {
+      Sentry.withScope((scope) => {
+        scope.setTag('appointment_id', appointmentId);
+        scope.setContext('api', { function: 'uploadRecording', appointmentId });
+        Sentry.captureException(err);
+      });
+    }
     const errorMsg = err instanceof Error ? err.message : 'Failed to upload recording';
 
     // Set appointment status to error in Firestore if not already done
@@ -911,6 +976,13 @@ export async function uploadDocument(
     return response.json();
   } catch (err) {
     console.error('❌ Failed to upload document:', err);
+    if (Platform.OS !== 'web') {
+      Sentry.withScope((scope) => {
+        scope.setTag('appointment_id', appointmentId);
+        scope.setContext('api', { function: 'uploadDocument', appointmentId });
+        Sentry.captureException(err);
+      });
+    }
     throw new Error(err instanceof Error ? err.message : 'Failed to upload document');
   }
 }
@@ -955,6 +1027,13 @@ export async function uploadNotes(
     }
   } catch (err) {
     console.error('❌ Failed to upload notes:', err);
+    if (Platform.OS !== 'web') {
+      Sentry.withScope((scope) => {
+        scope.setTag('appointment_id', appointmentId);
+        scope.setContext('api', { function: 'uploadNotes', appointmentId });
+        Sentry.captureException(err);
+      });
+    }
     throw new Error(err instanceof Error ? err.message : 'Failed to upload notes');
   }
 }
@@ -993,6 +1072,13 @@ export async function processAppointment(
     return response.json();
   } catch (err) {
     console.error('❌ Failed to process appointment:', err);
+    if (Platform.OS !== 'web') {
+      Sentry.withScope((scope) => {
+        scope.setTag('appointment_id', appointmentId);
+        scope.setContext('api', { function: 'processAppointment', appointmentId });
+        Sentry.captureException(err);
+      });
+    }
     const errorMsg = err instanceof Error ? err.message : 'Failed to process appointment';
 
     try {
@@ -1059,6 +1145,9 @@ export function listenToInProgressAppointments(
       },
       (error) => {
         console.error('❌ Listener error:', error);
+        if (Platform.OS !== 'web') {
+          Sentry.captureException(error);
+        }
         if (onError) onError(error as Error);
       },
     );
@@ -1066,6 +1155,9 @@ export function listenToInProgressAppointments(
     return unsubscribe;
   } catch (err) {
     console.error('❌ Failed to setup listener:', err);
+    if (Platform.OS !== 'web') {
+      Sentry.captureException(err);
+    }
     if (onError) onError(err instanceof Error ? err : new Error('Failed to setup listener'));
     return () => {};
   }

@@ -19,6 +19,7 @@
     "@react-native-firebase/firestore": "^23.8.6",
     "@react-native-google-signin/google-signin": "^16.1.1",
     "@react-navigation/native": "^7.1.8",
+    "@sentry/react-native": "^8.5.0",
     "expo": "~54.0.33",
     "expo-asset": "~12.0.12",
     "expo-audio": "~1.1.1",
@@ -56,7 +57,9 @@
   "private": true,
   "expo": {
     "install": {
-      "exclude": ["react-native-svg"]
+      "exclude": [
+        "react-native-svg"
+      ]
     }
   }
 }

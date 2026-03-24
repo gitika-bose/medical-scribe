@@ -5,11 +5,26 @@ import { Ionicons } from '@expo/vector-icons';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import 'react-native-reanimated';
 
 import { AuthProvider, useAuth } from '@/hooks/useAuth';
+import * as Sentry from '@sentry/react-native';
+
+Sentry.init({
+  dsn: 'https://0bbbddebe063080734cb6731546d9191@o4511090840633344.ingest.us.sentry.io/4511090877661184',
+
+  // Adds more context data to events (IP address, cookies, user, etc.)
+  // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+  sendDefaultPii: true,
+
+  // Enable Logs
+  enableLogs: true,
+
+  // uncomment the line below to enable Spotlight (https://spotlightjs.com)
+  // spotlight: __DEV__,
+});
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -33,7 +48,7 @@ const LightTheme = {
   },
 };
 
-export default function RootLayout() {
+export default Sentry.wrap(function RootLayout() {
   const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
     ...FontAwesome.font,
@@ -59,13 +74,24 @@ export default function RootLayout() {
       <RootLayoutNav />
     </AuthProvider>
   );
-}
+});
 
 function RootLayoutNav() {
   const { user, loading } = useAuth();
   const segments = useSegments();
   const router = useRouter();
   const [routingReady, setRoutingReady] = useState(false);
+
+  // Attach the Firebase UID to every Sentry event so errors are traceable
+  // to a specific user without exposing PII (uid is an opaque internal ID).
+  useEffect(() => {
+    if (Platform.OS === 'web') return;
+    if (user) {
+      Sentry.setUser({ id: user.uid });
+    } else {
+      Sentry.setUser(null);
+    }
+  }, [user]);
 
   useEffect(() => {
     if (loading) return;

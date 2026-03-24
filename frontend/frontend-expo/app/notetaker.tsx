@@ -26,6 +26,7 @@ import { AlertModal } from '@/components/shared/AlertModal';
 import { GuestDisclaimer } from '@/components/shared/GuestDisclaimer';
 import { QuestionsModal } from '@/components/pages/home/QuestionsModal';
 import { Colors } from '@/constants/Colors';
+import * as Sentry from '@sentry/react-native';
 
 export default function NotetakerScreen() {
   const router = useRouter();

@@ -22,9 +22,10 @@ import {
   type User,
 } from 'firebase/auth';
 import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
-import * as AuthSession from 'expo-auth-session';
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
+import { Platform } from 'react-native';
+import * as Sentry from '@sentry/react-native';
 
 import { auth, db } from '@/api/firebase';
 import { deleteUserAccount } from '@/api/user';
@@ -41,10 +42,6 @@ WebBrowser.maybeCompleteAuthSession();
 const GOOGLE_WEB_CLIENT_ID = '798703978932-0ovpaoc9kjvh4c9gia3ehh2apksn2ftb.apps.googleusercontent.com';
 const GOOGLE_IOS_CLIENT_ID = '798703978932-eche7dcd3e53mtmo88of7284q108ohrl.apps.googleusercontent.com';
 
-// Redirect URI used for the native Google OAuth flow.
-// Must match the URI registered in Google Cloud Console for the iOS OAuth client.
-const GOOGLE_REDIRECT_URI = AuthSession.makeRedirectUri({ native: 'juno://redirect' });
-
 // ---------------------------------------------------------------------------
 // Guest / test-user credentials from environment
 // ---------------------------------------------------------------------------
@@ -59,8 +56,6 @@ interface AuthContextType {
   isGuestUser: boolean;
   /** Whether the Google Sign-In request is ready to be triggered */
   isGoogleSignInReady: boolean;
-  /** The redirect URI used for Google OAuth — useful for debugging */
-  googleRedirectUri: string;
   signInWithGoogle: () => Promise<void>;
   /** Sign up with email and password, creating a new user account */
   signUpWithEmail: (name: string, email: string, password: string) => Promise<void>;
@@ -101,12 +96,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isGuestUser, setIsGuestUser] = useState(false);
 
   // Set up the Google ID-token auth request.
-  // redirectUri is pinned to juno://redirect on native so it matches the
-  // iOS OAuth client configured in Google Cloud Console.
+  // No redirectUri override — expo-auth-session automatically uses the
+  // reversed iOS client ID scheme (com.googleusercontent.apps.<id>:/oauthredirect)
+  // when iosClientId is provided, which is required by Google's OAuth policy.
   const [request, _response, promptAsync] = Google.useIdTokenAuthRequest({
     clientId: GOOGLE_WEB_CLIENT_ID,
     iosClientId: GOOGLE_IOS_CLIENT_ID,
-    redirectUri: GOOGLE_REDIRECT_URI,
   });
 
   // Listen for Firebase auth state changes
@@ -147,7 +142,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    */
   const signInWithGoogle = async () => {
     try {
-      console.log('[Google Sign-In] Using redirect URI:', GOOGLE_REDIRECT_URI);
       const result = await promptAsync();
 
       if (result?.type === 'success') {
@@ -171,10 +165,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // User intentionally cancelled – don't treat as an error
         return;
       } else {
-        throw new Error(`Sign-in failed (redirect URI: ${GOOGLE_REDIRECT_URI})`);
+        throw new Error('Google sign-in failed. Please try again.');
       }
     } catch (error) {
       console.error('Error signing in with Google:', error);
+      // Capture with error code only — Firebase error messages can embed the
+      // attempted email address, which is PII we don't want in Sentry.
+      if (Platform.OS !== 'web') {
+        const code = (error as any)?.code;
+        Sentry.captureException(
+          new Error(code ? `auth/google-signin: ${code}` : 'auth/google-signin-failed'),
+        );
+      }
       throw error;
     }
   };
@@ -382,6 +384,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       guestSessionActive = false;
     } catch (error: any) {
       console.error('Error deleting account:', error);
+      if (Platform.OS !== 'web') {
+        Sentry.captureException(error);
+      }
       throw error;
     }
   };
@@ -402,6 +407,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       guestSessionActive = false;
       console.error('Error signing in as guest:', error);
+      if (Platform.OS !== 'web') {
+        Sentry.captureException(error);
+      }
       throw error;
     }
   };
@@ -432,7 +440,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loading,
     isGuestUser,
     isGoogleSignInReady: !!request,
-    googleRedirectUri: GOOGLE_REDIRECT_URI,
     signInWithGoogle,
     signUpWithEmail,
     signInWithEmail,

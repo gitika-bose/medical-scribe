@@ -53,7 +53,8 @@
         {
           "url": "https://sentry.io/",
           "project": "juno-app",
-          "organization": "juno-7f"
+          "organization": "juno-7f",
+          "uploadSourceMaps": false
         }
       ]
     ],

@@ -21,6 +21,7 @@ Usage:
     logger.info("Processing started", extra={"session_id": "abc-123"})
 """
 
+import hashlib
 import json
 import logging
 import os
@@ -46,6 +47,17 @@ class SessionIdFilter(logging.Filter):
         return True
 
 
+def _derive_appointment_trace_id(appointment_id: str) -> str:
+    """
+    Derive a stable 128-bit (32 hex char) trace ID from an appointment ID.
+
+    Using MD5 here purely as a deterministic hash — not for security.
+    The same appointment_id will always produce the same trace_id, so every
+    Cloud Run log line for a given appointment shares one trace in Cloud Logging.
+    """
+    return hashlib.md5(appointment_id.encode()).hexdigest()
+
+
 class StructuredJsonFormatter(logging.Formatter):
     """
     Formats log records as single-line JSON objects.
@@ -55,6 +67,26 @@ class StructuredJsonFormatter(logging.Formatter):
     - "message"  → log text
     - "logging.googleapis.com/trace" → trace correlation
     - All other keys → searchable in jsonPayload.*
+
+    Trace correlation strategy
+    --------------------------
+    Each HTTP request to Cloud Run gets its own random OpenTelemetry trace_id.
+    That means logs from /upload-recording-new, /process, /finalize, etc. for
+    the *same* appointment would each land in a different trace — making it hard
+    to see all logs for an appointment at once in Cloud Logging.
+
+    To fix this, when a session_id (= appointment_id) is present on the log
+    record, we override `logging.googleapis.com/trace` with a *deterministic*
+    trace ID derived from the appointment_id.  Every log line across every
+    request for that appointment will therefore share a single stable trace,
+    and you can query:
+
+        trace="projects/<project>/traces/<md5_of_appointment_id>"
+
+    in the Cloud Logging Logs Explorer to see all logs for one appointment.
+
+    The real per-request OTel trace_id/span_id are still emitted as plain
+    jsonPayload fields (trace_id / span_id) for request-level debugging.
     """
 
     def __init__(self):
@@ -74,18 +106,37 @@ class StructuredJsonFormatter(logging.Formatter):
         if session_id:
             log_entry["session_id"] = session_id
 
-        # Add OpenTelemetry trace context
+        # Always capture the real per-request OTel trace/span IDs as raw fields
+        # so individual request spans are still visible in Cloud Trace.
         span_context = trace.get_current_span().get_span_context()
+        span_id_hex: str = ""
         if span_context and span_context.is_valid:
             trace_id_hex = format(span_context.trace_id, "032x")
             span_id_hex = format(span_context.span_id, "016x")
-
             log_entry["trace_id"] = trace_id_hex
             log_entry["span_id"] = span_id_hex
 
-            # Google Cloud Logging trace correlation format
-            # This links log entries to the corresponding Cloud Trace trace
-            if self.gcp_project_id:
+        # ---------------------------------------------------------------
+        # Cloud Logging trace correlation
+        # ---------------------------------------------------------------
+        # When we have an appointment_id (session_id), derive a *stable*
+        # trace ID from it so that ALL log lines for the same appointment
+        # (across multiple HTTP requests) are grouped under one trace in
+        # Cloud Logging, making per-appointment log queries trivial.
+        # ---------------------------------------------------------------
+        if self.gcp_project_id:
+            if session_id:
+                appt_trace_id = _derive_appointment_trace_id(session_id)
+                # Expose the appointment-scoped trace ID as a plain field too
+                log_entry["appointment_trace_id"] = appt_trace_id
+                log_entry["logging.googleapis.com/trace"] = (
+                    f"projects/{self.gcp_project_id}/traces/{appt_trace_id}"
+                )
+                # Keep the real per-request spanId for request-level linkage
+                if span_id_hex:
+                    log_entry["logging.googleapis.com/spanId"] = span_id_hex
+            elif span_context and span_context.is_valid:
+                # Non-appointment routes: fall back to the real OTel trace
                 log_entry["logging.googleapis.com/trace"] = (
                     f"projects/{self.gcp_project_id}/traces/{trace_id_hex}"
                 )

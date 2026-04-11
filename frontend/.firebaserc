@@ -10,6 +10,9 @@
         ],
         "app": [
           "patient-scribe-app"
+        ],
+        "simplify": [
+          "meetjuno-simplify"
         ]
       }
     }

@@ -11,6 +11,12 @@ werkzeug==3.0.1
 pydub==0.25.1
 gunicorn
 PyPDF2==3.0.1
+python-docx
+textstat
+# scispaCy (optional — improves medical jargon detection in /simplify)
+# Install model separately:
+#   pip install scispacy
+#   pip install https://s3-us-west-2.amazonaws.com/ai2-s3-scispacy/releases/v0.5.3/en_ner_bc5cdr_md-0.5.3.tar.gz
 
 # OpenTelemetry — tracing & session correlation
 opentelemetry-api

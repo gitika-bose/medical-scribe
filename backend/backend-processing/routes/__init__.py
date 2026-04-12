@@ -7,16 +7,22 @@ Modules:
 - audio.py             — Audio upload, chunking, transcription, finalize
 - processing.py        — AI processing, questions, notes, documents
 - try_endpoints.py     — Unauthenticated demo endpoints
+- simplify.py          — Medical document simplification (SSE streaming)
+- score.py             — Patient Accessibility Score (standalone + embedded)
 """
 
 from routes.appointments_crud import appointments_crud_bp
 from routes.audio import audio_bp
 from routes.processing import processing_bp
 from routes.try_endpoints import try_bp
+from routes.simplify import simplify_bp
+from routes.score import score_bp
 
 all_blueprints = [
     appointments_crud_bp,
     audio_bp,
     processing_bp,
     try_bp,
+    simplify_bp,
+    score_bp,
 ]

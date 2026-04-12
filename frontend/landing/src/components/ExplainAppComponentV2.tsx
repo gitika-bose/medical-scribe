@@ -122,6 +122,7 @@ const ExplainAppComponentV2 = forwardRef<HTMLDivElement>((_props, ref) => {
   const [documentFiles, setDocumentFiles] = useState<File[]>([]);
   const recordingInputRef = useRef<HTMLInputElement>(null);
   const documentInputRef = useRef<HTMLInputElement>(null);
+  const notesStartedRef = useRef(false);
 
   // --- Result state ---
   const [isLoading, setIsLoading] = useState(false);
@@ -155,11 +156,10 @@ const ExplainAppComponentV2 = forwardRef<HTMLDivElement>((_props, ref) => {
   // --- Handlers ---
   const handleRecordingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
-    if (file) analyticsEvents.tryUploadFile(file.size, file.type);
+    if (file) analyticsEvents.tryUploadFile(file.size, file.type, 'recording');
     setRecordingFile(file);
   };
   const handleRemoveRecording = () => {
-    analyticsEvents.tryRemoveFile();
     setRecordingFile(null);
     if (recordingInputRef.current) recordingInputRef.current.value = '';
   };
@@ -168,24 +168,29 @@ const ExplainAppComponentV2 = forwardRef<HTMLDivElement>((_props, ref) => {
     if (!files) return;
     const toAdd = Array.from(files).slice(0, MAX_FILES - documentFiles.length);
     if (toAdd.length > 0) {
-      toAdd.forEach(f => analyticsEvents.tryUploadFile(f.size, f.type));
+      toAdd.forEach(f => analyticsEvents.tryUploadFile(f.size, f.type, 'document'));
       setDocumentFiles(prev => [...prev, ...toAdd]);
     }
     if (documentInputRef.current) documentInputRef.current.value = '';
   };
   const handleRemoveDocument = (index: number) => {
-    analyticsEvents.tryRemoveFile();
     setDocumentFiles(prev => prev.filter((_, i) => i !== index));
   };
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    if (e.target.value.length <= MAX_CHARS) setNotesText(e.target.value);
+    if (e.target.value.length <= MAX_CHARS) {
+      if (!notesStartedRef.current && e.target.value.length > 0) {
+        notesStartedRef.current = true;
+        analyticsEvents.notesStarted();
+      }
+      setNotesText(e.target.value);
+    }
   };
 
   // Submit
   const handleSubmit = async () => {
     setIsLoading(true); setError(null); setSoapNotes(null); setTitle(null); setQuestions(null); setDeleteSuccess(false);
     try {
-      analyticsEvents.trySubmit(hasRecording, hasNotes);
+      analyticsEvents.trySubmit(hasRecording, hasNotes, hasDocuments, documentFiles.length);
       setLoadingStep('Creating appointment…');
       const appointmentId = await tryCreateAppointment();
       // Use appointmentId as session ID so all calls are grouped in Cloud Trace / Logging
@@ -225,7 +230,7 @@ const ExplainAppComponentV2 = forwardRef<HTMLDivElement>((_props, ref) => {
         setDeleteSuccess(true);
       }
 
-      analyticsEvents.trySubmitSuccess(hasRecording, hasNotes);
+      analyticsEvents.trySubmitSuccess(hasRecording, hasNotes, hasDocuments);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
       setError(message); analyticsEvents.trySubmitError(message);
@@ -255,14 +260,21 @@ const ExplainAppComponentV2 = forwardRef<HTMLDivElement>((_props, ref) => {
   // Waitlist
   const handleWaitlistSubmit = async (e: FormEvent) => {
     e.preventDefault(); setWaitlistStatus('submitting');
+    analyticsEvents.waitlistSubmit();
     try {
       const response = await fetch('https://formspree.io/f/mjgeorjw', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: waitlistEmail, source: 'try-page-waitlist' }),
       });
-      if (response.ok) { setWaitlistStatus('success'); setWaitlistEmail(''); }
-      else throw new Error('Submission failed');
-    } catch { setWaitlistStatus('error'); }
+      if (response.ok) {
+        analyticsEvents.waitlistSubmitSuccess();
+        setWaitlistStatus('success');
+        setWaitlistEmail('');
+      } else throw new Error('Submission failed');
+    } catch {
+      analyticsEvents.waitlistSubmitError();
+      setWaitlistStatus('error');
+    }
   };
 
   const sortByImportance = <T extends { importance: 'high' | 'low' }>(items: T[]): T[] =>

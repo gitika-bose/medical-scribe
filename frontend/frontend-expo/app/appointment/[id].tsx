@@ -276,7 +276,7 @@ export default function AppointmentDetailScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={[styles.innerContent, isDesktop && styles.innerContentDesktop]}>
-          {hasSummaryContent ? (
+          {hasSummaryContent && (
             isV14 ? (
               <AppointmentSummaryV14 summary={ps as ProcessedSummaryV14} />
             ) : isV13 ? (
@@ -284,14 +284,6 @@ export default function AppointmentDetailScreen() {
             ) : (
               <AppointmentSummaryV12 summary={ps as ProcessedSummaryV12} />
             )
-          ) : (
-            <View style={styles.processingContainer}>
-              <ActivityIndicator size="large" color={Colors.primary} />
-              <Text style={styles.processingTitle}>Finalizing Appointment</Text>
-              <Text style={styles.processingSubtitle}>
-                Your appointment summary is being prepared. This page will update automatically.
-              </Text>
-            </View>
           )}
 
           <DeleteAppointmentButton appointmentId={id!} onDeleteStart={() => { isDeletingRef.current = true; }} onDeleteError={setError} style={{ flex: 1, width: 'auto' }} />

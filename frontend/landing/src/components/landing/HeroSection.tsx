@@ -1,4 +1,5 @@
 import heroSvg from '../../assets/hero.svg'
+import { analyticsEvents } from '../../api/analytics'
 
 function HeroSection() {
   return (
@@ -33,6 +34,7 @@ function HeroSection() {
                   backgroundColor: 'var(--primary-color)',
                   borderRadius: 'var(--button-rounded-radius)',
                 }}
+                onClick={() => analyticsEvents.heroClickGetStarted()}
               >
                 Get Started
                 <svg className="ml-2 w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -48,6 +50,7 @@ function HeroSection() {
                   borderRadius: 'var(--button-rounded-radius)',
                   border: '1px solid var(--dark-border-color)',
                 }}
+                onClick={() => analyticsEvents.heroClickJoinWaitlist()}
               >
                 Join Waitlist
               </a>

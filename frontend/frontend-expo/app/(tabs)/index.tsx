@@ -132,7 +132,7 @@ export default function HomeScreen() {
 
           {/* ── Action Buttons ──────────────────────────────────────────── */}
           <View style={[styles.actionRow, isPhone && styles.actionRowPhone]}>
-            {/* Record Visit */}
+            {/* Start Note Taking */}
             <TouchableOpacity
               style={[styles.recordButton, isPhone && styles.recordButtonPhone]}
               onPress={() => router.push('/notetaker' as any)}
@@ -140,10 +140,10 @@ export default function HomeScreen() {
             >
               <View style={styles.recordButtonContent}>
                 <Text style={[styles.recordTitle, isPhone && styles.recordTitlePhone]}>
-                  Record Visit
+                  Start Note-Taking
                 </Text>
                 <Text style={[styles.recordSubtitle, isPhone && styles.recordSubtitlePhone]}>
-                  Listen & simplify
+                  Listen & take notes
                 </Text>
               </View>
               <View style={styles.recordIcon}>

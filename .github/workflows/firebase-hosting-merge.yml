@@ -4,6 +4,7 @@ on:
     branches:
       - deploy-app
       - deploy-landing
+      - deploy-simplify
 
 jobs:
   deploy_app:
@@ -46,4 +47,25 @@ jobs:
           channelId: live
           projectId: patient-scribe-app
           target: landing
+          entryPoint: frontend
+
+  deploy_simplify:
+    if: github.ref == 'refs/heads/deploy-simplify'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies and build simplify page
+        working-directory: frontend/simplify
+        run: |
+          npm ci
+          npm run build
+
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_PATIENT_SCRIBE_APP }}
+          channelId: live
+          projectId: patient-scribe-app
+          target: simplify
           entryPoint: frontend

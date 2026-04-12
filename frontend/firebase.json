@@ -47,6 +47,23 @@
           "destination": "/index.html"
         }
       ]
+    },
+    {
+      "target": "simplify",
+      "public": "simplify/dist",
+      "ignore": [
+        "firebase.json",
+        "**/.*",
+        "**/node_modules/**",
+        ".env.local",
+        ".env.*.local"
+      ],
+      "rewrites": [
+        {
+          "source": "**",
+          "destination": "/index.html"
+        }
+      ]
     }
   ]
 }

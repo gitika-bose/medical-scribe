@@ -319,7 +319,8 @@ RULES:
 3. Format: TERM (plain definition) — example: "myelin (protective nerve coating)"
 4. Define each term ONLY on its first occurrence — do not repeat definitions.
 5. Do NOT change any other part of the text.
-6. Output ONLY the modified text — no commentary.
+6. Always refer to the patient as "you" / "your" — never as "the patient" or in third person.
+7. Output ONLY the modified text — no commentary.
 
 TEXT:
 {text}
@@ -344,8 +345,9 @@ Review the text below and:
 1. Convert any remaining medical abbreviations to plain English.
 2. Where context makes it clear, replace vague quantities ("a few", "some", "several") with specifics. Never fabricate — only clarify when the context explicitly supports a specific number.
 3. Make sure every instruction to the patient is in active voice and starts with a clear action verb ("Take", "Call", "Schedule", "Avoid", "Ask").
-4. Do NOT add, remove, or fabricate any medical information.
-5. Output ONLY the improved text — no commentary, no headings.
+4. Always refer to the patient as "you" / "your" — never as "the patient" or in third person.
+5. Do NOT add, remove, or fabricate any medical information.
+6. Output ONLY the improved text — no commentary, no headings.
 
 TEXT:
 {pre_processed}
@@ -453,7 +455,8 @@ RULES:
 5. Sort action_items by urgency: immediate first, then soon, then routine. Max 10 items.
 6. summary: 2-3 plain sentences covering the overall result — e.g. "Most of your results are in the normal range. Two values need attention. Your doctor will review these with you."
 7. questions: generate 3-5 questions grounded in what the text says
-8. Output ONLY valid JSON — no markdown, no commentary
+8. In ALL text fields, refer to the patient as "you" / "your" — never as "the patient" or in third person.
+9. Output ONLY valid JSON — no markdown, no commentary
 
 JSON OUTPUT:"""
 
@@ -533,7 +536,8 @@ RULES:
 6. questions: generate 3-5 questions grounded in what the text says
 7. what_happened.date: extract the visit date if mentioned, otherwise null
 8. summary: 2-3 plain sentences covering what happened, the key finding, and the main next step
-9. Output ONLY valid JSON — no markdown, no commentary
+9. In ALL text fields, refer to the patient as "you" / "your" — never as "the patient" or in third person.
+10. Output ONLY valid JSON — no markdown, no commentary
 
 JSON OUTPUT:"""
 

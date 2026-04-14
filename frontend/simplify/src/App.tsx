@@ -1,5 +1,6 @@
-import { useState, useRef, useCallback, type ReactNode } from 'react';
+import { useState, useRef, useCallback, useEffect, type ReactNode } from 'react';
 import { API_URL } from './api/firebase';
+import { analyticsEvents } from './api/analytics';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -105,6 +106,9 @@ interface AppointmentNote {
 type SimplifyResult = LegacyResult | LabResult | AppointmentNote;
 
 type AppState = 'upload' | 'processing' | 'result';
+
+const ACCEPTED_EXTENSIONS = ['pdf', 'txt', 'docx', 'png', 'jpg', 'jpeg', 'webp'];
+const MAX_FILES = 10;
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -660,35 +664,54 @@ function LegacyResultView({ result }: { result: LegacyResult }) {
 
 export default function App() {
   const [appState, setAppState] = useState<AppState>('upload');
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [dragOver, setDragOver] = useState(false);
   const [steps, setSteps] = useState<PipelineStep[]>(INITIAL_STEPS);
   const [result, setResult] = useState<SimplifyResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
+  useEffect(() => { analyticsEvents.pageOpen(); }, []);
+
   // ── File handlers ──────────────────────────────────────────────────────────
 
-  const handleFile = useCallback((f: File) => {
-    const ext = f.name.split('.').pop()?.toLowerCase();
-    if (!['pdf', 'txt', 'docx'].includes(ext ?? '')) {
-      setError('Please upload a PDF, .txt, or .docx file.');
+  const addFiles = useCallback((incoming: FileList | File[], inputMethod: 'picker' | 'drop') => {
+    const list = Array.from(incoming);
+    const invalid = list.find(f => {
+      const ext = f.name.split('.').pop()?.toLowerCase() ?? '';
+      return !ACCEPTED_EXTENSIONS.includes(ext);
+    });
+    if (invalid) {
+      setError(`'${invalid.name}' is not supported. Use PDF, TXT, DOCX, PNG, JPG, JPEG, or WEBP.`);
       return;
     }
     setError(null);
-    setFile(f);
+    setFiles(prev => {
+      const combined = [...prev, ...list];
+      if (combined.length > MAX_FILES) {
+        setError(`Maximum ${MAX_FILES} files allowed.`);
+        return prev;
+      }
+      const fileTypes = list.map(f => f.name.split('.').pop() ?? '').join(',');
+      analyticsEvents.fileAdded(list.length, fileTypes, inputMethod);
+      return combined;
+    });
+  }, []);
+
+  const removeFile = useCallback((index: number) => {
+    setFiles(prev => prev.filter((_, i) => i !== index));
+    analyticsEvents.fileRemoved();
   }, []);
 
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (f) handleFile(f);
+    if (e.target.files) addFiles(e.target.files, 'picker');
+    e.target.value = '';
   };
 
   const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setDragOver(false);
-    const f = e.dataTransfer.files?.[0];
-    if (f) handleFile(f);
+    if (e.dataTransfer.files) addFiles(e.dataTransfer.files, 'drop');
   };
 
   // ── Pipeline ────────────────────────────────────────────────────────────────
@@ -700,7 +723,10 @@ export default function App() {
   }, []);
 
   const handleSubmit = async () => {
-    if (!file) return;
+    if (files.length === 0) return;
+
+    const fileTypes = files.map(f => f.name.split('.').pop() ?? '').join(',');
+    analyticsEvents.submit(files.length, fileTypes);
 
     setError(null);
     setResult(null);
@@ -708,7 +734,7 @@ export default function App() {
     setAppState('processing');
 
     const formData = new FormData();
-    formData.append('file', file);
+    files.forEach(f => formData.append('files', f));
 
     abortRef.current = new AbortController();
 
@@ -753,6 +779,7 @@ export default function App() {
             if (event.error) throw new Error(event.error);
 
             if (event.step === 'result' && event.data) {
+              analyticsEvents.submitSuccess(event.data.doc_type ?? 'legacy');
               setResult(event.data);
               setAppState('result');
             } else if (typeof event.step === 'number' && event.status) {
@@ -765,13 +792,16 @@ export default function App() {
       }
     } catch (err: unknown) {
       if (err instanceof Error && err.name === 'AbortError') return;
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred.');
+      const msg = err instanceof Error ? err.message : 'An unexpected error occurred.';
+      analyticsEvents.submitError(msg);
+      setError(msg);
       setAppState('upload');
     }
   };
 
   const handleDownload = () => {
     if (!result) return;
+    analyticsEvents.download(result.doc_type ?? 'legacy');
     const text = buildDownloadText(result);
     const blob = new Blob([text], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -783,8 +813,9 @@ export default function App() {
   };
 
   const handleReset = () => {
+    if (appState === 'result') analyticsEvents.simplifyAnother();
     abortRef.current?.abort();
-    setFile(null);
+    setFiles([]);
     setSteps(INITIAL_STEPS.map(s => ({ ...s, status: 'waiting' })));
     setResult(null);
     setError(null);
@@ -828,21 +859,27 @@ export default function App() {
                 >
                   <input
                     type="file"
-                    accept=".pdf,.txt,.docx"
+                    accept=".pdf,.txt,.docx,.png,.jpg,.jpeg,.webp"
+                    multiple
                     onChange={onFileChange}
                   />
                   <div className="upload-icon">📄</div>
-                  {file ? (
-                    <p className="upload-file-name">✓ {file.name}</p>
-                  ) : (
-                    <>
-                      <p className="upload-title">
-                        {dragOver ? 'Drop to upload' : 'Drag & drop your document here'}
-                      </p>
-                      <p className="upload-hint">or click to browse — PDF, TXT, DOCX</p>
-                    </>
-                  )}
+                  <p className="upload-title">
+                    {dragOver ? 'Drop to upload' : 'Drag & drop your documents here'}
+                  </p>
+                  <p className="upload-hint">or click to browse — PDF, DOCX, TXT, PNG, JPG, WEBP</p>
                 </div>
+
+                {files.length > 0 && (
+                  <ul className="file-list">
+                    {files.map((f, i) => (
+                      <li key={i} className="file-list-item">
+                        <span className="file-list-name">✓ {f.name}</span>
+                        <button className="file-list-remove" onClick={() => removeFile(i)}>✕</button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
 
                 <div className="privacy-note">
                   <span className="privacy-note-icon">🔒</span>
@@ -853,7 +890,7 @@ export default function App() {
 
                 <button
                   className="cta-btn"
-                  disabled={!file}
+                  disabled={files.length === 0}
                   onClick={handleSubmit}
                 >
                   Simplify My Document →

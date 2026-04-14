@@ -2,7 +2,8 @@
 Simplify route — medical document simplification pipeline.
 
 POST /simplify
-  Accepts: multipart/form-data with 'file' field (PDF, .txt, .docx)
+  Accepts: multipart/form-data with one or more 'files' fields
+           (PDF, .txt, .docx, PNG, JPG, JPEG, WEBP)
   Returns: text/event-stream (SSE) with per-step progress + final result
 
 SSE event schema (each line: "data: <json>\\n\\n"):
@@ -11,7 +12,7 @@ SSE event schema (each line: "data: <json>\\n\\n"):
   { "step": "result", "data": { ...structured output... } }
   { "step": "error",  "error": "..." }
 
-File is held in memory only — never written to GCS or Firestore.
+Files are held in memory only — never written to GCS or Firestore.
 """
 
 import io
@@ -21,6 +22,7 @@ import logging
 from flask import Blueprint, request, Response, stream_with_context
 
 from utils.pdf_extract import extract_text_from_pdf
+from utils.ocr import ocr_image
 from utils.simplify_ai import SimplifyService
 from utils.scoring import score_text
 
@@ -39,8 +41,10 @@ STEPS = {
     7: "Generating follow-up questions",
 }
 
-ALLOWED_EXTENSIONS = {"pdf", "txt", "docx"}
-MAX_FILE_BYTES = 10 * 1024 * 1024  # 10 MB
+ALLOWED_EXTENSIONS = {"pdf", "txt", "docx", "png", "jpg", "jpeg", "webp"}
+IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "webp"}
+MAX_FILE_BYTES = 10 * 1024 * 1024  # 10 MB per file
+MAX_FILES = 10
 
 
 def _allowed(filename: str) -> bool:
@@ -53,7 +57,7 @@ def _sse(payload: dict) -> str:
 
 
 def _extract_text(file_bytes: bytes, filename: str) -> str:
-    """Extract plain text from PDF, TXT, or DOCX bytes."""
+    """Extract plain text from PDF, TXT, DOCX, or image bytes."""
     ext = filename.rsplit(".", 1)[1].lower()
 
     if ext == "txt":
@@ -72,6 +76,9 @@ def _extract_text(file_bytes: bytes, filename: str) -> str:
         doc = Document(io.BytesIO(file_bytes))
         return "\n".join(p.text for p in doc.paragraphs if p.text.strip())
 
+    if ext in IMAGE_EXTENSIONS:
+        return ocr_image(file_bytes)
+
     raise ValueError(f"Unsupported file extension: {ext}")
 
 
@@ -81,36 +88,45 @@ def _extract_text(file_bytes: bytes, filename: str) -> str:
 def simplify_document():
     """Stream simplification pipeline progress + result via SSE."""
 
-    # ── Validate file upload ──────────────────────────────────────────────────
-    if "file" not in request.files:
-        return {"error": "No file field in request"}, 400
+    # ── Validate file uploads ─────────────────────────────────────────────────
+    uploads = request.files.getlist("files")
+    if not uploads:
+        return {"error": "No files field in request"}, 400
+    if len(uploads) > MAX_FILES:
+        return {"error": f"Maximum {MAX_FILES} files allowed"}, 400
 
-    upload = request.files["file"]
-    if not upload.filename or not _allowed(upload.filename):
-        return {"error": "File must be PDF, TXT, or DOCX"}, 400
+    file_parts: list[tuple[bytes, str]] = []
+    for upload in uploads:
+        if not upload.filename or not _allowed(upload.filename):
+            return {"error": f"'{upload.filename}' is not a supported file type (PDF, TXT, DOCX, PNG, JPG, JPEG, WEBP)"}, 400
+        file_bytes = upload.read()
+        if len(file_bytes) > MAX_FILE_BYTES:
+            return {"error": f"'{upload.filename}' exceeds 10 MB limit"}, 413
+        file_parts.append((file_bytes, upload.filename))
 
-    file_bytes = upload.read()
-    if len(file_bytes) > MAX_FILE_BYTES:
-        return {"error": "File exceeds 10 MB limit"}, 413
-
-    filename = upload.filename
-    logger.info("simplify: received '%s' (%d bytes)", filename, len(file_bytes))
+    filenames = ", ".join(f for _, f in file_parts)
+    logger.info("simplify: received %d file(s): %s", len(file_parts), filenames)
 
     # ── Stream generator ──────────────────────────────────────────────────────
     def generate():
         service = SimplifyService()
 
         try:
-            # ── Step 1: Extract text ──────────────────────────────────────────
+            # ── Step 1: Extract text from all files ───────────────────────────
             yield _sse({"step": 1, "status": "active", "label": STEPS[1]})
-            try:
-                text = _extract_text(file_bytes, filename)
-            except Exception as exc:
-                logger.exception("simplify: text extraction failed")
-                yield _sse({"step": "error", "error": f"Could not read file: {exc}"})
-                return
+            text_parts: list[str] = []
+            for file_bytes, filename in file_parts:
+                try:
+                    extracted = _extract_text(file_bytes, filename)
+                    if extracted.strip():
+                        text_parts.append(extracted)
+                except Exception as exc:
+                    logger.exception("simplify: text extraction failed for '%s'", filename)
+                    yield _sse({"step": "error", "error": f"Could not read '{filename}': {exc}"})
+                    return
+            text = "\n\n---\n\n".join(text_parts)
             if not text.strip():
-                yield _sse({"step": "error", "error": "File appears to be empty or unreadable."})
+                yield _sse({"step": "error", "error": "Files appear to be empty or unreadable."})
                 return
             yield _sse({"step": 1, "status": "done", "label": STEPS[1]})
 

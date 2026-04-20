@@ -96,15 +96,8 @@ export default function PrivacyPolicyScreen() {
           </Text>
         </View>
         <Text style={styles.body}>
-          Because of this design, we{' '}
-          <Text style={styles.bold}>do not maintain long-term records of your submissions</Text>.
-        </Text>
-
-        <Text style={styles.sectionTitle}>4. No User Accounts</Text>
-        <Text style={styles.body}>
-          Juno currently allows users to try the service{' '}
-          <Text style={styles.bold}>without creating an account</Text>. We do not collect user
-          profiles or maintain personal user databases for this version of the product.
+          We{' '}
+          <Text style={styles.bold}>only store the generated summaries</Text>.
         </Text>
 
         <Text style={styles.sectionTitle}>5. Infrastructure and Service Providers</Text>

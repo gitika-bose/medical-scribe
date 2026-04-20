@@ -758,9 +758,9 @@
 .v2-feedback-email::placeholder { color: var(--muted-text-color); }
 .v2-feedback-email:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(124,139,107,0.12); }
 .v2-feedback-submit {
-  display: block; width: 40%; padding: 0.875rem; margin-top: 1rem; justify-self: center;
-  background-color: var(--primary-color-muted); color: var(--dark-text-color);
-  border: none; border-radius: 0.75rem; font-size: 1rem; font-weight: 600;
+  display: block; width: 40%; padding: 0.875rem; margin: 1rem auto 0;
+  background-color: var(--primary-color); color: #fff;
+  border: none; border-radius: 2rem; font-size: 1rem; font-weight: 600;
   cursor: pointer; font-family: inherit; transition: all 0.2s;
 }
 .v2-feedback-submit:hover { background-color: var(--primary-color-light); color: #fff; }

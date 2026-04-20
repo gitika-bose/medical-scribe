@@ -56,4 +56,6 @@ export const analyticsEvents = {
       appointment_id: appointmentId,
       file_size: fileSize,
     }),
+  submitFeedback: (rating: number) =>
+    logAnalyticsEvent('submit_feedback', { rating }),
 };

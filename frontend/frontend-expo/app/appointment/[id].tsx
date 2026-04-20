@@ -6,6 +6,11 @@ import {
   ScrollView,
   ActivityIndicator,
   StyleSheet,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -34,6 +39,14 @@ export default function AppointmentDetailScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const isDeletingRef = useRef(false);
+
+  // Feedback modal state
+  const [feedbackModalVisible, setFeedbackModalVisible] = useState(false);
+  const [feedbackStars, setFeedbackStars] = useState(0);
+  const [feedbackText, setFeedbackText] = useState('');
+  const [feedbackEmail, setFeedbackEmail] = useState('');
+  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
+  const [feedbackSent, setFeedbackSent] = useState(false);
 
   // Real-time listener
   useEffect(() => {
@@ -119,6 +132,43 @@ export default function AppointmentDetailScreen() {
     }
   };
 
+  const handleFeedbackSubmit = async () => {
+    if (feedbackStars === 0) return;
+    setFeedbackSubmitting(true);
+    try {
+      const lines = [
+        `Source: app-appointment-feedback`,
+        `Appointment ID: ${id}`,
+        `Rating: ${feedbackStars}/5 stars`,
+        `Feedback: ${feedbackText.trim() || '(none)'}`,
+      ];
+      if (feedbackEmail.trim()) lines.push(`User Email: ${feedbackEmail.trim()}`);
+      await fetch('https://formspree.io/f/mjgeorjw', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          email: feedbackEmail.trim() || 'gitika.bose@gmail.com',
+          message: lines.join('\n'),
+        }),
+      });
+      analyticsEvents.submitFeedback(feedbackStars);
+      setFeedbackSent(true);
+    } catch (err) {
+      console.error('Failed to submit feedback:', err);
+    } finally {
+      setFeedbackSubmitting(false);
+    }
+  };
+
+  const closeFeedbackModal = () => {
+    if (feedbackSubmitting) return;
+    setFeedbackModalVisible(false);
+    setFeedbackSent(false);
+    setFeedbackStars(0);
+    setFeedbackText('');
+    setFeedbackEmail('');
+  };
+
   // Loading state
   if (isLoading) {
     return (
@@ -129,10 +179,115 @@ export default function AppointmentDetailScreen() {
     );
   }
 
+  // Feedback modal — rendered as an overlay, shared across states
+  const FeedbackModal = (
+    <Modal
+      visible={feedbackModalVisible}
+      transparent
+      animationType="slide"
+      onRequestClose={closeFeedbackModal}
+    >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
+        <Pressable style={styles.feedbackModalOverlay} onPress={closeFeedbackModal}>
+          <Pressable style={styles.feedbackModalSheet} onPress={() => {}}>
+            {!feedbackSent ? (
+              <>
+                <Text style={styles.feedbackModalTitle}>Share Your Feedback</Text>
+                <Text style={styles.feedbackModalSubtitle}>How helpful was this?</Text>
+
+                <View style={styles.feedbackStarsRow}>
+                  {[1, 2, 3, 4, 5].map(star => (
+                    <TouchableOpacity
+                      key={star}
+                      onPress={() => setFeedbackStars(star)}
+                      style={styles.feedbackStarBtn}
+                    >
+                      <Text style={[styles.feedbackStarText, star <= feedbackStars && styles.feedbackStarFilled]}>
+                        ★
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                <Text style={styles.feedbackInputLabel}>
+                  What could be better?{' '}
+                  <Text style={styles.feedbackOptional}>(optional)</Text>
+                </Text>
+                <TextInput
+                  style={styles.feedbackTextInput}
+                  multiline
+                  numberOfLines={4}
+                  placeholder="Share your thoughts…"
+                  placeholderTextColor={Colors.mutedForeground}
+                  value={feedbackText}
+                  onChangeText={setFeedbackText}
+                  textAlignVertical="top"
+                />
+
+                <Text style={styles.feedbackInputLabel}>
+                  Your email{' '}
+                  <Text style={styles.feedbackOptional}>(optional)</Text>
+                </Text>
+                <TextInput
+                  style={styles.feedbackEmailInput}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  placeholder="you@example.com"
+                  placeholderTextColor={Colors.mutedForeground}
+                  value={feedbackEmail}
+                  onChangeText={setFeedbackEmail}
+                />
+
+                <View style={styles.feedbackModalActions}>
+                  <TouchableOpacity
+                    style={styles.feedbackCancelBtn}
+                    onPress={closeFeedbackModal}
+                    disabled={feedbackSubmitting}
+                  >
+                    <Text style={styles.feedbackCancelText}>Cancel</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.feedbackSubmitBtn,
+                      (feedbackStars === 0 || feedbackSubmitting) && styles.feedbackSubmitBtnDisabled,
+                    ]}
+                    onPress={handleFeedbackSubmit}
+                    disabled={feedbackStars === 0 || feedbackSubmitting}
+                  >
+                    {feedbackSubmitting ? (
+                      <ActivityIndicator size="small" color={Colors.primaryForeground} />
+                    ) : (
+                      <Text style={styles.feedbackSubmitText}>Submit</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </>
+            ) : (
+              <>
+                <Text style={styles.feedbackModalTitle}>Thank you! 🎉</Text>
+                <Text style={styles.feedbackThankYouText}>
+                  Your feedback helps us improve Juno.
+                </Text>
+                <TouchableOpacity style={styles.feedbackDoneBtn} onPress={closeFeedbackModal}>
+                  <Text style={styles.feedbackSubmitText}>Done</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </Pressable>
+        </Pressable>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+
   // Error / not found state
   if (error || !appointment || appointment.status === 'Error') {
     return (
       <View style={styles.container}>
+        {FeedbackModal}
+
         <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
           <TouchableOpacity style={styles.backButton} onPress={navigateBack}>
             <Ionicons name="arrow-back" size={22} color={Colors.primary} />
@@ -198,11 +353,20 @@ export default function AppointmentDetailScreen() {
             </View>
 
             <View style={styles.actionRow}>
-              <TouchableOpacity style={styles.feedbackButton} onPress={() => console.log('Feedback')} activeOpacity={0.7}>
+              <TouchableOpacity
+                style={styles.feedbackButton}
+                onPress={() => setFeedbackModalVisible(true)}
+                activeOpacity={0.7}
+              >
                 <Ionicons name="chatbox-outline" size={18} color={Colors.primaryForeground} />
                 <Text style={styles.feedbackButtonText}>Submit Feedback</Text>
               </TouchableOpacity>
-              <DeleteAppointmentButton appointmentId={id!} onDeleteStart={() => { isDeletingRef.current = true; }} onDeleteError={setError} style={{ flex: 1 }} />
+              <DeleteAppointmentButton
+                appointmentId={id!}
+                onDeleteStart={() => { isDeletingRef.current = true; }}
+                onDeleteError={setError}
+                style={{ flex: 1 }}
+              />
             </View>
           </View>
         </ScrollView>
@@ -360,4 +524,118 @@ const styles = StyleSheet.create({
 
   // Processing bottom actions
   processingBottomActions: { paddingHorizontal: 20, paddingBottom: 32, paddingTop: 8 },
+
+  // ── Feedback Modal ──────────────────────────────────────────────────────────
+  feedbackModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
+  },
+  feedbackModalSheet: {
+    backgroundColor: Colors.background,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 28,
+    paddingBottom: 40,
+  },
+  feedbackModalTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: Colors.primary,
+    marginBottom: 6,
+  },
+  feedbackModalSubtitle: {
+    fontSize: 15,
+    color: Colors.mutedForeground,
+    marginBottom: 20,
+  },
+  feedbackStarsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 24,
+  },
+  feedbackStarBtn: { padding: 4 },
+  feedbackStarText: {
+    fontSize: 38,
+    color: Colors.border,
+  },
+  feedbackStarFilled: {
+    color: '#F59E0B',
+  },
+  feedbackInputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.foreground,
+    marginBottom: 6,
+  },
+  feedbackOptional: {
+    fontWeight: '400',
+    color: Colors.mutedForeground,
+  },
+  feedbackTextInput: {
+    borderWidth: 1,
+    borderColor: Colors.inputBorder,
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 15,
+    color: Colors.foreground,
+    minHeight: 90,
+    marginBottom: 16,
+    backgroundColor: Colors.background,
+  },
+  feedbackEmailInput: {
+    borderWidth: 1,
+    borderColor: Colors.inputBorder,
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 15,
+    color: Colors.foreground,
+    marginBottom: 24,
+    backgroundColor: Colors.background,
+  },
+  feedbackModalActions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  feedbackCancelBtn: {
+    flex: 1,
+    paddingVertical: 13,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    alignItems: 'center',
+  },
+  feedbackCancelText: {
+    fontSize: 15,
+    color: Colors.mutedForeground,
+    fontWeight: '500',
+  },
+  feedbackSubmitBtn: {
+    flex: 1,
+    paddingVertical: 13,
+    borderRadius: 12,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+  },
+  feedbackSubmitBtnDisabled: {
+    backgroundColor: Colors.border,
+  },
+  feedbackSubmitText: {
+    fontSize: 15,
+    color: Colors.primaryForeground,
+    fontWeight: '600',
+  },
+  feedbackThankYouText: {
+    fontSize: 15,
+    color: Colors.mutedForeground,
+    marginBottom: 24,
+    lineHeight: 22,
+  },
+  feedbackDoneBtn: {
+    paddingVertical: 13,
+    borderRadius: 12,
+    backgroundColor: Colors.primary,
+    alignItems: 'center',
+  },
 });
